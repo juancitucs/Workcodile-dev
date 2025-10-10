@@ -6,11 +6,11 @@
         "_id": "ObjectId",
         "name": "String",
         "email": "String (Unique, Indexed)",
+        "emailVerified": "Boolean",
         "password": "String (Hashed)",
-        "avatar": "String (URL)",
-        "university": "String",
+        "avatar_key": "String (S3 Object Key)",
         "bio": "String",
-        "location": "String",
+        "role": "String ('student' | 'moderator' | 'admin')",
         "cycle": "Number",
         "interests": ["String"],
         "bookmarked_posts": ["ObjectId (ref: 'posts')"],
@@ -22,10 +22,8 @@
         "name": "Ana García",
         "email": "ana.garcia@unam.edu.pe",
         "password": "$2b$12$KqL6b8d2e...hashed_password_example",
-        "avatar": "https://images.unsplash.com/photo-1494790108755-2616b612b977?w=100&h=100&fit=crop&crop=face",
-        "university": "UNAM",
+        "avatar_key": "avatars/60d5ec49f5a2b1a2c8d3e8f1.jpg",
         "bio": "Estudiante de Ingeniería de Sistemas apasionada por el desarrollo web y la inteligencia artificial.",
-        "location": "Moquegua, Perú",
         "cycle": 5,
         "interests": ["Programación", "Bases de datos", "Desarrollo web"],
         "bookmarked_posts": ["ObjectId('60d5ec49f5a2b1a2c8d3e8f3')"],
@@ -55,7 +53,7 @@
         "title": "String",
         "content": "String",
         "author_id": "ObjectId (ref: 'users')",
-        "course_id": "String (e.g., 'IS-226', Indexed)",
+        "course_id": "ObjectId (ref: 'courses', Indexed)",
         "createdAt": "Date",
         "updatedAt": "Date",
         "hashtags": ["String"],
@@ -64,20 +62,24 @@
             "name": "String",
             "size": "Number",
             "type": "String",
-            "url": "String"
+            "object_key": "String (S3 Object Key)"
           }
         ],
         "views": "Number",
         "upvote_count": "Number",
         "downvote_count": "Number",
         "votes": [
-          { "user_id": "ObjectId (ref: 'users')", "type": "String ('up' or 'down')" }
+          {
+            "user_id": "ObjectId (ref: 'users')",
+            "type": "String ('up' or 'down')"
+          }
         ],
         "average_rating": "Number",
         "total_ratings": "Number",
         "ratings": [
           { "user_id": "ObjectId (ref: 'users')", "value": "Number (1-5)" }
         ],
+
         "comments": [
           {
             "_id": "ObjectId",
@@ -87,7 +89,10 @@
             "updatedAt": "Date",
             "score": "Number",
             "votes": [
-              { "user_id": "ObjectId (ref: 'users')", "type": "String ('up' or 'down')" }
+              {
+                "user_id": "ObjectId (ref: 'users')",
+                "type": "String ('up' or 'down')"
+              }
             ],
             "replies": "Array (recursive structure of comment documents)"
           }
@@ -98,11 +103,18 @@
         "title": "🔍 Busco tutor para Matemática II",
         "content": "Hola estudiantes de UNAM! Necesito ayuda con Matemática II...",
         "author_id": "ObjectId('60d5ec49f5a2b1a2c8d3e8f1')",
-        "course_id": "IS-226",
+        "course_id": "ObjectId('60d5ec49f5a2b1a2c8d3e9a1')",
         "createdAt": "2024-01-15T10:30:00Z",
         "updatedAt": "2024-01-15T10:30:00Z",
         "hashtags": ["tutoría", "matemática", "ayuda"],
-        "attachments": [],
+        "attachments": [
+          {
+            "name": "Guia de integrales.pdf",
+            "size": 2097152,
+            "type": "application/pdf",
+            "object_key": "attachments/60d5ec49f5a2b1a2c8d3e8f2/guia_integrales.pdf"
+          }
+        ],
         "views": 156,
         "upvote_count": 12,
         "downvote_count": 1,
@@ -137,6 +149,8 @@
         "description": "String",
         "category": "String ('posting', 'social', 'engagement', 'special')",
         "rarity": "String ('common', 'rare', 'epic', 'legendary')",
+        "icon": "String (S3 key or URL)",
+        "visible": "Boolean",
         "maxProgress": "Number",
         "reward_points": "Number",
         "reward_badge": "String"
