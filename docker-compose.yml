@@ -1,0 +1,61 @@
+version: '3.8'
+
+services:
+  database:
+    image: mongo:latest
+    container_name: workcodile-mongo
+    ports:
+      - "27018:27017"
+    volumes:
+      - ./data:/data/db
+    networks:
+      - workcodile-net
+
+  backend:
+    build:
+      context: ./backend
+    container_name: workcodile-backend
+    ports:
+      - "3001:3001"
+    volumes:
+      - ./backend:/app # Monta el código para desarrollo en tiempo real
+      - /app/node_modules # No montar node_modules locales
+    depends_on:
+      - database
+    environment:
+      - MONGO_URI=${MONGO_URI}
+      - PORT=${PORT}
+    networks:
+      - workcodile-net
+
+  frontend:
+    build:
+      context: ./frontend
+    container_name: workcodile-frontend
+    ports:
+      - "8080:80" # Expone el Nginx en el puerto 8080
+    volumes:
+      - ./frontend/src:/app/src # Monta el código para desarrollo en tiempo real
+    depends_on:
+      - backend
+    networks:
+      - workcodile-net
+
+  minio:
+    image: minio/minio:latest
+    container_name: workcodile-minio
+    ports:
+      - "9000:9000" # API
+      - "9001:9001" # Consola Web
+    volumes:
+      - ./minio_data:/data
+    environment:
+      - MINIO_ROOT_USER=${MINIO_ROOT_USER}
+      - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD}
+    command: server /data --console-address ":9001"
+    networks:
+      - workcodile-net
+
+networks:
+  workcodile-net:
+    driver: bridge
