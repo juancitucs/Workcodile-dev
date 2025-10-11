@@ -76,7 +76,7 @@ Siga estos pasos para configurar y ejecutar el proyecto en su máquina.
 ### 1. Clonar el Repositorio
 
 ```bash
-git clone <URL_DEL_REPOSITORIO>
+git clone https://github.com/juancitucs/Workcodile-dev
 cd WorkCodile-Foro
 ```
 
