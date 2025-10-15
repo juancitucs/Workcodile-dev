@@ -296,9 +296,9 @@ export function PostCard({ post }: PostCardProps) {
                     </span>
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    {post.attachments.map((attachment) => (
+                    {post.attachments.map((attachment, index) => (
                       <motion.div
-                        key={attachment.id}
+                        key={`${index}-${attachment.name}`}
                         whileHover={{ scale: 1.02, y: -1 }}
                         transition={{ duration: 0.2, ease: [0.4, 0, 0.2, 1] }}
                         className="flex items-center space-x-2 p-3 bg-gradient-to-r from-workcodile-gray-light/50 to-workcodile-gray-subtle/30 border border-workcodile-border-light rounded-md hover:from-workcodile-green-subtle/30 hover:to-workcodile-gray-subtle/50 cursor-pointer transition-all duration-300 shadow-sm hover:shadow-md"

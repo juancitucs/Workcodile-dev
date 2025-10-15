@@ -1,0 +1,22 @@
+# Dependencias
+**/node_modules
+
+# Archivos de build
+**/dist
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Variables de entorno
+.env
+*.local
+
+# Datos de la base de datos local
+data/
+minio_data/
+
+# Archivos del sistema operativo
+.DS_Store
+Thumbs.db
