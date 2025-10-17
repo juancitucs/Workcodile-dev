@@ -1,4 +1,3 @@
-
 // backend/src/__tests__/server.test.js
 import request from 'supertest';
 import { app } from '../server.js'; // Asumimos que exportas tu app de express
