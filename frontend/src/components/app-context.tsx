@@ -289,33 +289,78 @@ export function AppProvider({ children }: { children: ReactNode }) {
     fetchPosts()
   }, [])
 
+  useEffect(() => {
+    const loadUser = async () => {
+      const token = localStorage.getItem('token');
+      if (token) {
+        try {
+          const response = await fetch('http://localhost:3001/api/auth/me', {
+            headers: {
+              'x-auth-token': token,
+            },
+          });
+
+          if (!response.ok) {
+            // Token is invalid or expired
+            logout();
+            return;
+          }
+
+          const userData = await response.json();
+          setUser(userData);
+        } catch (error) {
+          console.error('Failed to load user session:', error);
+          logout(); // Clear session on any error
+        }
+      }
+    };
+
+    loadUser();
+  }, []);
+
   const resetMainFeed = () => setMainFeedKey((prev) => prev + 1)
   const selectPost = (postId: string | null) => setSelectedPostId(postId)
 
   const login = async (email: string, password: string) => {
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1000))
-    const foundUser = mockUsers.find((u) => u.email === email)
-    if (foundUser) {
-      setUser(foundUser)
-    } else {
-      throw new Error('Usuario no encontrado')
+    const response = await fetch('http://localhost:3001/api/auth/login', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ email, password }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.msg || 'Error al iniciar sesión');
     }
+
+    const { token, user: userData } = await response.json();
+    localStorage.setItem('token', token);
+    setUser(userData);
   }
 
   const register = async (name: string, email: string, password: string) => {
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1000))
-    const newUser: User = {
-      id: Date.now().toString(),
-      name,
-      email,
-      university: 'UNAM',
+    const response = await fetch('http://localhost:3001/api/auth/register', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ name, email, password }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.msg || 'Error al registrarse');
     }
-    setUser(newUser)
+
+    const { token, user: userData } = await response.json();
+    localStorage.setItem('token', token);
+    setUser(userData);
   }
 
   const logout = () => {
+    localStorage.removeItem('token');
     setUser(null)
   }
 
