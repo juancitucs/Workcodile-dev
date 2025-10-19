@@ -3,11 +3,20 @@ import { AuthPage } from './components/auth-page'
 import { MainFeed } from './components/main-feed'
 import { Toaster } from './components/ui/sonner'
 import { SinglePostView } from './components/single-post-view'
+import { Loader2 } from 'lucide-react'
 
 function AppContent() {
-  const { user, mainFeedKey, selectedPostId } = useApp()
+  const { authStatus, mainFeedKey, selectedPostId } = useApp()
 
-  if (!user) {
+  if (authStatus === 'loading') {
+    return (
+      <div className="min-h-screen workcodile-bg flex items-center justify-center">
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+      </div>
+    )
+  }
+
+  if (authStatus !== 'authenticated') {
     return <AuthPage />
   }
 

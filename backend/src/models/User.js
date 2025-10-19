@@ -15,6 +15,11 @@ const userSchema = new mongoose.Schema(
     cycle: { type: Number },
     interests: [{ type: String }],
     bookmarked_posts: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Post' }],
+    theme: {
+      type: String,
+      enum: ['light', 'dark'],
+      default: 'light',
+    },
   },
   { timestamps: true }
 )

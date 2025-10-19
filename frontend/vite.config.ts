@@ -71,6 +71,6 @@ export default defineConfig({
   server: {
     port: 3000,
     open: true,
-    allowedHosts: ['dependence-barrier-truly-setup.trycloudflare.com'],
+    allowedHosts: ['stem-edmonton-dose-discipline.trycloudflare.com'],
   },
 })

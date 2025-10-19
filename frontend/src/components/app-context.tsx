@@ -12,6 +12,7 @@ interface User {
   email: string
   avatar?: string
   university: string
+  theme?: string
 }
 
 interface Course {
@@ -71,6 +72,7 @@ interface Notification {
 }
 
 interface AppContextType {
+  authStatus: 'loading' | 'authenticated' | 'unauthenticated'
   user: User | null
   posts: Post[]
   courses: Course[]
@@ -90,12 +92,12 @@ interface AppContextType {
   addComment: (postId: string, content: string, parentId?: string) => void
   voteComment: (postId: string, commentId: string, vote: 'up' | 'down') => void
   searchPosts: (query: string) => Post[]
-  getCourseById: (courseId: string) => Course | undefined
-  getCoursesByCycle: (cycle: number) => Course[]
-  isDarkMode: boolean
-  toggleDarkMode: () => void
+  getCourseById: (courseId: string) => Course | undefined;
+  getCoursesByCycle: (cycle: number) => Course[];
+  theme: 'light' | 'dark';
+  toggleTheme: () => void;
   // New rating and additional features
-  ratePost: (postId: string, rating: number) => void
+  ratePost: (postId: string, rating: number) => void;
   toggleBookmark: (postId: string) => void
   reportPost: (postId: string) => void
   incrementViews: (postId: string) => void
@@ -236,24 +238,56 @@ const mockNotifications: Notification[] = [
 ]
 
 export function AppProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null)
-  const [posts, setPosts] = useState<Post[]>([])
+  const [authStatus, setAuthStatus] = useState<
+    'loading' | 'authenticated' | 'unauthenticated'
+  >('loading');
+  const [user, setUser] = useState<User | null>(null);
+  const [posts, setPosts] = useState<Post[]>([]);
   const [notifications, setNotifications] =
-    useState<Notification[]>(mockNotifications)
-  const [isDarkMode, setIsDarkMode] = useState(false)
-  const [mainFeedKey, setMainFeedKey] = useState(0)
-  const [selectedPostId, setSelectedPostId] = useState<string | null>(null)
+    useState<Notification[]>(mockNotifications);
+  const [theme, setTheme] = useState<'light' | 'dark'>('light');
+  const [mainFeedKey, setMainFeedKey] = useState(0);
+  const [selectedPostId, setSelectedPostId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const root = window.document.documentElement;
+    root.classList.remove('light', 'dark');
+    root.classList.add(theme);
+  }, [theme]);
+
+  const toggleTheme = () => {
+    const newTheme = theme === 'light' ? 'dark' : 'light';
+    setTheme(newTheme);
+    updateUserTheme(newTheme);
+  };
+
+  const updateUserTheme = async (newTheme: 'light' | 'dark') => {
+    const token = localStorage.getItem('token');
+    if (!token) return;
+
+    try {
+      await fetch('http://localhost:3001/api/auth/user/theme', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-auth-token': token,
+        },
+        body: JSON.stringify({ theme: newTheme }),
+      });
+    } catch (error) {
+      console.error('Failed to update theme:', error);
+    }
+  };
 
   useEffect(() => {
     const fetchPosts = async () => {
       try {
-        const response = await fetch('http://localhost:3001/api/posts')
+        const response = await fetch('http://localhost:3001/api/posts');
         if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`)
+          throw new Error(`HTTP error! status: ${response.status}`);
         }
-        const data = await response.json()
+        const data = await response.json();
 
-        // Transform backend data to frontend Post interface
         const transformedPosts: Post[] = data.map((post: any) => ({
           id: post._id,
           title: post.title,
@@ -261,9 +295,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
           author: {
             id: post.author?._id?.toString() || '',
             name: post.author?.name || 'Usuario Anónimo',
-            avatar: post.author?.avatar_key, // This might need to be a full URL later
-            university: 'UNAM', // Placeholder
-            email: post.author?.email || '', // Placeholder
+            avatar: post.author?.avatar_key,
+            university: 'UNAM',
+            email: post.author?.email || '',
           },
           createdAt: new Date(post.createdAt),
           course: post.course_id || '',
@@ -275,19 +309,19 @@ export function AppProvider({ children }: { children: ReactNode }) {
           rating: post.average_rating || 0,
           totalRatings: post.total_ratings || 0,
           views: post.views || 0,
-          isBookmarked: false, // Default
-          userVote: undefined, // Default
-          userRating: 0, // Default
-        }))
+          isBookmarked: false,
+          userVote: undefined,
+          userRating: 0,
+        }));
 
-        setPosts(transformedPosts)
+        setPosts(transformedPosts);
       } catch (error) {
-        console.error('Failed to fetch posts:', error)
+        console.error('Failed to fetch posts:', error);
       }
-    }
+    };
 
-    fetchPosts()
-  }, [])
+    fetchPosts();
+  }, []);
 
   useEffect(() => {
     const loadUser = async () => {
@@ -301,25 +335,32 @@ export function AppProvider({ children }: { children: ReactNode }) {
           });
 
           if (!response.ok) {
-            // Token is invalid or expired
             logout();
+            setAuthStatus('unauthenticated');
             return;
           }
 
           const userData = await response.json();
           setUser(userData);
+          if (userData.theme) {
+            setTheme(userData.theme);
+          }
+          setAuthStatus('authenticated');
         } catch (error) {
           console.error('Failed to load user session:', error);
-          logout(); // Clear session on any error
+          logout();
+          setAuthStatus('unauthenticated');
         }
+      } else {
+        setAuthStatus('unauthenticated');
       }
     };
 
     loadUser();
   }, []);
 
-  const resetMainFeed = () => setMainFeedKey((prev) => prev + 1)
-  const selectPost = (postId: string | null) => setSelectedPostId(postId)
+  const resetMainFeed = () => setMainFeedKey((prev) => prev + 1);
+  const selectPost = (postId: string | null) => setSelectedPostId(postId);
 
   const login = async (email: string, password: string) => {
     const response = await fetch('http://localhost:3001/api/auth/login', {
@@ -338,7 +379,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const { token, user: userData } = await response.json();
     localStorage.setItem('token', token);
     setUser(userData);
-  }
+    if (userData.theme) {
+      setTheme(userData.theme);
+    }
+    setAuthStatus('authenticated');
+  };
 
   const register = async (name: string, email: string, password: string) => {
     const response = await fetch('http://localhost:3001/api/auth/register', {
@@ -357,18 +402,23 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const { token, user: userData } = await response.json();
     localStorage.setItem('token', token);
     setUser(userData);
-  }
+    if (userData.theme) {
+      setTheme(userData.theme);
+    }
+    setAuthStatus('authenticated');
+  };
 
   const logout = () => {
     localStorage.removeItem('token');
-    setUser(null)
-  }
+    setUser(null);
+    setAuthStatus('unauthenticated');
+  };
 
   const updateProfile = (profileData: Partial<User>) => {
     if (user) {
-      setUser({ ...user, ...profileData })
+      setUser({ ...user, ...profileData });
     }
-  }
+  };
 
   const createPost = (
     title: string,
@@ -377,7 +427,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     hashtags: string[],
     attachments: FileAttachment[]
   ) => {
-    if (!user) return
+    if (!user) return;
 
     const newPost: Post = {
       id: Date.now().toString(),
@@ -397,53 +447,50 @@ export function AppProvider({ children }: { children: ReactNode }) {
       userRating: 0,
       views: 0,
       isBookmarked: false,
-    }
+    };
 
-    setPosts((prev) => [newPost, ...prev])
-  }
+    setPosts((prev) => [newPost, ...prev]);
+  };
 
   const votePost = (postId: string, vote: 'up' | 'down') => {
     setPosts((prev) =>
       prev.map((post) => {
         if (post.id === postId) {
-          const currentVote = post.userVote
-          let newUpvotes = post.upvotes
-          let newDownvotes = post.downvotes
+          const currentVote = post.userVote;
+          let newUpvotes = post.upvotes;
+          let newDownvotes = post.downvotes;
 
-          // Handle vote changes
           if (currentVote === vote) {
-            // User is undoing their vote
-            if (vote === 'up') newUpvotes--
-            else newDownvotes--
+            if (vote === 'up') newUpvotes--;
+            else newDownvotes--;
             return {
               ...post,
               upvotes: newUpvotes,
               downvotes: newDownvotes,
               userVote: undefined,
-            }
+            };
           } else {
-            // New vote or changing vote
-            if (currentVote === 'up') newUpvotes--
-            if (currentVote === 'down') newDownvotes--
+            if (currentVote === 'up') newUpvotes--;
+            if (currentVote === 'down') newDownvotes--;
 
-            if (vote === 'up') newUpvotes++
-            else newDownvotes++
+            if (vote === 'up') newUpvotes++;
+            else newDownvotes++;
 
             return {
               ...post,
               upvotes: newUpvotes,
               downvotes: newDownvotes,
               userVote: vote,
-            }
+            };
           }
         }
-        return post
+        return post;
       })
-    )
-  }
+    );
+  };
 
   const addComment = (postId: string, content: string, parentId?: string) => {
-    if (!user) return
+    if (!user) return;
 
     const newComment: Comment = {
       id: Date.now().toString(),
@@ -453,46 +500,44 @@ export function AppProvider({ children }: { children: ReactNode }) {
       score: 0,
       replies: [],
       parentId,
-    }
+    };
 
     setPosts((prev) =>
       prev.map((post) => {
         if (post.id === postId) {
           if (parentId) {
-            // Add a reply to a nested comment
             const addReplyToComment = (comments: Comment[]): Comment[] => {
               return comments.map((comment) => {
                 if (comment.id === parentId) {
                   return {
                     ...comment,
                     replies: [...comment.replies, newComment],
-                  }
+                  };
                 }
                 if (comment.replies.length > 0) {
                   return {
                     ...comment,
                     replies: addReplyToComment(comment.replies),
-                  }
+                  };
                 }
-                return comment
-              })
-            }
+                return comment;
+              });
+            };
             return {
               ...post,
               comments: addReplyToComment(post.comments),
-            }
+            };
           } else {
-            // Add a top-level comment
             return {
               ...post,
               comments: [...post.comments, newComment],
-            }
+            };
           }
         }
-        return post
+        return post;
       })
-    )
-  }
+    );
+  };
 
   const voteComment = (
     postId: string,
@@ -505,40 +550,37 @@ export function AppProvider({ children }: { children: ReactNode }) {
           const updateCommentVotes = (comments: Comment[]): Comment[] => {
             return comments.map((comment) => {
               if (comment.id === commentId) {
-                const currentVote = comment.userVote
-                let newScore = comment.score
+                const currentVote = comment.userVote;
+                let newScore = comment.score;
 
                 if (currentVote === vote) {
-                  // Undoing vote
-                  newScore += vote === 'up' ? -1 : 1
-                  return { ...comment, score: newScore, userVote: undefined }
+                  newScore += vote === 'up' ? -1 : 1;
+                  return { ...comment, score: newScore, userVote: undefined };
                 } else {
-                  // New vote or changing vote
-                  if (currentVote === 'up') newScore -= 1
-                  if (currentVote === 'down') newScore += 1
-                  newScore += vote === 'up' ? 1 : -1
-                  return { ...comment, score: newScore, userVote: vote }
+                  if (currentVote === 'up') newScore -= 1;
+                  if (currentVote === 'down') newScore += 1;
+                  newScore += vote === 'up' ? 1 : -1;
+                  return { ...comment, score: newScore, userVote: vote };
                 }
               }
-              // Recursively update replies
               if (comment.replies && comment.replies.length > 0) {
                 return {
                   ...comment,
                   replies: updateCommentVotes(comment.replies),
-                }
+                };
               }
-              return comment
-            })
-          }
-          return { ...post, comments: updateCommentVotes(post.comments) }
+              return comment;
+            });
+          };
+          return { ...post, comments: updateCommentVotes(post.comments) };
         }
-        return post
+        return post;
       })
-    )
-  }
+    );
+  };
 
   const searchPosts = (query: string) => {
-    if (!query.trim()) return posts
+    if (!query.trim()) return posts;
 
     return posts.filter(
       (post) =>
@@ -548,56 +590,50 @@ export function AppProvider({ children }: { children: ReactNode }) {
         post.hashtags.some((tag) =>
           tag.toLowerCase().includes(query.toLowerCase())
         )
-    )
-  }
+    );
+  };
 
   const getCourseById = (courseId: string) => {
-    return courses.find((course) => course.id === courseId)
-  }
+    return courses.find((course) => course.id === courseId);
+  };
 
   const getCoursesByCycle = (cycle: number) => {
-    return courses.filter((course) => course.cycle === cycle)
-  }
-
-  const toggleDarkMode = () => {
-    setIsDarkMode((prev) => !prev)
-    document.documentElement.classList.toggle('dark')
-  }
+    return courses.filter((course) => course.cycle === cycle);
+  };
 
   const ratePost = (postId: string, rating: number) => {
-    if (!user) return // Ensure user is logged in
+    if (!user) return;
 
     setPosts((prev) =>
       prev.map((post) => {
         if (post.id === postId) {
-          const wasUserRated = post.userRating && post.userRating > 0
+          const wasUserRated = post.userRating && post.userRating > 0;
           const newTotalRatings = wasUserRated
             ? post.totalRatings
-            : post.totalRatings + 1
+            : post.totalRatings + 1;
 
-          // Calculate new average rating
-          const currentTotal = post.rating * post.totalRatings
+          const currentTotal = post.rating * post.totalRatings;
           const newTotal = wasUserRated
             ? currentTotal - (post.userRating || 0) + rating
-            : currentTotal + rating
+            : currentTotal + rating;
           const newAverageRating =
-            newTotalRatings > 0 ? newTotal / newTotalRatings : 0
+            newTotalRatings > 0 ? newTotal / newTotalRatings : 0;
 
           console.log(
             `Usuario ${user.name} calificó el post "${post.title}" con ${rating} cocodrilos`
-          )
+          );
 
           return {
             ...post,
             rating: newAverageRating,
             totalRatings: newTotalRatings,
             userRating: rating,
-          }
+          };
         }
-        return post
+        return post;
       })
-    )
-  }
+    );
+  };
 
   const toggleBookmark = (postId: string) => {
     setPosts((prev) =>
@@ -606,17 +642,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
           return {
             ...post,
             isBookmarked: !post.isBookmarked,
-          }
+          };
         }
-        return post
+        return post;
       })
-    )
-  }
+    );
+  };
 
   const reportPost = (postId: string) => {
-    // In a real app, this would send a report to the backend
-    console.log(`Post ${postId} reported by user ${user?.id}`)
-  }
+    console.log(`Post ${postId} reported by user ${user?.id}`);
+  };
 
   const incrementViews = (postId: string) => {
     setPosts((prev) =>
@@ -625,16 +660,17 @@ export function AppProvider({ children }: { children: ReactNode }) {
           return {
             ...post,
             views: post.views + 1,
-          }
+          };
         }
-        return post
+        return post;
       })
-    )
-  }
+    );
+  };
 
   return (
     <AppContext.Provider
       value={{
+        authStatus,
         user,
         posts,
         courses,
@@ -650,8 +686,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
         searchPosts,
         getCourseById,
         getCoursesByCycle,
-        isDarkMode,
-        toggleDarkMode,
+        theme,
+        toggleTheme,
         ratePost,
         toggleBookmark,
         reportPost,
@@ -664,7 +700,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     >
       {children}
     </AppContext.Provider>
-  )
+  );
 }
 
 export function useApp() {

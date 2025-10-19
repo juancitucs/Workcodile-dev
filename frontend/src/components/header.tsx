@@ -33,7 +33,7 @@ interface HeaderProps {
 }
 
 export function Header({ onCreatePost, onSearch }: HeaderProps) {
-  const { user, logout, isDarkMode, toggleDarkMode, resetMainFeed } = useApp();
+  const { user, logout, theme, toggleTheme, resetMainFeed } = useApp();
   const [searchQuery, setSearchQuery] = useState('');
   const [showProfile, setShowProfile] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
@@ -117,9 +117,9 @@ export function Header({ onCreatePost, onSearch }: HeaderProps) {
             <Button
               variant="ghost"
               size="sm"
-              onClick={toggleDarkMode}
+              onClick={toggleTheme}
             >
-              {isDarkMode ? (
+              {theme === 'dark' ? (
                 <Sun className="h-5 w-5" />
               ) : (
                 <Moon className="h-5 w-5" />

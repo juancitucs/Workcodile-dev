@@ -30,7 +30,7 @@ const register = async (req, res) => {
 
     jwt.sign(
       payload,
-      process.env.JWT_SECRET || 'your_jwt_secret',
+      process.env.JWT_SECRET || 'my_jwt_secret',
       { expiresIn: 360000 },
       (err, token) => {
         if (err) throw err
@@ -52,7 +52,7 @@ const login = async (req, res) => {
       return res.status(400).json({ msg: 'Invalid credentials' })
     }
 
-    const isMatch = await bcrypt.compare(password, user.password);
+    const isMatch = await bcrypt.compare(password, user.password)
     if (!isMatch) {
       return res.status(400).json({ msg: 'Invalid credentials' })
     }
@@ -88,8 +88,32 @@ const getMe = async (req, res) => {
     res.json(user)
   } catch (err) {
     console.error(err.message)
-    res.status(500).send('Server Error')
+    res.status(500).send('Server Error');
   }
-}
+};
 
-module.exports = { register, login, getMe }
+const updateUserTheme = async (req, res) => {
+  const { theme } = req.body;
+  if (!['light', 'dark'].includes(theme)) {
+    return res.status(400).json({ msg: 'Invalid theme' });
+  }
+
+  try {
+    const user = await User.findByIdAndUpdate(
+      req.user.id,
+      { theme },
+      { new: true }
+    ).select('-password');
+
+    if (!user) {
+      return res.status(404).json({ msg: 'User not found' });
+    }
+
+    res.json(user);
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send('Server Error');
+  }
+};
+
+module.exports = { register, login, getMe, updateUserTheme };
