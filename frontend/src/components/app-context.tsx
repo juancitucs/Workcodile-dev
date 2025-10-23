@@ -87,17 +87,25 @@ interface AppContextType {
     course: string,
     hashtags: string[],
     attachments: FileAttachment[]
-  ) => void
-  votePost: (postId: string, vote: 'up' | 'down') => void
-  addComment: (postId: string, content: string, parentId?: string) => void
-  voteComment: (postId: string, commentId: string, vote: 'up' | 'down') => void
+  ) => Promise<void>
+  votePost: (postId: string, vote: 'up' | 'down') => Promise<void>
+  addComment: (
+    postId: string,
+    content: string,
+    parentId?: string
+  ) => Promise<void>
+  voteComment: (
+    postId: string,
+    commentId: string,
+    vote: 'up' | 'down'
+  ) => Promise<void>
   searchPosts: (query: string) => Post[]
-  getCourseById: (courseId: string) => Course | undefined;
-  getCoursesByCycle: (cycle: number) => Course[];
-  theme: 'light' | 'dark';
-  toggleTheme: () => void;
+  getCourseById: (courseId: string) => Course | undefined
+  getCoursesByCycle: (cycle: number) => Course[]
+  theme: 'light' | 'dark'
+  toggleTheme: () => void
   // New rating and additional features
-  ratePost: (postId: string, rating: number) => void;
+  ratePost: (postId: string, rating: number) => void
   toggleBookmark: (postId: string) => void
   reportPost: (postId: string) => void
   incrementViews: (postId: string) => void
@@ -237,33 +245,75 @@ const mockNotifications: Notification[] = [
   },
 ]
 
+const transformBackendComment = (comment: any): Comment => {
+  return {
+    ...comment,
+    id: comment._id,
+    createdAt: new Date(comment.createdAt),
+    author: {
+      id: comment.author_id?._id?.toString() || comment.author_id?.toString() || '',
+      name: comment.author?.name || 'Usuario Anónimo',
+      avatar: comment.author?.avatar_key,
+      university: 'UNAM',
+      email: comment.author?.email || '',
+    },
+    replies: comment.replies ? comment.replies.map(transformBackendComment) : [],
+  }
+}
+
+const transformBackendPost = (post: any): Post => ({
+  id: post._id,
+  title: post.title,
+  content: post.content,
+  author: {
+    id: post.author?._id?.toString() || '',
+    name: post.author?.name || 'Usuario Anónimo',
+    avatar: post.author?.avatar_key,
+    university: 'UNAM',
+    email: post.author?.email || '',
+  },
+  createdAt: new Date(post.createdAt),
+  course: post.course_id || '',
+  upvotes: post.upvote_count || 0,
+  downvotes: post.downvote_count || 0,
+  comments: post.comments ? post.comments.map(transformBackendComment) : [],
+  hashtags: post.hashtags || [],
+  attachments: post.attachments || [],
+  rating: post.average_rating || 0,
+  totalRatings: post.total_ratings || 0,
+  views: post.views || 0,
+  isBookmarked: false,
+  userVote: undefined,
+  userRating: 0,
+})
+
 export function AppProvider({ children }: { children: ReactNode }) {
   const [authStatus, setAuthStatus] = useState<
     'loading' | 'authenticated' | 'unauthenticated'
-  >('loading');
-  const [user, setUser] = useState<User | null>(null);
-  const [posts, setPosts] = useState<Post[]>([]);
+  >('loading')
+  const [user, setUser] = useState<User | null>(null)
+  const [posts, setPosts] = useState<Post[]>([])
   const [notifications, setNotifications] =
-    useState<Notification[]>(mockNotifications);
-  const [theme, setTheme] = useState<'light' | 'dark'>('light');
-  const [mainFeedKey, setMainFeedKey] = useState(0);
-  const [selectedPostId, setSelectedPostId] = useState<string | null>(null);
+    useState<Notification[]>(mockNotifications)
+  const [theme, setTheme] = useState<'light' | 'dark'>('light')
+  const [mainFeedKey, setMainFeedKey] = useState(0)
+  const [selectedPostId, setSelectedPostId] = useState<string | null>(null)
 
   useEffect(() => {
-    const root = window.document.documentElement;
-    root.classList.remove('light', 'dark');
-    root.classList.add(theme);
-  }, [theme]);
+    const root = window.document.documentElement
+    root.classList.remove('light', 'dark')
+    root.classList.add(theme)
+  }, [theme])
 
   const toggleTheme = () => {
-    const newTheme = theme === 'light' ? 'dark' : 'light';
-    setTheme(newTheme);
-    updateUserTheme(newTheme);
-  };
+    const newTheme = theme === 'light' ? 'dark' : 'light'
+    setTheme(newTheme)
+    updateUserTheme(newTheme)
+  }
 
   const updateUserTheme = async (newTheme: 'light' | 'dark') => {
-    const token = localStorage.getItem('token');
-    if (!token) return;
+    const token = localStorage.getItem('token')
+    if (!token) return
 
     try {
       await fetch('http://localhost:3001/api/auth/user/theme', {
@@ -273,94 +323,70 @@ export function AppProvider({ children }: { children: ReactNode }) {
           'x-auth-token': token,
         },
         body: JSON.stringify({ theme: newTheme }),
-      });
+      })
     } catch (error) {
-      console.error('Failed to update theme:', error);
+      console.error('Failed to update theme:', error)
     }
-  };
+  }
 
   useEffect(() => {
     const fetchPosts = async () => {
       try {
-        const response = await fetch('http://localhost:3001/api/posts');
+        const response = await fetch('http://localhost:3001/api/posts')
         if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
+          throw new Error(`HTTP error! status: ${response.status}`)
         }
-        const data = await response.json();
+        const data = await response.json()
 
-        const transformedPosts: Post[] = data.map((post: any) => ({
-          id: post._id,
-          title: post.title,
-          content: post.content,
-          author: {
-            id: post.author?._id?.toString() || '',
-            name: post.author?.name || 'Usuario Anónimo',
-            avatar: post.author?.avatar_key,
-            university: 'UNAM',
-            email: post.author?.email || '',
-          },
-          createdAt: new Date(post.createdAt),
-          course: post.course_id || '',
-          upvotes: post.upvote_count || 0,
-          downvotes: post.downvote_count || 0,
-          comments: post.comments || [],
-          hashtags: post.hashtags || [],
-          attachments: post.attachments || [],
-          rating: post.average_rating || 0,
-          totalRatings: post.total_ratings || 0,
-          views: post.views || 0,
-          isBookmarked: false,
-          userVote: undefined,
-          userRating: 0,
-        }));
+        const transformedPosts: Post[] = data.map(transformBackendPost)
 
-        setPosts(transformedPosts);
+        setPosts(transformedPosts)
       } catch (error) {
-        console.error('Failed to fetch posts:', error);
+        console.error('Failed to fetch posts:', error)
       }
-    };
+    }
 
-    fetchPosts();
-  }, []);
+    fetchPosts()
+  }, [])
 
   useEffect(() => {
     const loadUser = async () => {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('token')
       if (token) {
         try {
           const response = await fetch('http://localhost:3001/api/auth/me', {
             headers: {
               'x-auth-token': token,
             },
-          });
+          })
 
           if (!response.ok) {
-            logout();
-            setAuthStatus('unauthenticated');
-            return;
+            logout()
+            setAuthStatus('unauthenticated')
+            return
           }
 
-          const userData = await response.json();
-          setUser(userData);
+          const userData = await response.json()
+          setUser(userData)
           if (userData.theme) {
-            setTheme(userData.theme);
+            setTheme(userData.theme)
           }
-          setAuthStatus('authenticated');
+          setAuthStatus('authenticated')
         } catch (error) {
-          console.error('Failed to load user session:', error);
-          logout();
-          setAuthStatus('unauthenticated');
+          console.error('Failed to load user session:', error)
+          logout()
+          setAuthStatus('unauthenticated')
         }
       } else {
-        setAuthStatus('unauthenticated');
+        setAuthStatus('unauthenticated')
       }
-    };
+    }
 
-    loadUser();
-  }, []);
+    loadUser()
+  }, [])
 
-  const resetMainFeed = () => setMainFeedKey((prev) => prev + 1);
-  const selectPost = (postId: string | null) => setSelectedPostId(postId);
+  const resetMainFeed = () => setMainFeedKey((prev) => prev + 1)
+  const selectPost = (postId: string | null) => setSelectedPostId(postId)
 
   const login = async (email: string, password: string) => {
     const response = await fetch('http://localhost:3001/api/auth/login', {
@@ -369,21 +395,21 @@ export function AppProvider({ children }: { children: ReactNode }) {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({ email, password }),
-    });
+    })
 
     if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.msg || 'Error al iniciar sesión');
+      const errorData = await response.json()
+      throw new Error(errorData.msg || 'Error al iniciar sesión')
     }
 
-    const { token, user: userData } = await response.json();
-    localStorage.setItem('token', token);
-    setUser(userData);
+    const { token, user: userData } = await response.json()
+    localStorage.setItem('token', token)
+    setUser(userData)
     if (userData.theme) {
-      setTheme(userData.theme);
+      setTheme(userData.theme)
     }
-    setAuthStatus('authenticated');
-  };
+    setAuthStatus('authenticated')
+  }
 
   const register = async (name: string, email: string, password: string) => {
     const response = await fetch('http://localhost:3001/api/auth/register', {
@@ -392,195 +418,174 @@ export function AppProvider({ children }: { children: ReactNode }) {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({ name, email, password }),
-    });
+    })
 
     if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.msg || 'Error al registrarse');
+      const errorData = await response.json()
+      throw new Error(errorData.msg || 'Error al registrarse')
     }
 
-    const { token, user: userData } = await response.json();
-    localStorage.setItem('token', token);
-    setUser(userData);
+    const { token, user: userData } = await response.json()
+    localStorage.setItem('token', token)
+    setUser(userData)
     if (userData.theme) {
-      setTheme(userData.theme);
+      setTheme(userData.theme)
     }
-    setAuthStatus('authenticated');
-  };
+    setAuthStatus('authenticated')
+  }
 
   const logout = () => {
-    localStorage.removeItem('token');
-    setUser(null);
-    setAuthStatus('unauthenticated');
-  };
+    localStorage.removeItem('token')
+    setUser(null)
+    setAuthStatus('unauthenticated')
+  }
 
   const updateProfile = (profileData: Partial<User>) => {
     if (user) {
-      setUser({ ...user, ...profileData });
+      setUser({ ...user, ...profileData })
     }
-  };
+  }
 
-  const createPost = (
+  const createPost = async (
     title: string,
     content: string,
     course: string,
     hashtags: string[],
     attachments: FileAttachment[]
   ) => {
-    if (!user) return;
+    if (!user) return
+    const token = localStorage.getItem('token')
+    if (!token) return
 
-    const newPost: Post = {
-      id: Date.now().toString(),
-      title,
-      content,
-      author: user,
-      createdAt: new Date(),
-      course,
-      upvotes: 0,
-      downvotes: 0,
-      comments: [],
-      hashtags,
-      attachments,
-      rating: 0,
-      averageRating: 0,
-      totalRatings: 0,
-      userRating: 0,
-      views: 0,
-      isBookmarked: false,
-    };
-
-    setPosts((prev) => [newPost, ...prev]);
-  };
-
-  const votePost = (postId: string, vote: 'up' | 'down') => {
-    setPosts((prev) =>
-      prev.map((post) => {
-        if (post.id === postId) {
-          const currentVote = post.userVote;
-          let newUpvotes = post.upvotes;
-          let newDownvotes = post.downvotes;
-
-          if (currentVote === vote) {
-            if (vote === 'up') newUpvotes--;
-            else newDownvotes--;
-            return {
-              ...post,
-              upvotes: newUpvotes,
-              downvotes: newDownvotes,
-              userVote: undefined,
-            };
-          } else {
-            if (currentVote === 'up') newUpvotes--;
-            if (currentVote === 'down') newDownvotes--;
-
-            if (vote === 'up') newUpvotes++;
-            else newDownvotes++;
-
-            return {
-              ...post,
-              upvotes: newUpvotes,
-              downvotes: newDownvotes,
-              userVote: vote,
-            };
-          }
-        }
-        return post;
+    try {
+      const response = await fetch('http://localhost:3001/api/posts', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-auth-token': token,
+        },
+        body: JSON.stringify({ title, content, course, hashtags, attachments }),
       })
-    );
-  };
 
-  const addComment = (postId: string, content: string, parentId?: string) => {
-    if (!user) return;
+      if (!response.ok) {
+        throw new Error('Failed to create post')
+      }
 
-    const newComment: Comment = {
-      id: Date.now().toString(),
-      content,
-      author: user,
-      createdAt: new Date(),
-      score: 0,
-      replies: [],
-      parentId,
-    };
+      const newPost = await response.json()
+      const transformedPost = transformBackendPost(newPost)
+      setPosts((prev) => [transformedPost, ...prev])
+    } catch (error) {
+      console.error('Error creating post:', error)
+    }
+  }
 
-    setPosts((prev) =>
-      prev.map((post) => {
-        if (post.id === postId) {
-          if (parentId) {
-            const addReplyToComment = (comments: Comment[]): Comment[] => {
-              return comments.map((comment) => {
-                if (comment.id === parentId) {
-                  return {
-                    ...comment,
-                    replies: [...comment.replies, newComment],
-                  };
-                }
-                if (comment.replies.length > 0) {
-                  return {
-                    ...comment,
-                    replies: addReplyToComment(comment.replies),
-                  };
-                }
-                return comment;
-              });
-            };
-            return {
-              ...post,
-              comments: addReplyToComment(post.comments),
-            };
-          } else {
-            return {
-              ...post,
-              comments: [...post.comments, newComment],
-            };
-          }
+  const votePost = async (postId: string, vote: 'up' | 'down') => {
+    const token = localStorage.getItem('token')
+    if (!token) return
+
+    try {
+      const response = await fetch(
+        `http://localhost:3001/api/posts/${postId}/vote`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-auth-token': token,
+          },
+          body: JSON.stringify({ vote }),
         }
-        return post;
-      })
-    );
-  };
+      )
 
-  const voteComment = (
+      if (!response.ok) {
+        throw new Error('Failed to vote on post')
+      }
+
+      const updatedPost = await response.json()
+      const transformedPost = transformBackendPost(updatedPost)
+
+      setPosts((prev) =>
+        prev.map((p) => (p.id === postId ? transformedPost : p))
+      )
+    } catch (error) {
+      console.error('Error voting on post:', error)
+    }
+  }
+
+  const addComment = async (
+    postId: string,
+    content: string,
+    parentId?: string
+  ) => {
+    if (!user) return
+    const token = localStorage.getItem('token')
+    if (!token) return
+
+    try {
+      const response = await fetch(
+        `http://localhost:3001/api/posts/${postId}/comments`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-auth-token': token,
+          },
+          body: JSON.stringify({ content, parentId }),
+        }
+      )
+
+      if (!response.ok) {
+        throw new Error('Failed to add comment')
+      }
+
+      const updatedPost = await response.json()
+      const transformedPost = transformBackendPost(updatedPost)
+
+      setPosts((prev) =>
+        prev.map((p) => (p.id === postId ? transformedPost : p))
+      )
+    } catch (error) {
+      console.error('Error adding comment:', error)
+    }
+  }
+
+  const voteComment = async (
     postId: string,
     commentId: string,
     vote: 'up' | 'down'
   ) => {
-    setPosts((prev) =>
-      prev.map((post) => {
-        if (post.id === postId) {
-          const updateCommentVotes = (comments: Comment[]): Comment[] => {
-            return comments.map((comment) => {
-              if (comment.id === commentId) {
-                const currentVote = comment.userVote;
-                let newScore = comment.score;
+    const token = localStorage.getItem('token')
+    if (!token) return
 
-                if (currentVote === vote) {
-                  newScore += vote === 'up' ? -1 : 1;
-                  return { ...comment, score: newScore, userVote: undefined };
-                } else {
-                  if (currentVote === 'up') newScore -= 1;
-                  if (currentVote === 'down') newScore += 1;
-                  newScore += vote === 'up' ? 1 : -1;
-                  return { ...comment, score: newScore, userVote: vote };
-                }
-              }
-              if (comment.replies && comment.replies.length > 0) {
-                return {
-                  ...comment,
-                  replies: updateCommentVotes(comment.replies),
-                };
-              }
-              return comment;
-            });
-          };
-          return { ...post, comments: updateCommentVotes(post.comments) };
+    try {
+      const response = await fetch(
+        `http://localhost:3001/api/posts/${postId}/comments/${commentId}/vote`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-auth-token': token,
+          },
+          body: JSON.stringify({ vote }),
         }
-        return post;
-      })
-    );
-  };
+      )
+
+      if (!response.ok) {
+        throw new Error('Failed to vote on comment')
+      }
+
+      const updatedPost = await response.json()
+      const transformedPost = transformBackendPost(updatedPost)
+
+      setPosts((prev) =>
+        prev.map((p) => (p.id === postId ? transformedPost : p))
+      )
+    } catch (error) {
+      console.error('Error voting on comment:', error)
+    }
+  }
 
   const searchPosts = (query: string) => {
-    if (!query.trim()) return posts;
+    if (!query.trim()) return posts
 
     return posts.filter(
       (post) =>
@@ -590,50 +595,50 @@ export function AppProvider({ children }: { children: ReactNode }) {
         post.hashtags.some((tag) =>
           tag.toLowerCase().includes(query.toLowerCase())
         )
-    );
-  };
+    )
+  }
 
   const getCourseById = (courseId: string) => {
-    return courses.find((course) => course.id === courseId);
-  };
+    return courses.find((course) => course.id === courseId)
+  }
 
   const getCoursesByCycle = (cycle: number) => {
-    return courses.filter((course) => course.cycle === cycle);
-  };
+    return courses.filter((course) => course.cycle === cycle)
+  }
 
   const ratePost = (postId: string, rating: number) => {
-    if (!user) return;
+    if (!user) return
 
     setPosts((prev) =>
       prev.map((post) => {
         if (post.id === postId) {
-          const wasUserRated = post.userRating && post.userRating > 0;
+          const wasUserRated = post.userRating && post.userRating > 0
           const newTotalRatings = wasUserRated
             ? post.totalRatings
-            : post.totalRatings + 1;
+            : post.totalRatings + 1
 
-          const currentTotal = post.rating * post.totalRatings;
+          const currentTotal = post.rating * post.totalRatings
           const newTotal = wasUserRated
             ? currentTotal - (post.userRating || 0) + rating
-            : currentTotal + rating;
+            : currentTotal + rating
           const newAverageRating =
-            newTotalRatings > 0 ? newTotal / newTotalRatings : 0;
+            newTotalRatings > 0 ? newTotal / newTotalRatings : 0
 
           console.log(
             `Usuario ${user.name} calificó el post "${post.title}" con ${rating} cocodrilos`
-          );
+          )
 
           return {
             ...post,
             rating: newAverageRating,
             totalRatings: newTotalRatings,
             userRating: rating,
-          };
+          }
         }
-        return post;
+        return post
       })
-    );
-  };
+    )
+  }
 
   const toggleBookmark = (postId: string) => {
     setPosts((prev) =>
@@ -642,16 +647,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
           return {
             ...post,
             isBookmarked: !post.isBookmarked,
-          };
+          }
         }
-        return post;
+        return post
       })
-    );
-  };
+    )
+  }
 
   const reportPost = (postId: string) => {
-    console.log(`Post ${postId} reported by user ${user?.id}`);
-  };
+    console.log(`Post ${postId} reported by user ${user?.id}`)
+  }
 
   const incrementViews = (postId: string) => {
     setPosts((prev) =>
@@ -660,12 +665,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
           return {
             ...post,
             views: post.views + 1,
-          };
+          }
         }
-        return post;
+        return post
       })
-    );
-  };
+    )
+  }
 
   return (
     <AppContext.Provider
@@ -700,7 +705,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     >
       {children}
     </AppContext.Provider>
-  );
+  )
 }
 
 export function useApp() {
