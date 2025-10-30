@@ -1,11 +1,13 @@
-import { uploadFile, deleteFile, getFileUrl } from '../services/storage/storage.service.js';
-import multer from 'multer';
+const { uploadFile, deleteFile, getFileUrl } = require('../services/storage/storage.service');
+const multer = require('multer');
 
 const upload = multer({ storage: multer.memoryStorage() });
 
-export const uploadMiddleware = upload.single('file');
+const uploadMiddleware = upload.single('file');
 
-export async function uploadHandler(req, res) {
+async function uploadHandler(req, res) {
+  console.log('Upload handler called');
+  console.log('req.file:', req.file);
   try {
     if (!req.file) return res.status(400).json({ message: 'No se envió ningún archivo.' });
 
@@ -19,18 +21,18 @@ export async function uploadHandler(req, res) {
   }
 }
 
-export async function getFileHandler(req, res) {
+async function getFileHandler(req, res) {
   try {
     const { name } = req.params;
-    const url = getFileUrl(name);
-    res.json({ url });
+    const url = await getFileUrl(name);
+    res.redirect(url);
   } catch (error) {
     console.error('Error al obtener URL:', error);
     res.status(500).json({ message: 'Error al obtener la URL del archivo.' });
   }
 }
 
-export async function deleteHandler(req, res) {
+async function deleteHandler(req, res) {
   try {
     const { name } = req.params;
     await deleteFile(name);
@@ -40,3 +42,10 @@ export async function deleteHandler(req, res) {
     res.status(500).json({ message: 'Error al eliminar el archivo.' });
   }
 }
+
+module.exports = {
+    uploadMiddleware,
+    uploadHandler,
+    getFileHandler,
+    deleteHandler,
+};

@@ -1,43 +1,113 @@
 const mongoose = require('mongoose')
 const { ObjectId } = require('mongodb')
 
+const postAggregationPipeline = [
+  // 1. Unwind the comments array
+  {
+    $unwind: {
+      path: '$comments',
+      preserveNullAndEmptyArrays: true,
+    },
+  },
+  // 2. Lookup author for each comment
+  {
+    $lookup: {
+      from: 'users',
+      localField: 'comments.author_id',
+      foreignField: '_id',
+      as: 'comments.author',
+    },
+  },
+  // 3. Unwind the comment author (it's an array)
+  {
+    $unwind: {
+      path: '$comments.author',
+      preserveNullAndEmptyArrays: true,
+    },
+  },
+  // 4. Group back by post
+  {
+    $group: {
+      _id: '$_id',
+      title: { $first: '$title' },
+      content: { $first: '$content' },
+      author_id: { $first: '$author_id' },
+      createdAt: { $first: '$createdAt' },
+      updatedAt: { $first: '$updatedAt' },
+      course_id: { $first: '$course_id' },
+      hashtags: { $first: '$hashtags' },
+      attachments: { $first: '$attachments' },
+      views: { $first: '$views' },
+      upvote_count: { $first: '$upvote_count' },
+      downvote_count: { $first: '$downvote_count' },
+      average_rating: { $first: '$average_rating' },
+      comments: { $push: '$comments' },
+    },
+  },
+  // 5. Lookup author for the post itself
+  {
+    $lookup: {
+      from: 'users',
+      localField: 'author_id',
+      foreignField: '_id',
+      as: 'author',
+    },
+  },
+  // 6. Unwind the post author
+  {
+    $unwind: {
+      path: '$author',
+      preserveNullAndEmptyArrays: true,
+    },
+  },
+  // 7. Final projection
+  {
+    $project: {
+      title: 1,
+      content: 1,
+      course_id: 1,
+      createdAt: 1,
+      updatedAt: 1,
+      hashtags: 1,
+      attachments: {
+        $map: {
+          input: '$attachments',
+          as: 'att',
+          in: {
+            name: '$$att.name',
+            size: '$$att.size',
+            type: '$$att.type',
+            object_key: '$$att.object_key',
+            url: { $concat: [ 'http://localhost:9000/workcodile-files/', '$$att.object_key' ] }
+          }
+        }
+      },
+      views: 1,
+      upvote_count: 1,
+      downvote_count: 1,
+      average_rating: 1,
+      author: {
+        _id: '$author._id',
+        name: '$author.name',
+        avatar_key: '$author.avatar_key',
+      },
+      comments: {
+        $filter: { // Remove empty comment objects from posts with no comments
+          input: '$comments',
+          as: 'comment',
+          cond: { $ifNull: ['$$comment._id', false] }
+        }
+      }
+    },
+  },
+]
+
 const getAllPosts = async (req, res) => {
   try {
     const posts = await mongoose.connection.db
       .collection('posts')
       .aggregate([
-        {
-          $lookup: {
-            from: 'users',
-            let: { author_id: '$author_id' },
-            pipeline: [{ $match: { $expr: { $eq: ['$_id', '$author_id'] } } }],
-            as: 'authorInfo',
-          },
-        },
-        {
-          $unwind: {
-            path: '$authorInfo',
-            preserveNullAndEmptyArrays: true, // Keep posts even if author is not found
-          },
-        },
-        {
-          $project: {
-            title: 1,
-            content: 1,
-            course_id: 1,
-            createdAt: 1,
-            updatedAt: 1,
-            hashtags: 1,
-            comments: 1,
-            attachments: 1,
-            views: 1,
-            upvote_count: 1,
-            downvote_count: 1,
-            average_rating: 1,
-            'author.name': '$authorInfo.name',
-            'author.avatar_key': '$authorInfo.avatar_key',
-          },
-        },
+        ...postAggregationPipeline,
         {
           $sort: { createdAt: -1 },
         },
@@ -124,8 +194,12 @@ const votePost = async (req, res) => {
 
     const updatedPost = await mongoose.connection.db
       .collection('posts')
-      .findOne({ _id: new ObjectId(id) })
-    res.status(200).json(updatedPost)
+      .aggregate([
+        { $match: { _id: new ObjectId(id) } },
+        ...postAggregationPipeline,
+      ])
+      .toArray()
+    res.status(200).json(updatedPost[0])
   } catch (error) {
     console.error('Error voting on post:', error)
     res.status(500).json({ message: 'Error voting on post' })
@@ -165,8 +239,12 @@ const addCommentToPost = async (req, res) => {
 
     const updatedPost = await mongoose.connection.db
       .collection('posts')
-      .findOne({ _id: new ObjectId(id) })
-    res.status(200).json(updatedPost)
+      .aggregate([
+        { $match: { _id: new ObjectId(id) } },
+        ...postAggregationPipeline,
+      ])
+      .toArray()
+    res.status(200).json(updatedPost[0])
   } catch (error) {
     console.error('Error adding comment:', error)
     res.status(500).json({ message: 'Error adding comment' })
@@ -174,6 +252,8 @@ const addCommentToPost = async (req, res) => {
 }
 
 const createPost = async (req, res) => {
+  console.log('Create post called');
+  console.log('req.body:', req.body);
   try {
     const { title, content, course, hashtags, attachments } = req.body
     const userId = new ObjectId(req.user.id)
@@ -200,18 +280,16 @@ const createPost = async (req, res) => {
     const result = await mongoose.connection.db
       .collection('posts')
       .insertOne(newPost)
-    // find the inserted document to return it
+    
     const createdPost = await mongoose.connection.db
       .collection('posts')
-      .findOne({ _id: result.insertedId })
+      .aggregate([
+        { $match: { _id: result.insertedId } },
+        ...postAggregationPipeline,
+      ])
+      .toArray()
 
-    const author = await mongoose.connection.db
-      .collection('users')
-      .findOne({ _id: createdPost.author_id })
-
-    createdPost.author = author
-
-    res.status(201).json(createdPost)
+    res.status(201).json(createdPost[0])
   } catch (error) {
     console.error('Error creating post:', error)
     res.status(500).json({ message: 'Error creating post' })
@@ -286,9 +364,13 @@ const voteComment = async (req, res) => {
 
     const updatedPost = await mongoose.connection.db
       .collection('posts')
-      .findOne({ _id: new ObjectId(postId) })
+      .aggregate([
+        { $match: { _id: new ObjectId(postId) } },
+        ...postAggregationPipeline,
+      ])
+      .toArray()
 
-    res.status(200).json(updatedPost)
+    res.status(200).json(updatedPost[0])
   } catch (error) {
     console.error('Error voting on comment:', error)
     res.status(500).json({ message: 'Error voting on comment' })

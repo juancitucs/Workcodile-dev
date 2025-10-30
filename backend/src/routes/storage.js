@@ -1,6 +1,6 @@
-import express from 'express';
-import { uploadMiddleware, uploadHandler, getFileHandler, deleteHandler } from '../controllers/storageController.js';
-import authMiddleware from '../middleware/authMiddleware.js'; // opcional
+const express = require('express');
+const { uploadMiddleware, uploadHandler, getFileHandler, deleteHandler } = require('../controllers/storageController');
+const authMiddleware = require('../middleware/authMiddleware'); // opcional
 
 const router = express.Router();
 
@@ -10,4 +10,4 @@ router.get('/:name', getFileHandler);
 
 router.delete('/:name', authMiddleware, deleteHandler);
 
-export default router;
+module.exports = router;

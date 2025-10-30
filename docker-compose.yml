@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   database:
     image: mongo:latest
@@ -22,12 +20,21 @@ services:
       - /app/node_modules # No montar node_modules locales
     depends_on:
       - database
+      - minio
     environment:
       - MONGO_URI=${MONGO_URI}
       - PORT=${PORT}
       - JWT_SECRET=${JWT_SECRET}
+      - MINIO_ENDPOINT=minio
+      - MINIO_PORT=9000
+      - MINIO_ACCESS_KEY=${MINIO_ACCESS_KEY}
+      - MINIO_SECRET_KEY=${MINIO_SECRET_KEY}
+      - MINIO_BUCKET_NAME=${MINIO_BUCKET_NAME}
+      - MINIO_PUBLIC_ENDPOINT=localhost
     networks:
       - workcodile-net
+    command: >
+      sh -c "npm install && npm run dev"
 
   frontend:
     build:
@@ -51,8 +58,8 @@ services:
     volumes:
       - ./minio_data:/data
     environment:
-      - MINIO_ROOT_USER=${MINIO_ROOT_USER}
-      - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD}
+      - MINIO_ROOT_USER=${MINIO_ACCESS_KEY}
+      - MINIO_ROOT_PASSWORD=${MINIO_SECRET_KEY}
     command: server /data --console-address ":9001"
     networks:
       - workcodile-net

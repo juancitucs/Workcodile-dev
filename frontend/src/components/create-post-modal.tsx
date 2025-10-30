@@ -16,7 +16,44 @@ interface CreatePostModalProps {
   onClose: () => void;
 }
 
+const uploadFiles = async (files: File[]): Promise<(Omit<FileAttachment, 'id'> & { object_key: string })[]> => {
+  const uploadPromises = files.map(async (file) => {
+    const formData = new FormData();
+    console.log('Uploading file:', file);
+    formData.append('file', file);
 
+    try {
+      const response = await fetch('http://localhost:3001/api/storage', {
+        method: 'POST',
+        headers: {
+          'x-auth-token': localStorage.getItem('token') || '',
+        },
+        body: formData,
+      });
+
+      console.log('Upload response:', response);
+
+      if (!response.ok) {
+        throw new Error(`Error uploading file: ${file.name}`);
+      }
+
+      const result = await response.json();
+      return {
+        name: file.name,
+        size: file.size,
+        type: file.type,
+        object_key: result.objectName,
+      };
+    } catch (error) {
+      console.error(error);
+      // You might want to handle this more gracefully
+      return null;
+    }
+  });
+
+  const results = await Promise.all(uploadPromises);
+  return results.filter((result): result is (Omit<FileAttachment, 'id'> & { object_key: string }) => result !== null);
+};
 
 export function CreatePostModal({ isOpen, onClose }: CreatePostModalProps) {
   const { createPost, courses, getCoursesByCycle } = useApp();
@@ -42,25 +79,39 @@ export function CreatePostModal({ isOpen, onClose }: CreatePostModalProps) {
     }
 
     setIsSubmitting(true);
-    
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    createPost(formData.title, formData.content, formData.course, hashtags, attachments);
-    
-    // Reset form
-    setFormData({
-      title: '',
-      content: '',
-      cycle: '',
-      course: ''
-    });
-    setHashtags([]);
-    setHashtagInput('');
-    setAttachments([]);
-    
-    setIsSubmitting(false);
-    onClose();
+
+    try {
+      const filesToUpload = attachments.map(a => a.file).filter(f => f) as File[];
+      console.log('Files to upload:', filesToUpload);
+      const uploadedAttachmentsData = await uploadFiles(filesToUpload);
+      console.log('Uploaded attachments data:', uploadedAttachmentsData);
+
+      const newAttachments: (Omit<FileAttachment, 'id'> & { object_key: string; })[] = uploadedAttachmentsData.map((uploadedFile) => ({
+        name: uploadedFile.name,
+        size: uploadedFile.size,
+        type: uploadedFile.type,
+        object_key: uploadedFile.object_key,
+      }));
+
+      await createPost(formData.title, formData.content, formData.course, hashtags, newAttachments.map(a => ({...a, id: crypto.randomUUID() })));
+
+      // Reset form
+      setFormData({
+        title: '',
+        content: '',
+        cycle: '',
+        course: ''
+      });
+      setHashtags([]);
+      setHashtagInput('');
+      setAttachments([]);
+    } catch (error) {
+      console.error("Failed to create post:", error);
+      // Optionally, show an error message to the user
+    } finally {
+      setIsSubmitting(false);
+      onClose();
+    }
   };
 
   const handleClose = () => {

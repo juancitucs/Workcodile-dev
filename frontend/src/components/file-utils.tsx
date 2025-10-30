@@ -5,6 +5,7 @@ export interface FileAttachment {
   type: string;
   url?: string;
   file?: File;
+  object_key?: string;
 }
 
 export const createFileAttachment = (file: File): FileAttachment => {

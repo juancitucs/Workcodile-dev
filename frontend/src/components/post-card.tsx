@@ -1,174 +1,185 @@
-import { useState, useEffect } from 'react';
-import { motion } from 'motion/react';
-import { Card, CardContent, CardHeader } from './ui/card';
-import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
-import { Button } from './ui/button';
-import { Badge } from './ui/badge';
-import { Textarea } from './ui/textarea';
-import { useApp } from './app-context';
-import { PostActions } from './post-actions';
-import { CompactCrocodileRating } from './crocodile-rating';
-import { WorkCodileLogo } from './crocodile-icon';
-import { 
-  ChevronUp, 
-  ChevronDown, 
-  MessageCircle, 
-  Share2, 
+import { useState, useEffect } from 'react'
+import { motion } from 'motion/react'
+import { Card, CardContent, CardHeader } from './ui/card'
+import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar'
+import { Button } from './ui/button'
+import { Badge } from './ui/badge'
+import { Textarea } from './ui/textarea'
+import { useApp } from './app-context'
+import { PostActions } from './post-actions'
+import { CompactCrocodileRating } from './crocodile-rating'
+import { WorkCodileLogo } from './crocodile-icon'
+import {
+  ChevronUp,
+  ChevronDown,
+  MessageCircle,
+  Share2,
   MoreHorizontal,
   Clock,
   GraduationCap,
   Hash,
   Paperclip,
-  Download
-} from 'lucide-react';
-import { formatDistanceToNow } from 'date-fns';
-import { es } from 'date-fns/locale';
-import { CommentTree } from './comment-tree';
+  Download,
+} from 'lucide-react'
+import { formatDistanceToNow } from 'date-fns'
+import { es } from 'date-fns/locale'
+import { CommentTree } from './comment-tree'
 
 interface FileAttachment {
-  id: string;
-  name: string;
-  size: number;
-  type: string;
-  url?: string;
+  id: string
+  name: string
+  size: number
+  type: string
+  url?: string
+  object_key?: string
 }
 
 interface Post {
-  id: string;
-  title: string;
-  content: string;
+  id: string
+  title: string
+  content: string
   author: {
-    id: string;
-    name: string;
-    email: string;
-    avatar?: string;
-    university: string;
-  };
-  createdAt: Date;
-  course: string;
-  upvotes: number;
-  downvotes: number;
+    id: string
+    name: string
+    email: string
+    avatar?: string
+    university: string
+  }
+  createdAt: Date
+  course: string
+  upvotes: number
+  downvotes: number
   comments: Array<{
-    id: string;
-    content: string;
+    id: string
+    content: string
     author: {
-      id: string;
-      name: string;
-      email: string;
-      avatar?: string;
-      university: string;
-    };
-    createdAt: Date;
-    upvotes: number;
-    downvotes: number;
-    userVote?: 'up' | 'down';
-  }>;
-  userVote?: 'up' | 'down';
-  hashtags: string[];
-  attachments: FileAttachment[];
-  rating: number;
-  totalRatings: number;
-  userRating?: number;
-  views: number;
-  isBookmarked?: boolean;
+      id: string
+      name: string
+      email: string
+      avatar?: string
+      university: string
+    }
+    createdAt: Date
+    upvotes: number
+    downvotes: number
+    userVote?: 'up' | 'down'
+  }>
+  userVote?: 'up' | 'down'
+  hashtags: string[]
+  attachments: FileAttachment[]
+  rating: number
+  totalRatings: number
+  userRating?: number
+  views: number
+  isBookmarked?: boolean
 }
 
 interface PostCardProps {
-  post: Post;
+  post: Post
 }
 
 const getCycleColor = (cycle: number) => {
   const colors = [
-    'bg-red-500', 'bg-blue-500', 'bg-green-500', 'bg-yellow-500', 'bg-purple-500',
-    'bg-pink-500', 'bg-indigo-500', 'bg-teal-500', 'bg-orange-500', 'bg-cyan-500'
-  ];
-  return colors[(cycle - 1) % colors.length];
-};
+    'bg-red-500',
+    'bg-blue-500',
+    'bg-green-500',
+    'bg-yellow-500',
+    'bg-purple-500',
+    'bg-pink-500',
+    'bg-indigo-500',
+    'bg-teal-500',
+    'bg-orange-500',
+    'bg-cyan-500',
+  ]
+  return colors[(cycle - 1) % colors.length]
+}
 
 const formatFileSize = (bytes: number) => {
-  if (bytes === 0) return '0 Bytes';
-  const k = 1024;
-  const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-};
+  if (bytes === 0) return '0 Bytes'
+  const k = 1024
+  const sizes = ['Bytes', 'KB', 'MB', 'GB']
+  const i = Math.floor(Math.log(bytes) / Math.log(k))
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
+}
 
 const getFileIcon = (type: string) => {
-  if (type.includes('image/')) return '🖼️';
-  if (type.includes('pdf')) return '📄';
-  if (type.includes('zip') || type.includes('rar')) return '📦';
-  if (type.includes('word')) return '📝';
-  return '📄';
-};
+  if (type.includes('image/')) return '🖼️'
+  if (type.includes('pdf')) return '📄'
+  if (type.includes('zip') || type.includes('rar')) return '📦'
+  if (type.includes('word')) return '📝'
+  return '📄'
+}
 
 export function PostCard({ post }: PostCardProps) {
-  const { 
-    votePost, 
-    addComment, 
-    voteComment, 
-    user, 
-    getCourseById, 
-    ratePost, 
-    toggleBookmark, 
-    reportPost, 
-    incrementViews, 
-    selectPost 
-  } = useApp();
-  const [showComments, setShowComments] = useState(false);
-  const [newComment, setNewComment] = useState('');
-  const [isSubmittingComment, setIsSubmittingComment] = useState(false);
-  const [hasIncrementedViews, setHasIncrementedViews] = useState(false);
+  const {
+    votePost,
+    addComment,
+    voteComment,
+    user,
+    getCourseById,
+    ratePost,
+    toggleBookmark,
+    reportPost,
+    incrementViews,
+    selectPost,
+  } = useApp()
+  const [showComments, setShowComments] = useState(false)
+  const [newComment, setNewComment] = useState('')
+  const [isSubmittingComment, setIsSubmittingComment] = useState(false)
+  const [hasIncrementedViews, setHasIncrementedViews] = useState(false)
 
   const handleVote = (vote: 'up' | 'down') => {
-    votePost(post.id, vote);
-  };
+    votePost(post.id, vote)
+  }
 
   const handleCommentVote = (commentId: string, vote: 'up' | 'down') => {
-    voteComment(post.id, commentId, vote);
-  };
+    voteComment(post.id, commentId, vote)
+  }
 
   const handleAddComment = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newComment.trim()) return;
+    e.preventDefault()
+    if (!newComment.trim()) return
 
-    setIsSubmittingComment(true);
-    await new Promise(resolve => setTimeout(resolve, 500)); // Simulate API call
-    addComment(post.id, newComment);
-    setNewComment('');
-    setIsSubmittingComment(false);
-  };
+    setIsSubmittingComment(true)
+    await new Promise((resolve) => setTimeout(resolve, 500)) // Simulate API call
+    addComment(post.id, newComment)
+    setNewComment('')
+    setIsSubmittingComment(false)
+  }
 
   const handleRate = (rating: number) => {
-    ratePost(post.id, rating);
-  };
+    ratePost(post.id, rating)
+  }
 
   const handleBookmark = () => {
-    toggleBookmark(post.id);
-  };
+    toggleBookmark(post.id)
+  }
 
   const handleReport = () => {
-    reportPost(post.id);
-  };
+    reportPost(post.id)
+  }
 
   // Increment views when component mounts (simulate viewing the post)
   useEffect(() => {
     if (!hasIncrementedViews) {
-      incrementViews(post.id);
-      setHasIncrementedViews(true);
+      incrementViews(post.id)
+      setHasIncrementedViews(true)
     }
-  }, [post.id, incrementViews, hasIncrementedViews]);
+  }, [post.id, incrementViews, hasIncrementedViews])
 
-  const netScore = post.upvotes - post.downvotes;
-  const course = getCourseById(post.course);
+  const netScore = post.upvotes - post.downvotes
+  const course = getCourseById(post.course)
 
   const handleCardClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    const target = e.target as HTMLElement;
+    const target = e.target as HTMLElement
     // Prevent navigation when clicking on interactive elements
-    if (target.closest('button, a, [role="button"], [data-collapsible-trigger]')) {
-      return;
+    if (
+      target.closest('button, a, [role="button"], [data-collapsible-trigger]')
+    ) {
+      return
     }
-    selectPost(post.id);
-  };
+    selectPost(post.id)
+  }
 
   return (
     <motion.div
@@ -199,14 +210,14 @@ export function PostCard({ post }: PostCardProps) {
                 <div className="flex items-center space-x-2 text-xs text-muted-foreground">
                   <Clock className="h-3 w-3" />
                   <span>
-                    {formatDistanceToNow(post.createdAt, { 
+                    {formatDistanceToNow(post.createdAt, {
                       addSuffix: true,
-                      locale: es 
+                      locale: es,
                     })}
                   </span>
                   {course && (
-                    <Badge 
-                      variant="secondary" 
+                    <Badge
+                      variant="secondary"
                       className={`${getCycleColor(course.cycle)} text-white text-xs flex items-center space-x-1`}
                     >
                       <GraduationCap className="h-3 w-3" />
@@ -234,15 +245,19 @@ export function PostCard({ post }: PostCardProps) {
               >
                 <ChevronUp className="h-4 w-4" />
               </Button>
-              
-              <span className={`text-sm font-medium ${
-                netScore > 0 ? 'text-primary' : 
-                netScore < 0 ? 'text-destructive' : 
-                'text-muted-foreground'
-              }`}>
+
+              <span
+                className={`text-sm font-medium ${
+                  netScore > 0
+                    ? 'text-primary'
+                    : netScore < 0
+                      ? 'text-destructive'
+                      : 'text-muted-foreground'
+                }`}
+              >
                 {netScore}
               </span>
-              
+
               <Button
                 variant={post.userVote === 'down' ? 'secondary' : 'ghost'}
                 size="sm"
@@ -292,30 +307,45 @@ export function PostCard({ post }: PostCardProps) {
                   <div className="flex items-center space-x-2 mb-2">
                     <Paperclip className="h-4 w-4 text-muted-foreground" />
                     <span className="text-xs text-muted-foreground">
-                      {post.attachments.length} archivo{post.attachments.length > 1 ? 's' : ''} adjunto{post.attachments.length > 1 ? 's' : ''}
+                      {post.attachments.length} archivo
+                      {post.attachments.length > 1 ? 's' : ''} adjunto
+                      {post.attachments.length > 1 ? 's' : ''}
                     </span>
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     {post.attachments.map((attachment, index) => (
-                      <motion.div
+                      <a
                         key={`${index}-${attachment.name}`}
-                        whileHover={{ scale: 1.02, y: -1 }}
-                        transition={{ duration: 0.2, ease: [0.4, 0, 0.2, 1] }}
-                        className="flex items-center space-x-2 p-3 bg-gradient-to-r from-workcodile-gray-light/50 to-workcodile-gray-subtle/30 border border-workcodile-border-light rounded-md hover:from-workcodile-green-subtle/30 hover:to-workcodile-gray-subtle/50 cursor-pointer transition-all duration-300 shadow-sm hover:shadow-md"
+                        href={attachment.url}
+                        download={attachment.name}
+                        target="_blank"
+                        rel="noopener noreferrer"
                       >
-                        <span className="text-sm">{getFileIcon(attachment.type)}</span>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-xs font-medium truncate">{attachment.name}</p>
-                          <p className="text-xs text-muted-foreground">{formatFileSize(attachment.size)}</p>
-                        </div>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-6 w-6 p-0 hover:bg-primary/10"
+                        <motion.div
+                          whileHover={{ scale: 1.02, y: -1 }}
+                          transition={{ duration: 0.2, ease: [0.4, 0, 0.2, 1] }}
+                          className="flex items-center space-x-2 p-3 bg-gradient-to-r from-workcodile-gray-light/50 to-workcodile-gray-subtle/30 border border-workcodile-border-light rounded-md hover:from-workcodile-green-subtle/30 hover:to-workcodile-gray-subtle/50 cursor-pointer transition-all duration-300 shadow-sm hover:shadow-md"
                         >
-                          <Download className="h-3 w-3" />
-                        </Button>
-                      </motion.div>
+                          <span className="text-sm">
+                            {getFileIcon(attachment.type)}
+                          </span>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs font-medium truncate">
+                              {attachment.name}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              {formatFileSize(attachment.size)}
+                            </p>
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 w-6 p-0 hover:bg-primary/10"
+                          >
+                            <Download className="h-3 w-3" />
+                          </Button>
+                        </motion.div>
+                      </a>
                     ))}
                   </div>
                 </div>
@@ -324,11 +354,11 @@ export function PostCard({ post }: PostCardProps) {
               {/* Rating display */}
               {post.totalRatings > 0 && (
                 <div className="mb-3 pb-3 border-b border-border/50">
-                  <CompactCrocodileRating
+                  {/* <CompactCrocodileRating
                     rating={post.rating}
                     totalRatings={post.totalRatings}
                     size="sm"
-                  />
+                  /> */}
                 </div>
               )}
 
@@ -368,8 +398,8 @@ export function PostCard({ post }: PostCardProps) {
                         className="min-h-[80px] resize-none"
                       />
                       <div className="flex justify-end">
-                        <Button 
-                          type="submit" 
+                        <Button
+                          type="submit"
                           size="sm"
                           disabled={!newComment.trim() || isSubmittingComment}
                         >
@@ -380,7 +410,11 @@ export function PostCard({ post }: PostCardProps) {
                   )}
 
                   {/* Comments list */}
-                  <CommentTree comments={post.comments} postId={post.id} onCommentVote={handleCommentVote} />
+                  <CommentTree
+                    comments={post.comments}
+                    postId={post.id}
+                    onCommentVote={handleCommentVote}
+                  />
                 </motion.div>
               )}
             </div>
@@ -388,5 +422,5 @@ export function PostCard({ post }: PostCardProps) {
         </CardContent>
       </Card>
     </motion.div>
-  );
+  )
 }

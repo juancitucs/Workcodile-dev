@@ -1,11 +1,11 @@
 
 // backend/src/services/storage/storage.provider.js
-import { Client } from 'minio';
+const { Client } = require('minio');
 
 // Este cliente se conecta al servicio de MinIO definido en docker-compose.yml
 const minioClient = new Client({
-  endPoint: process.env.MINIO_ENDPOINT,
-  port: parseInt(process.env.MINIO_PORT, 10),
+  endPoint: process.env.MINIO_ENDPOINT || 'minio',
+  port: parseInt(process.env.MINIO_PORT, 10) || 9000,
   useSSL: false, // En desarrollo no usamos SSL
   accessKey: process.env.MINIO_ACCESS_KEY,
   secretKey: process.env.MINIO_SECRET_KEY,
@@ -15,7 +15,7 @@ const minioClient = new Client({
  * Asegura que el bucket principal de la aplicación exista.
  * @param {string} bucketName - Nombre del bucket.
  */
-export async function ensureBucketExists(bucketName) {
+async function ensureBucketExists(bucketName) {
   try {
     const exists = await minioClient.bucketExists(bucketName);
     if (!exists) {
@@ -41,4 +41,7 @@ export async function ensureBucketExists(bucketName) {
   }
 }
 
-export default minioClient;
+module.exports = {
+    minioClient,
+    ensureBucketExists,
+};

@@ -1,45 +1,52 @@
-import { useState } from 'react';
-import { motion } from 'motion/react';
-import { Button } from './ui/button';
-import { 
-  DropdownMenu, 
-  DropdownMenuContent, 
-  DropdownMenuItem, 
+import { useState } from 'react'
+import { motion } from 'motion/react'
+import { Button } from './ui/button'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
   DropdownMenuTrigger,
-  DropdownMenuSeparator 
-} from './ui/dropdown-menu';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from './ui/dialog';
-import { toast } from 'sonner';
-import { 
-  Share2, 
-  Bookmark, 
+  DropdownMenuSeparator,
+} from './ui/dropdown-menu'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogDescription,
+} from './ui/dialog'
+import { toast } from 'sonner'
+import {
+  Share2,
+  Bookmark,
   BookmarkCheck,
-  Flag, 
-  Copy, 
-  Facebook, 
+  Flag,
+  Copy,
+  Facebook,
   Twitter,
   MessageCircle,
   Eye,
   Calendar,
   MoreHorizontal,
-  ExternalLink
-} from 'lucide-react';
-import { CrocodileRating } from './crocodile-rating';
-import { CrocodileEmoji, WorkCodileLogo } from './crocodile-icon';
+  ExternalLink,
+} from 'lucide-react'
+import { CrocodileRating } from './crocodile-rating'
+import { CrocodileEmoji, WorkCodileLogo } from './crocodile-icon'
 
 interface PostActionsProps {
-  postId: string;
-  postTitle: string;
-  commentsCount: number;
-  viewsCount?: number;
-  isBookmarked?: boolean;
-  rating: number;
-  totalRatings: number;
-  userRating?: number;
-  onToggleComments: () => void;
-  onBookmark?: () => void;
-  onRate?: (rating: number) => void;
-  onReport?: () => void;
+  postId: string
+  postTitle: string
+  commentsCount: number
+  viewsCount?: number
+  isBookmarked?: boolean
+  rating: number
+  totalRatings: number
+  userRating?: number
+  onToggleComments: () => void
+  onBookmark?: () => void
+  onRate?: (rating: number) => void
+  onReport?: () => void
 }
 
 export function PostActions({
@@ -54,58 +61,62 @@ export function PostActions({
   onToggleComments,
   onBookmark,
   onRate,
-  onReport
+  onReport,
 }: PostActionsProps) {
-  const [showShareDialog, setShowShareDialog] = useState(false);
-  const [showRatingDialog, setShowRatingDialog] = useState(false);
+  const [showShareDialog, setShowShareDialog] = useState(false)
+  const [showRatingDialog, setShowRatingDialog] = useState(false)
 
-  const postUrl = `${window.location.origin}/post/${postId}`;
+  const postUrl = `${window.location.origin}/post/${postId}`
 
   const handleCopyLink = async () => {
     try {
-      await navigator.clipboard.writeText(postUrl);
-      toast.success('Enlace copiado al portapapeles');
-      setShowShareDialog(false);
+      await navigator.clipboard.writeText(postUrl)
+      toast.success('Enlace copiado al portapapeles')
+      setShowShareDialog(false)
     } catch (error) {
-      toast.error('Error al copiar el enlace');
+      toast.error('Error al copiar el enlace')
     }
-  };
+  }
 
   const handleShareFacebook = () => {
-    const url = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(postUrl)}`;
-    window.open(url, '_blank', 'width=600,height=400');
-    setShowShareDialog(false);
-  };
+    const url = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(postUrl)}`
+    window.open(url, '_blank', 'width=600,height=400')
+    setShowShareDialog(false)
+  }
 
   const handleShareTwitter = () => {
-    const text = `${postTitle} - WorkCodile UNAM`;
-    const url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(postUrl)}`;
-    window.open(url, '_blank', 'width=600,height=400');
-    setShowShareDialog(false);
-  };
+    const text = `${postTitle} - WorkCodile UNAM`
+    const url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(postUrl)}`
+    window.open(url, '_blank', 'width=600,height=400')
+    setShowShareDialog(false)
+  }
 
   const handleShareWhatsApp = () => {
-    const text = `${postTitle} - WorkCodile UNAM: ${postUrl}`;
-    const url = `https://wa.me/?text=${encodeURIComponent(text)}`;
-    window.open(url, '_blank');
-    setShowShareDialog(false);
-  };
+    const text = `${postTitle} - WorkCodile UNAM: ${postUrl}`
+    const url = `https://wa.me/?text=${encodeURIComponent(text)}`
+    window.open(url, '_blank')
+    setShowShareDialog(false)
+  }
 
   const handleBookmark = () => {
-    onBookmark?.();
-    toast.success(isBookmarked ? 'Publicación eliminada de guardados' : 'Publicación guardada');
-  };
+    onBookmark?.()
+    toast.success(
+      isBookmarked
+        ? 'Publicación eliminada de guardados'
+        : 'Publicación guardada'
+    )
+  }
 
   const handleReport = () => {
-    onReport?.();
-    toast.success('Publicación reportada. Será revisada por los moderadores.');
-  };
+    onReport?.()
+    toast.success('Publicación reportada. Será revisada por los moderadores.')
+  }
 
   const formatViews = (views: number) => {
-    if (views < 1000) return views.toString();
-    if (views < 1000000) return `${(views / 1000).toFixed(1)}k`;
-    return `${(views / 1000000).toFixed(1)}M`;
-  };
+    if (views < 1000) return views.toString()
+    if (views < 1000000) return `${(views / 1000).toFixed(1)}k`
+    return `${(views / 1000000).toFixed(1)}M`
+  }
 
   return (
     <div className="flex items-center justify-between">
@@ -119,7 +130,9 @@ export function PostActions({
           className="text-muted-foreground hover:text-foreground"
         >
           <MessageCircle className="h-4 w-4 mr-2" />
-          <span className="hidden sm:inline">{commentsCount} comentario{commentsCount !== 1 ? 's' : ''}</span>
+          <span className="hidden sm:inline">
+            {commentsCount} comentario{commentsCount !== 1 ? 's' : ''}
+          </span>
           <span className="sm:hidden">{commentsCount}</span>
         </Button>
 
@@ -180,7 +193,9 @@ export function PostActions({
               <div className="pt-2 border-t">
                 <div className="flex items-center space-x-2 p-2 bg-muted rounded text-sm">
                   <ExternalLink className="h-4 w-4" />
-                  <span className="flex-1 truncate text-muted-foreground">{postUrl}</span>
+                  <span className="flex-1 truncate text-muted-foreground">
+                    {postUrl}
+                  </span>
                 </div>
               </div>
             </div>
@@ -191,28 +206,34 @@ export function PostActions({
         {viewsCount > 0 && (
           <div className="flex items-center space-x-1 text-xs text-muted-foreground">
             <Eye className="h-3 w-3" />
-            <span className="hidden sm:inline">{formatViews(viewsCount)} visualizaciones</span>
+            <span className="hidden sm:inline">
+              {formatViews(viewsCount)} visualizaciones
+            </span>
             <span className="sm:hidden">{formatViews(viewsCount)}</span>
           </div>
         )}
       </div>
 
-      {/* Right actions */}
+      {/* Right actions 
       <div className="flex items-center space-x-2">
-        {/* Rating */}
+        {/* Rating 
         <Dialog open={showRatingDialog} onOpenChange={setShowRatingDialog}>
           <DialogTrigger asChild>
             <Button
               variant="ghost"
               size="sm"
               className={`transition-all hover:bg-workcodile-green/10 hover:text-workcodile-green border border-transparent hover:border-workcodile-green/20 ${
-                userRating ? 'bg-workcodile-green/10 text-workcodile-green border-workcodile-green/20' : 'text-muted-foreground'
+                userRating
+                  ? 'bg-workcodile-green/10 text-workcodile-green border-workcodile-green/20'
+                  : 'text-muted-foreground'
               }`}
             >
               <div className="flex items-center space-x-2">
                 <WorkCodileLogo className="w-5 h-5" />
                 <div className="flex flex-col items-start">
-                  <span className="text-sm font-semibold">{rating.toFixed(1)}</span>
+                  <span className="text-sm font-semibold">
+                    {rating.toFixed(1)}
+                  </span>
                   <span className="text-xs leading-none">
                     {userRating ? `Tu voto: ${userRating}` : 'Calificar'}
                   </span>
@@ -229,7 +250,8 @@ export function PostActions({
                 </div>
               </DialogTitle>
               <DialogDescription className="text-center">
-                Califica qué tan útil te pareció esta publicación usando nuestro sistema de cocodrilos
+                Califica qué tan útil te pareció esta publicación usando nuestro
+                sistema de cocodrilos
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-6 py-4">
@@ -237,17 +259,19 @@ export function PostActions({
                 <p className="text-base text-muted-foreground mb-6">
                   ¿Qué tan útil te pareció esta publicación?
                 </p>
-                <CrocodileRating
+                {/* <CrocodileRating
                   rating={rating}
                   userRating={userRating || 0}
                   totalRatings={totalRatings}
                   onRate={(newRating) => {
-                    onRate?.(newRating);
-                    setShowRatingDialog(false);
-                    toast.success(`¡Calificación enviada! ${newRating} cocodrilo${newRating !== 1 ? 's' : ''}`);
+                    onRate?.(newRating)
+                    setShowRatingDialog(false)
+                    toast.success(
+                      `¡Calificación enviada! ${newRating} cocodrilo${newRating !== 1 ? 's' : ''}`
+                    )
                   }}
                   size="lg"
-                />
+                /> 
               </div>
               <div className="text-center text-sm text-muted-foreground">
                 <p>Ayuda a otros estudiantes calificando el contenido</p>
@@ -256,7 +280,7 @@ export function PostActions({
           </DialogContent>
         </Dialog>
 
-        {/* More options */}
+        {/* More options
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
@@ -282,13 +306,16 @@ export function PostActions({
               Compartir...
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={handleReport} className="text-destructive">
+            <DropdownMenuItem
+              onClick={handleReport}
+              className="text-destructive"
+            >
               <Flag className="h-4 w-4 mr-2" />
               Reportar publicación
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
-      </div>
+      </div> */}
     </div>
-  );
+  )
 }

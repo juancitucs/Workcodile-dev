@@ -28,6 +28,7 @@ interface FileAttachment {
   type: string
   url?: string // For uploaded files
   file?: File // For local files
+  object_key?: string
 }
 
 interface Post {
@@ -251,7 +252,7 @@ const transformBackendComment = (comment: any): Comment => {
     id: comment._id,
     createdAt: new Date(comment.createdAt),
     author: {
-      id: comment.author_id?._id?.toString() || comment.author_id?.toString() || '',
+      id: comment.author?._id?.toString() || '',
       name: comment.author?.name || 'Usuario Anónimo',
       avatar: comment.author?.avatar_key,
       university: 'UNAM',
@@ -278,7 +279,10 @@ const transformBackendPost = (post: any): Post => ({
   downvotes: post.downvote_count || 0,
   comments: post.comments ? post.comments.map(transformBackendComment) : [],
   hashtags: post.hashtags || [],
-  attachments: post.attachments || [],
+  attachments: post.attachments ? post.attachments.map((att: any) => ({
+    ...att,
+    url: `http://localhost:3001/api/storage/${att.object_key}`,
+  })) : [],
   rating: post.average_rating || 0,
   totalRatings: post.total_ratings || 0,
   views: post.views || 0,
