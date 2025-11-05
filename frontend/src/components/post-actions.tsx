@@ -31,8 +31,8 @@ import {
   MoreHorizontal,
   ExternalLink,
 } from 'lucide-react'
-import { CrocodileRating } from './crocodile-rating'
-import { CrocodileEmoji, WorkCodileLogo } from './crocodile-icon'
+// import { CrocodileRating } from './crocodile-rating'
+// import { CrocodileEmoji, WorkCodileLogo } from './crocodile-icon'
 
 interface PostActionsProps {
   postId: string
