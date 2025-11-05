@@ -1,5 +1,8 @@
 const mongoose = require('mongoose')
 const { ObjectId } = require('mongodb')
+const Notification = require('../models/Notification');
+const Report = require('../models/Report');
+const { getFileUrl } = require('../services/storage/storage.service');
 
 const postAggregationPipeline = [
   // 1. Unwind the comments array
@@ -9,23 +12,7 @@ const postAggregationPipeline = [
       preserveNullAndEmptyArrays: true,
     },
   },
-  // 2. Lookup author for each comment
-  {
-    $lookup: {
-      from: 'users',
-      localField: 'comments.author_id',
-      foreignField: '_id',
-      as: 'comments.author',
-    },
-  },
-  // 3. Unwind the comment author (it's an array)
-  {
-    $unwind: {
-      path: '$comments.author',
-      preserveNullAndEmptyArrays: true,
-    },
-  },
-  // 4. Group back by post
+  // 2. Group back by post
   {
     $group: {
       _id: '$_id',
@@ -44,7 +31,7 @@ const postAggregationPipeline = [
       comments: { $push: '$comments' },
     },
   },
-  // 5. Lookup author for the post itself
+  // 3. Lookup author for the post itself
   {
     $lookup: {
       from: 'users',
@@ -53,14 +40,14 @@ const postAggregationPipeline = [
       as: 'author',
     },
   },
-  // 6. Unwind the post author
+  // 4. Unwind the post author
   {
     $unwind: {
       path: '$author',
       preserveNullAndEmptyArrays: true,
     },
   },
-  // 7. Final projection
+  // 5. Final projection
   {
     $project: {
       title: 1,
@@ -78,7 +65,6 @@ const postAggregationPipeline = [
             size: '$$att.size',
             type: '$$att.type',
             object_key: '$$att.object_key',
-            url: { $concat: [ 'http://localhost:9000/workcodile-files/', '$$att.object_key' ] }
           }
         }
       },
@@ -114,6 +100,26 @@ const getAllPosts = async (req, res) => {
       ])
       .toArray()
 
+    const populateCommentAuthors = async (comments) => {
+      for (const comment of comments) {
+        const author = await mongoose.connection.db.collection('users').findOne({ _id: comment.author_id });
+        comment.author = {
+            _id: author._id,
+            name: author.name,
+            avatar_key: author.avatar_key,
+        };
+        if (comment.replies && comment.replies.length > 0) {
+            await populateCommentAuthors(comment.replies);
+        }
+      }
+    };
+
+    for (const post of posts) {
+        if (post.comments && post.comments.length > 0) {
+            await populateCommentAuthors(post.comments);
+        }
+    }
+
     res.status(200).json(posts)
   } catch (error) {
     console.error('Error fetching posts:', error)
@@ -126,6 +132,7 @@ const votePost = async (req, res) => {
     const { id } = req.params
     const { vote } = req.body // 'up' or 'down'
     const userId = new ObjectId(req.user.id)
+    const user = await mongoose.connection.db.collection('users').findOne({ _id: userId });
 
     const post = await mongoose.connection.db
       .collection('posts')
@@ -192,6 +199,15 @@ const votePost = async (req, res) => {
       .collection('posts')
       .updateOne({ _id: new ObjectId(id) }, update)
 
+    if (post.author_id.toString() !== userId.toString()) {
+      const notification = new Notification({
+        user: post.author_id,
+        text: `${user.name} ha votado en tu publicación: "${post.title}"`,
+        link: `/post/${id}`
+      });
+      await notification.save();
+    }
+
     const updatedPost = await mongoose.connection.db
       .collection('posts')
       .aggregate([
@@ -208,9 +224,10 @@ const votePost = async (req, res) => {
 
 const addCommentToPost = async (req, res) => {
   try {
-    const { id } = req.params
-    const { content, parentId } = req.body
-    const userId = new ObjectId(req.user.id)
+    const { id } = req.params;
+    const { content, parentId } = req.body;
+    const userId = new ObjectId(req.user.id);
+    const user = await mongoose.connection.db.collection('users').findOne({ _id: userId });
 
     const comment = {
       _id: new ObjectId(),
@@ -220,36 +237,85 @@ const addCommentToPost = async (req, res) => {
       score: 0,
       replies: [],
       parentId: parentId ? new ObjectId(parentId) : null,
-    }
+    };
 
-    let update
+    const post = await mongoose.connection.db.collection('posts').findOne({ _id: new ObjectId(id) });
+
+    if (!post) {
+      return res.status(404).json({ message: 'Post not found' });
+    }
 
     if (parentId) {
-      update = { $push: { 'comments.$[elem].replies': comment } }
-      const arrayFilters = [{ 'elem._id': new ObjectId(parentId) }]
-      await mongoose.connection.db
-        .collection('posts')
-        .updateOne({ _id: new ObjectId(id) }, update, { arrayFilters })
+      const findAndPushReply = (comments, parentId, reply) => {
+        for (const comment of comments) {
+          if (comment._id.equals(parentId)) {
+            if (!comment.replies) {
+              comment.replies = [];
+            }
+            comment.replies.push(reply);
+            return true;
+          }
+          if (comment.replies && comment.replies.length > 0) {
+            if (findAndPushReply(comment.replies, parentId, reply)) {
+              return true;
+            }
+          }
+        }
+        return false;
+      };
+
+      if (findAndPushReply(post.comments, new ObjectId(parentId), comment)) {
+        await mongoose.connection.db.collection('posts').updateOne({ _id: new ObjectId(id) }, { $set: { comments: post.comments } });
+      } else {
+        return res.status(404).json({ message: 'Parent comment not found' });
+      }
     } else {
-      update = { $push: { comments: comment } }
-      await mongoose.connection.db
-        .collection('posts')
-        .updateOne({ _id: new ObjectId(id) }, update)
+      await mongoose.connection.db.collection('posts').updateOne({ _id: new ObjectId(id) }, { $push: { comments: comment } });
     }
 
-    const updatedPost = await mongoose.connection.db
+    if (post.author_id.toString() !== userId.toString()) {
+      const notification = new Notification({
+        user: post.author_id,
+        text: `${user.name} ha comentado en tu publicación: "${post.title}"`,
+        link: `/post/${id}`
+      });
+      await notification.save();
+    }
+
+    const updatedPostForAgg = await mongoose.connection.db
       .collection('posts')
       .aggregate([
         { $match: { _id: new ObjectId(id) } },
         ...postAggregationPipeline,
       ])
-      .toArray()
-    res.status(200).json(updatedPost[0])
+      .toArray();
+
+    const updatedPost = updatedPostForAgg[0];
+
+    const populateCommentAuthors = async (comments) => {
+      for (const comment of comments) {
+        const author = await mongoose.connection.db.collection('users').findOne({ _id: comment.author_id });
+        comment.author = {
+            _id: author._id,
+            name: author.name,
+            avatar_key: author.avatar_key,
+        };
+        if (comment.replies && comment.replies.length > 0) {
+            await populateCommentAuthors(comment.replies);
+        }
+      }
+    };
+
+    if (updatedPost.comments && updatedPost.comments.length > 0) {
+        await populateCommentAuthors(updatedPost.comments);
+    }
+
+    res.status(200).json(updatedPost);
   } catch (error) {
-    console.error('Error adding comment:', error)
-    res.status(500).json({ message: 'Error adding comment' })
+    console.error('Error adding comment:', error);
+    res.status(500).json({ message: 'Error adding comment' });
   }
-}
+};
 
 const createPost = async (req, res) => {
   console.log('Create post called');
@@ -377,10 +443,149 @@ const voteComment = async (req, res) => {
   }
 }
 
+const ratePost = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { rating } = req.body;
+    const userId = new ObjectId(req.user.id);
+
+    const post = await mongoose.connection.db.collection('posts').findOne({ _id: new ObjectId(id) });
+
+    if (!post) {
+      return res.status(404).json({ message: 'Post not found' });
+    }
+
+    const userRating = post.ratings && post.ratings.find((r) => r.user_id.equals(userId));
+
+    let newTotalRatings = post.total_ratings || 0;
+    let currentTotal = (post.average_rating || 0) * newTotalRatings;
+
+    if (userRating) {
+      currentTotal -= userRating.value;
+      userRating.value = rating;
+    } else {
+      if (!post.ratings) {
+        post.ratings = [];
+      }
+      post.ratings.push({ user_id: userId, value: rating });
+      newTotalRatings++;
+    }
+
+    const newAverageRating = (currentTotal + rating) / newTotalRatings;
+
+    await mongoose.connection.db.collection('posts').updateOne(
+      { _id: new ObjectId(id) },
+      {
+        $set: {
+          ratings: post.ratings,
+          total_ratings: newTotalRatings,
+          average_rating: newAverageRating,
+        },
+      }
+    );
+
+    const updatedPost = await mongoose.connection.db
+      .collection('posts')
+      .aggregate([
+        { $match: { _id: new ObjectId(id) } },
+        ...postAggregationPipeline,
+      ])
+      .toArray();
+
+    res.status(200).json(updatedPost[0]);
+  } catch (error) {
+    console.error('Error rating post:', error);
+    res.status(500).json({ message: 'Error rating post' });
+  }
+};
+
+const bookmarkPost = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = new ObjectId(req.user.id);
+
+    const user = await mongoose.connection.db.collection('users').findOne({ _id: userId });
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    const postObjectId = new ObjectId(id);
+    const isBookmarked = user.bookmarked_posts && user.bookmarked_posts.some(postId => postId.equals(postObjectId));
+
+    let update;
+    if (isBookmarked) {
+      update = { $pull: { bookmarked_posts: postObjectId } };
+    } else {
+      update = { $push: { bookmarked_posts: postObjectId } };
+    }
+
+    await mongoose.connection.db.collection('users').updateOne({ _id: userId }, update);
+
+    res.status(200).json({ bookmarked: !isBookmarked });
+
+  } catch (error) {
+    console.error('Error bookmarking post:', error);
+    res.status(500).json({ message: 'Error bookmarking post' });
+  }
+};
+
+
+
+const reportPost = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { reason } = req.body;
+    const userId = new ObjectId(req.user.id);
+
+    const newReport = new Report({
+      post: id,
+      user: userId,
+      reason: reason || 'No reason provided',
+    });
+
+    await newReport.save();
+
+    res.status(200).json({ message: 'Post reported successfully' });
+  } catch (error) {
+    console.error('Error reporting post:', error);
+    res.status(500).json({ message: 'Error reporting post' });
+  }
+};
+
+const incrementView = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    await mongoose.connection.db.collection('posts').updateOne({ _id: new ObjectId(id) }, { $inc: { views: 1 } });
+
+    res.status(200).json({ message: 'View count incremented' });
+  } catch (error) {
+    console.error('Error incrementing view count:', error);
+    res.status(500).json({ message: 'Error incrementing view count' });
+  }
+};
+
+const downloadAttachment = async (req, res) => {
+  try {
+    const { object_key } = req.params;
+    const url = await getFileUrl(object_key);
+    res.redirect(url);
+  } catch (error) {
+    console.error('Error getting attachment URL:', error);
+    res.status(500).json({ message: 'Error getting attachment URL' });
+  }
+};
+
 module.exports = {
   getAllPosts,
   votePost,
   createPost,
   addCommentToPost,
   voteComment,
+  ratePost,
+  bookmarkPost,
+  reportPost,
+  incrementView,
+  downloadAttachment,
 }

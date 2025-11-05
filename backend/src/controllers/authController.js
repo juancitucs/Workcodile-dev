@@ -116,4 +116,45 @@ const updateUserTheme = async (req, res) => {
   }
 };
 
-module.exports = { register, login, getMe, updateUserTheme };
+const updateProfile = async (req, res) => {
+  const { name, bio, interests, avatar_key, socialLinks } = req.body;
+
+  try {
+    const user = await User.findById(req.user.id);
+
+    if (!user) {
+      return res.status(404).json({ msg: 'User not found' });
+    }
+
+    user.name = name || user.name;
+    user.bio = bio || user.bio;
+    user.interests = interests || user.interests;
+    user.avatar_key = avatar_key || user.avatar_key;
+    user.socialLinks = socialLinks || user.socialLinks;
+
+    await user.save();
+
+    res.json(user);
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send('Server Error');
+  }
+};
+
+const getUserById = async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id).select('-password');
+    if (!user) {
+      return res.status(404).json({ msg: 'User not found' });
+    }
+    res.json(user);
+  } catch (err) {
+    console.error(err.message);
+    if (err.kind === 'ObjectId') {
+      return res.status(404).json({ msg: 'User not found' });
+    }
+    res.status(500).send('Server Error');
+  }
+};
+
+module.exports = { register, login, getMe, updateUserTheme, updateProfile, getUserById };

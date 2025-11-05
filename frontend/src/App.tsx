@@ -4,9 +4,10 @@ import { MainFeed } from './components/main-feed'
 import { Toaster } from './components/ui/sonner'
 import { SinglePostView } from './components/single-post-view'
 import { Loader2 } from 'lucide-react'
+import { Routes, Route } from 'react-router-dom'
 
 function AppContent() {
-  const { authStatus, mainFeedKey, selectedPostId } = useApp()
+  const { authStatus, mainFeedKey } = useApp()
 
   if (authStatus === 'loading') {
     return (
@@ -20,11 +21,12 @@ function AppContent() {
     return <AuthPage />
   }
 
-  if (selectedPostId) {
-    return <SinglePostView />
-  }
-
-  return <MainFeed key={mainFeedKey} />
+  return (
+    <Routes>
+      <Route path="/" element={<MainFeed key={mainFeedKey} />} />
+      <Route path="/post/:id" element={<SinglePostView />} />
+    </Routes>
+  )
 }
 
 export default function App() {

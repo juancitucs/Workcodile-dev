@@ -1,7 +1,4 @@
 import { Comment } from './comment';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from './ui/collapsible';
-import { Button } from './ui/button';
-import { MessageSquare } from 'lucide-react';
 
 interface CommentTreeProps {
   comments: any[];
@@ -16,18 +13,10 @@ export function CommentTree({ comments, postId, onCommentVote }: CommentTreeProp
         <div key={comment.id}>
           <Comment comment={comment} postId={postId} onCommentVote={onCommentVote} />
           {comment.replies && comment.replies.length > 0 && (
-            <div className="ml-4 pl-4 border-l-2 border-gray-200 dark:border-gray-700">
-              <Collapsible className="mt-4" defaultOpen={true}>
-                <CollapsibleTrigger asChild>
-                  <Button variant="link" size="sm" className="h-6 px-2 text-xs">
-                    <MessageSquare className="h-3 w-3 mr-1" />
-                    {comment.replies.length} respuestas
-                  </Button>
-                </CollapsibleTrigger>
-                <CollapsibleContent className="mt-2">
-                  <CommentTree comments={comment.replies} postId={postId} onCommentVote={onCommentVote} />
-                </CollapsibleContent>
-              </Collapsible>
+            <div className="ml-8 pl-8 border-l-2 border-blue-500 dark:border-blue-400">
+              <div className="mt-2">
+                <CommentTree comments={comment.replies} postId={postId} onCommentVote={onCommentVote} />
+              </div>
             </div>
           )}
         </div>

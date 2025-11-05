@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { motion } from 'motion/react';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
@@ -27,32 +27,92 @@ import {
   BookOpen,
   Camera,
   Upload,
-  Image as ImageIcon
+  Image as ImageIcon,
+  Trash2,
+  Plus,
+  Link as LinkIcon,
+  Github,
+  Facebook,
+  Youtube,
+  MessageCircle,
 } from 'lucide-react';
 
 interface UserProfileProps {
   isOpen: boolean;
   onClose: () => void;
+  userId?: string;
 }
 
-export function UserProfile({ isOpen, onClose }: UserProfileProps) {
+const socialIcons = {
+  github: { icon: <Github className="h-6 w-6" />, bgColor: "bg-gray-800", textColor: "text-white" },
+  facebook: { icon: <Facebook className="h-6 w-6" />, bgColor: "bg-blue-600", textColor: "text-white" },
+  youtube: { icon: <Youtube className="h-6 w-6" />, bgColor: "bg-red-600", textColor: "text-white" },
+  whatsapp: { icon: <MessageCircle className="h-6 w-6" />, bgColor: "bg-green-500", textColor: "text-white" },
+  default: { icon: <LinkIcon className="h-6 w-6 text-black" />, bgColor: "bg-muted/30", textColor: "text-black" },
+};
+
+export function UserProfile({ isOpen, onClose, userId }: UserProfileProps) {
   const { user, posts, updateProfile } = useApp();
+  const [profileUser, setProfileUser] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [editedProfile, setEditedProfile] = useState({
-    name: user?.name || '',
-    email: user?.email || '',
+    name: '',
+    email: '',
     bio: '',
     location: 'Moquegua, Perú',
     cycle: '5',
-    interests: ['Programación', 'Bases de datos', 'Desarrollo web'],
-    avatar: user?.avatar || ''
+    interests: [],
+    avatar: '',
+    avatar_key: '',
+    socialLinks: [],
   });
 
+  useEffect(() => {
+    const fetchUser = async () => {
+      if (userId) {
+        try {
+          const response = await fetch(`http://localhost:3001/api/auth/user/${userId}`);
+          if (response.ok) {
+            const data = await response.json();
+            if (data.avatar_key) {
+              data.avatar = `http://localhost:9000/workcodile-files/${data.avatar_key}`;
+            }
+            setProfileUser(data);
+          }
+        } catch (error) {
+          console.error('Failed to fetch user:', error);
+        }
+      } else {
+        setProfileUser(user);
+      }
+    };
+
+    if (isOpen) {
+      fetchUser();
+    }
+  }, [isOpen, userId, user]);
+
+  useEffect(() => {
+    if (profileUser) {
+      setEditedProfile({
+        name: profileUser.name || '',
+        email: profileUser.email || '',
+        bio: profileUser.bio || '',
+        location: 'Moquegua, Perú',
+        cycle: '5',
+        interests: profileUser.interests || ['Programación', 'Bases de datos', 'Desarrollo web'],
+        avatar: profileUser.avatar || '',
+        avatar_key: profileUser.avatar_key || '',
+        socialLinks: profileUser.socialLinks || [],
+      });
+    }
+  }, [profileUser]);
+
   // Statistics from user posts
-  const userPosts = posts.filter(post => post.author.id === user?.id);
+  const userPosts = posts.filter(post => post.author.id === profileUser?._id);
   const totalUpvotes = userPosts.reduce((sum, post) => sum + post.upvotes, 0);
   const totalComments = userPosts.reduce((sum, post) => sum + post.comments.length, 0);
 
@@ -64,7 +124,7 @@ export function UserProfile({ isOpen, onClose }: UserProfileProps) {
   ];
 
   // Handle avatar upload
-  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -82,16 +142,38 @@ export function UserProfile({ isOpen, onClose }: UserProfileProps) {
 
     setIsUploadingAvatar(true);
 
-    // Create preview
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const result = e.target?.result as string;
-      setAvatarPreview(result);
-      setEditedProfile(prev => ({ ...prev, avatar: result }));
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('http://localhost:3001/api/storage', {
+        method: 'POST',
+        headers: {
+          'x-auth-token': token,
+        },
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error('Error al subir la imagen');
+      }
+
+      const data = await response.json();
+
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const result = e.target?.result as string;
+        setAvatarPreview(result);
+        setEditedProfile(prev => ({ ...prev, avatar: result, avatar_key: data.objectName }));
+        setIsUploadingAvatar(false);
+        toast.success('Avatar cargado correctamente');
+      };
+      reader.readAsDataURL(file);
+    } catch (error) {
       setIsUploadingAvatar(false);
-      toast.success('Avatar cargado correctamente');
-    };
-    reader.readAsDataURL(file);
+      toast.error('Error al subir el avatar');
+    }
   };
 
   const handleAvatarClick = () => {
@@ -100,30 +182,76 @@ export function UserProfile({ isOpen, onClose }: UserProfileProps) {
     }
   };
 
-  const handleSave = () => {
-    // Update the user profile in the context
-    updateProfile({
-      name: editedProfile.name,
-      avatar: editedProfile.avatar
-    });
-    setAvatarPreview(null);
-    setIsEditing(false);
-    toast.success('Perfil actualizado correctamente');
+  const handleSave = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('http://localhost:3001/api/auth/me', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-auth-token': token,
+        },
+        body: JSON.stringify({
+          name: editedProfile.name,
+          bio: editedProfile.bio,
+          interests: editedProfile.interests,
+          avatar_key: editedProfile.avatar_key,
+          socialLinks: editedProfile.socialLinks,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Error al actualizar el perfil');
+      }
+
+      const updatedUser = await response.json();
+      updateProfile(updatedUser);
+      setAvatarPreview(null);
+      setIsEditing(false);
+      toast.success('Perfil actualizado correctamente');
+    } catch (error) {
+      toast.error('Error al actualizar el perfil');
+    }
   };
 
   const handleCancel = () => {
     setEditedProfile({
-      name: user?.name || '',
-      email: user?.email || '',
-      bio: '',
+      name: profileUser.name || '',
+      email: profileUser.email || '',
+      bio: profileUser.bio || '',
       location: 'Moquegua, Perú',
       cycle: '5',
-      interests: ['Programación', 'Bases de datos', 'Desarrollo web'],
-      avatar: user?.avatar || ''
+      interests: profileUser.interests || ['Programación', 'Bases de datos', 'Desarrollo web'],
+      avatar: profileUser.avatar || '',
+      avatar_key: profileUser.avatar_key || '',
+      socialLinks: profileUser.socialLinks || [],
     });
     setAvatarPreview(null);
     setIsEditing(false);
   };
+
+  const handleSocialLinkChange = (index, field, value) => {
+    const newLinks = [...editedProfile.socialLinks];
+    newLinks[index][field] = value;
+    setEditedProfile(prev => ({ ...prev, socialLinks: newLinks }));
+  };
+
+  const addSocialLink = () => {
+    setEditedProfile(prev => ({
+      ...prev,
+      socialLinks: [...prev.socialLinks, { name: '', url: '' }],
+    }));
+  };
+
+  const removeSocialLink = (index) => {
+    const newLinks = [...editedProfile.socialLinks];
+    newLinks.splice(index, 1);
+    setEditedProfile(prev => ({ ...prev, socialLinks: newLinks }));
+  };
+
+  if (!profileUser) {
+    return null; // or a loading indicator
+  }
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -136,14 +264,14 @@ export function UserProfile({ isOpen, onClose }: UserProfileProps) {
                 <div>
                   <DialogTitle className="flex items-center space-x-2">
                     <User className="h-5 w-5 text-primary" />
-                    <span>Mi Perfil</span>
+                    <span>{profileUser._id === user._id ? 'Mi Perfil' : `Perfil de ${profileUser.name}`}</span>
                   </DialogTitle>
                   <DialogDescription>
                     Gestiona tu información personal, estadísticas y actividad en WorkCodile
                   </DialogDescription>
                 </div>
                 <div className="flex items-center space-x-2">
-                  {!isEditing && (
+                  {profileUser._id === user._id && !isEditing && (
                     <Button
                       variant="outline"
                       size="sm"
@@ -169,12 +297,12 @@ export function UserProfile({ isOpen, onClose }: UserProfileProps) {
                   onClick={handleAvatarClick}
                 >
                   <AvatarImage 
-                    src={avatarPreview || editedProfile.avatar || user?.avatar} 
-                    alt={user?.name} 
+                    src={avatarPreview || editedProfile.avatar || profileUser.avatar} 
+                    alt={profileUser.name} 
                   />
                   <AvatarFallback className="text-2xl bg-primary/10">
-                    {user?.avatar ? (
-                      user.name?.charAt(0).toUpperCase()
+                    {profileUser.avatar ? (
+                      profileUser.name?.charAt(0).toUpperCase()
                     ) : (
                       <WorkCodileLogo className="h-12 w-12" />
                     )}
@@ -261,7 +389,7 @@ export function UserProfile({ isOpen, onClose }: UserProfileProps) {
                   </div>
                 ) : (
                   <>
-                    <h2 className="text-2xl font-bold">{user?.name}</h2>
+                    <h2 className="text-2xl font-bold">{profileUser.name}</h2>
                     <p className="text-muted-foreground mt-1">
                       {editedProfile.bio || 'Estudiante de Ingeniería de Sistemas en UNAM'}
                     </p>
@@ -271,7 +399,7 @@ export function UserProfile({ isOpen, onClose }: UserProfileProps) {
                 <div className="flex flex-wrap justify-center sm:justify-start items-center gap-4 mt-3 text-sm text-muted-foreground">
                   <div className="flex items-center space-x-1">
                     <Mail className="h-4 w-4" />
-                    <span>{user?.email}</span>
+                    <span>{profileUser.email}</span>
                   </div>
                   <div className="flex items-center space-x-1">
                     <GraduationCap className="h-4 w-4" />
@@ -290,6 +418,74 @@ export function UserProfile({ isOpen, onClose }: UserProfileProps) {
             </div>
 
             {/* Edit Actions - moved to bottom fixed section */}
+
+            <Separator />
+
+            {/* Social Links */}
+            {editedProfile.socialLinks.length > 0 && !isEditing && (
+              <div>
+                <h3 className="text-lg font-semibold mb-4">Redes Sociales</h3>
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                  {editedProfile.socialLinks.map((link, index) => {
+                    const socialIconData = socialIcons[link.name.toLowerCase()] || socialIcons.default;
+                    const IconComponent = socialIconData.icon;
+                    const bgColorClass = socialIconData.bgColor;
+                    const textColorClass = socialIconData.textColor;
+
+                    return (
+                      <a key={index} href={link.url} target="_blank" rel="noopener noreferrer">
+                        <motion.div
+                          whileHover={{ scale: 1.05 }}
+                          className={`${bgColorClass} rounded-lg p-4 text-center`}
+                        >
+                          <div className={`flex justify-center items-center text-2xl font-bold mx-auto mb-2 ${textColorClass}`}>{IconComponent}</div>
+                          <div className={`text-xs ${textColorClass}`}>{link.name}</div>
+                        </motion.div>
+                      </a>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {isEditing && (
+              <div>
+                <h3 className="text-lg font-semibold mb-4">Redes Sociales</h3>
+                {editedProfile.socialLinks.map((link, index) => (
+                  <div key={index} className="flex items-center space-x-2 mb-2">
+                    <Input
+                      value={link.name}
+                      onChange={(e) => handleSocialLinkChange(index, 'name', e.target.value)}
+                      placeholder="Nombre (e.g., GitHub)"
+                    />
+                    {link.name.toLowerCase() === 'whatsapp' ? (
+                      <div className="flex items-center w-full">
+                        <span className="text-sm text-muted-foreground bg-muted/50 px-3 py-2 rounded-l-md border border-r-0 border-input">+51</span>
+                        <Input
+                          value={link.url.replace('https://wa.me/51', '')}
+                          onChange={(e) => handleSocialLinkChange(index, 'url', `https://wa.me/51${e.target.value.replace(/[^0-9]/g, '')}`)}
+                          placeholder="Número de WhatsApp"
+                          className="rounded-l-none"
+                        />
+                      </div>
+                    ) : (
+                      <Input
+                        value={link.url}
+                        onChange={(e) => handleSocialLinkChange(index, 'url', e.target.value)}
+                        placeholder="URL"
+                      />
+                    )}
+                    <Button variant="ghost" size="sm" onClick={() => removeSocialLink(index)}>
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))}
+                <Button variant="outline" size="sm" onClick={addSocialLink}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Añadir enlace
+                </Button>
+              </div>
+            )}
 
             <Separator />
 

@@ -14,6 +14,12 @@ const userSchema = new mongoose.Schema(
     },
     cycle: { type: Number },
     interests: [{ type: String }],
+    socialLinks: [
+      {
+        name: { type: String, required: true },
+        url: { type: String, required: true },
+      },
+    ],
     bookmarked_posts: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Post' }],
     theme: {
       type: String,

@@ -11,8 +11,10 @@ interface User {
   name: string
   email: string
   avatar?: string
+  avatar_key?: string
   university: string
   theme?: string
+  bookmarked_posts?: string[]
 }
 
 interface Course {
@@ -70,6 +72,7 @@ interface Notification {
   text: string
   createdAt: Date
   read: boolean
+  link?: string
 }
 
 interface AppContextType {
@@ -78,6 +81,7 @@ interface AppContextType {
   posts: Post[]
   courses: Course[]
   notifications: Notification[]
+  markNotificationAsRead: (notificationId: string) => void
   login: (email: string, password: string) => Promise<void>
   register: (name: string, email: string, password: string) => Promise<void>
   logout: () => void
@@ -112,8 +116,6 @@ interface AppContextType {
   incrementViews: (postId: string) => void
   mainFeedKey: number
   resetMainFeed: () => void
-  selectedPostId: string | null
-  selectPost: (postId: string | null) => void
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined)
@@ -225,27 +227,6 @@ const courses: Course[] = [
   { id: 'IS-1027', name: 'ELECTIVO II: TOPICOS AVANZADOS II', cycle: 10 },
 ]
 
-const mockNotifications: Notification[] = [
-  {
-    id: '1',
-    text: 'Carlos Mendoza ha comentado en tu publicación "Busco tutor para Matemática II".',
-    createdAt: new Date(new Date().getTime() - 1000 * 60 * 5),
-    read: false,
-  },
-  {
-    id: '2',
-    text: 'Tu publicación "Ofrezco servicios para Aplicaciones Web I" ha recibido 5 nuevos votos.',
-    createdAt: new Date(new Date().getTime() - 1000 * 60 * 60),
-    read: false,
-  },
-  {
-    id: '3',
-    text: 'María Rodriguez ha respondido a tu comentario en "Grupo de estudio para Estadística Básica".',
-    createdAt: new Date(new Date().getTime() - 1000 * 60 * 60 * 3),
-    read: true,
-  },
-]
-
 const transformBackendComment = (comment: any): Comment => {
   return {
     ...comment,
@@ -254,7 +235,7 @@ const transformBackendComment = (comment: any): Comment => {
     author: {
       id: comment.author?._id?.toString() || '',
       name: comment.author?.name || 'Usuario Anónimo',
-      avatar: comment.author?.avatar_key,
+      avatar: comment.author?.avatar_key ? `http://localhost:9000/workcodile-files/${comment.author.avatar_key}` : undefined,
       university: 'UNAM',
       email: comment.author?.email || '',
     },
@@ -269,7 +250,7 @@ const transformBackendPost = (post: any): Post => ({
   author: {
     id: post.author?._id?.toString() || '',
     name: post.author?.name || 'Usuario Anónimo',
-    avatar: post.author?.avatar_key,
+    avatar: post.author?.avatar_key ? `http://localhost:9000/workcodile-files/${post.author.avatar_key}` : undefined,
     university: 'UNAM',
     email: post.author?.email || '',
   },
@@ -281,7 +262,6 @@ const transformBackendPost = (post: any): Post => ({
   hashtags: post.hashtags || [],
   attachments: post.attachments ? post.attachments.map((att: any) => ({
     ...att,
-    url: `http://localhost:3001/api/storage/${att.object_key}`,
   })) : [],
   rating: post.average_rating || 0,
   totalRatings: post.total_ratings || 0,
@@ -291,17 +271,23 @@ const transformBackendPost = (post: any): Post => ({
   userRating: 0,
 })
 
+const transformBackendNotification = (notification: any): Notification => ({
+  id: notification._id,
+  text: notification.text,
+  createdAt: new Date(notification.createdAt),
+  read: notification.read,
+  link: notification.link,
+})
+
 export function AppProvider({ children }: { children: ReactNode }) {
   const [authStatus, setAuthStatus] = useState<
     'loading' | 'authenticated' | 'unauthenticated'
   >('loading')
   const [user, setUser] = useState<User | null>(null)
   const [posts, setPosts] = useState<Post[]>([])
-  const [notifications, setNotifications] =
-    useState<Notification[]>(mockNotifications)
+  const [notifications, setNotifications] = useState<Notification[]>([])
   const [theme, setTheme] = useState<'light' | 'dark'>('light')
   const [mainFeedKey, setMainFeedKey] = useState(0)
-  const [selectedPostId, setSelectedPostId] = useState<string | null>(null)
 
   useEffect(() => {
     const root = window.document.documentElement
@@ -371,6 +357,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
           }
 
           const userData = await response.json()
+          if (userData.avatar_key) {
+            userData.avatar = `http://localhost:9000/workcodile-files/${userData.avatar_key}`;
+          }
           setUser(userData)
           if (userData.theme) {
             setTheme(userData.theme)
@@ -389,8 +378,56 @@ export function AppProvider({ children }: { children: ReactNode }) {
     loadUser()
   }, [])
 
+  useEffect(() => {
+    const fetchNotifications = async () => {
+      const token = localStorage.getItem('token')
+      if (authStatus === 'authenticated' && token) {
+        try {
+          const response = await fetch('http://localhost:3001/api/notifications', {
+            headers: {
+              'x-auth-token': token,
+            },
+          })
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`)
+          }
+          const data = await response.json()
+          const transformedNotifications: Notification[] = data.map(transformBackendNotification)
+          setNotifications(transformedNotifications)
+        } catch (error) {
+          console.error('Failed to fetch notifications:', error)
+        }
+      }
+    }
+
+    fetchNotifications()
+  }, [authStatus])
+
+  const markNotificationAsRead = async (notificationId: string) => {
+    const token = localStorage.getItem('token')
+    if (!token) return
+
+    try {
+      const response = await fetch(`http://localhost:3001/api/notifications/${notificationId}/read`, {
+        method: 'PUT',
+        headers: {
+          'x-auth-token': token,
+        },
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to mark notification as read')
+      }
+
+      setNotifications(prev =>
+        prev.map(n => n.id === notificationId ? { ...n, read: true } : n)
+      )
+    } catch (error) {
+      console.error('Error marking notification as read:', error)
+    }
+  }
+
   const resetMainFeed = () => setMainFeedKey((prev) => prev + 1)
-  const selectPost = (postId: string | null) => setSelectedPostId(postId)
 
   const login = async (email: string, password: string) => {
     const response = await fetch('http://localhost:3001/api/auth/login', {
@@ -408,6 +445,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
     const { token, user: userData } = await response.json()
     localStorage.setItem('token', token)
+    if (userData.avatar_key) {
+      userData.avatar = `http://localhost:9000/workcodile-files/${userData.avatar_key}`;
+    }
     setUser(userData)
     if (userData.theme) {
       setTheme(userData.theme)
@@ -431,6 +471,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
     const { token, user: userData } = await response.json()
     localStorage.setItem('token', token)
+    if (userData.avatar_key) {
+      userData.avatar = `http://localhost:9000/workcodile-files/${userData.avatar_key}`;
+    }
     setUser(userData)
     if (userData.theme) {
       setTheme(userData.theme)
@@ -442,11 +485,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
     localStorage.removeItem('token')
     setUser(null)
     setAuthStatus('unauthenticated')
+    setNotifications([])
   }
 
   const updateProfile = (profileData: Partial<User>) => {
     if (user) {
-      setUser({ ...user, ...profileData })
+      const newProfile = { ...user, ...profileData };
+      if (newProfile.avatar_key) {
+        newProfile.avatar = `http://localhost:9000/workcodile-files/${newProfile.avatar_key}`;
+      }
+      setUser(newProfile);
     }
   }
 
@@ -610,70 +658,115 @@ export function AppProvider({ children }: { children: ReactNode }) {
     return courses.filter((course) => course.cycle === cycle)
   }
 
-  const ratePost = (postId: string, rating: number) => {
+  const ratePost = async (postId: string, rating: number) => {
     if (!user) return
+    const token = localStorage.getItem('token')
+    if (!token) return
 
-    setPosts((prev) =>
-      prev.map((post) => {
-        if (post.id === postId) {
-          const wasUserRated = post.userRating && post.userRating > 0
-          const newTotalRatings = wasUserRated
-            ? post.totalRatings
-            : post.totalRatings + 1
-
-          const currentTotal = post.rating * post.totalRatings
-          const newTotal = wasUserRated
-            ? currentTotal - (post.userRating || 0) + rating
-            : currentTotal + rating
-          const newAverageRating =
-            newTotalRatings > 0 ? newTotal / newTotalRatings : 0
-
-          console.log(
-            `Usuario ${user.name} calificó el post "${post.title}" con ${rating} cocodrilos`
-          )
-
-          return {
-            ...post,
-            rating: newAverageRating,
-            totalRatings: newTotalRatings,
-            userRating: rating,
-          }
-        }
-        return post
+    try {
+      const response = await fetch(`http://localhost:3001/api/posts/${postId}/rate`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-auth-token': token,
+        },
+        body: JSON.stringify({ rating }),
       })
-    )
+
+      if (!response.ok) {
+        throw new Error('Failed to rate post')
+      }
+
+      const updatedPost = await response.json()
+      const transformedPost = transformBackendPost(updatedPost)
+
+      setPosts((prev) =>
+        prev.map((p) => (p.id === postId ? transformedPost : p))
+      )
+    } catch (error) {
+      console.error('Error rating post:', error)
+    }
   }
 
-  const toggleBookmark = (postId: string) => {
-    setPosts((prev) =>
-      prev.map((post) => {
-        if (post.id === postId) {
-          return {
-            ...post,
-            isBookmarked: !post.isBookmarked,
-          }
-        }
-        return post
+  const toggleBookmark = async (postId: string) => {
+    if (!user) return
+    const token = localStorage.getItem('token')
+    if (!token) return
+
+    try {
+      const response = await fetch(`http://localhost:3001/api/posts/${postId}/bookmark`, {
+        method: 'POST',
+        headers: {
+          'x-auth-token': token,
+        },
       })
-    )
+
+      if (!response.ok) {
+        throw new Error('Failed to bookmark post')
+      }
+
+      const { bookmarked } = await response.json()
+
+      setPosts((prev) =>
+        prev.map((post) => {
+          if (post.id === postId) {
+            return {
+              ...post,
+              isBookmarked: bookmarked,
+            }
+          }
+          return post
+        })
+      )
+    } catch (error) {
+      console.error('Error bookmarking post:', error)
+    }
   }
 
-  const reportPost = (postId: string) => {
-    console.log(`Post ${postId} reported by user ${user?.id}`)
+  const reportPost = async (postId: string, reason: string = 'No reason provided') => {
+    if (!user) return
+    const token = localStorage.getItem('token')
+    if (!token) return
+
+    try {
+      const response = await fetch(`http://localhost:3001/api/posts/${postId}/report`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-auth-token': token,
+        },
+        body: JSON.stringify({ reason }),
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to report post')
+      }
+
+      console.log(`Post ${postId} reported by user ${user?.id}`)
+    } catch (error) {
+      console.error('Error reporting post:', error)
+    }
   }
 
-  const incrementViews = (postId: string) => {
-    setPosts((prev) =>
-      prev.map((post) => {
-        if (post.id === postId) {
-          return {
-            ...post,
-            views: post.views + 1,
-          }
-        }
-        return post
+  const incrementViews = async (postId: string) => {
+    try {
+      await fetch(`http://localhost:3001/api/posts/${postId}/view`, {
+        method: 'POST',
       })
-    )
+      setPosts((prev) =>
+        prev.map((post) => {
+          if (post.id === postId) {
+            return {
+              ...post,
+              views: post.views + 1,
+            }
+          }
+          return post
+        })
+      )
+    } catch (error) {
+      console.error('Error incrementing view count:', error)
+    }
   }
 
   return (
@@ -684,6 +777,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         posts,
         courses,
         notifications,
+        markNotificationAsRead,
         login,
         register,
         logout,
@@ -703,8 +797,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
         incrementViews,
         mainFeedKey,
         resetMainFeed,
-        selectedPostId,
-        selectPost,
       }}
     >
       {children}

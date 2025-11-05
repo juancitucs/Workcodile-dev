@@ -126,7 +126,11 @@ export function PostActions({
         <Button
           variant="ghost"
           size="sm"
-          onClick={onToggleComments}
+          onClick={(e) => {
+            e.preventDefault()
+            e.stopPropagation()
+            onToggleComments()
+          }}
           className="text-muted-foreground hover:text-foreground"
         >
           <MessageCircle className="h-4 w-4 mr-2" />

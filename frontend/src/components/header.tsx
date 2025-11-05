@@ -174,10 +174,10 @@ export function Header({ onCreatePost, onSearch }: HeaderProps) {
       />
 
       {/* Settings Modal */}
-      <Settings 
+      {showSettings && <Settings 
         isOpen={showSettings} 
         onClose={() => setShowSettings(false)} 
-      />
+      />}
     </motion.header>
   );
 }
