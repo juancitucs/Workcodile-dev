@@ -1,3 +1,4 @@
+/*
 import { useState } from 'react';
 import { motion } from 'motion/react';
 import { CrocodileIcon, CrocodileEmoji } from './crocodile-icon';
@@ -176,3 +177,4 @@ export function CompactCrocodileRating({
     </div>
   );
 }
+*/

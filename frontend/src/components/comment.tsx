@@ -1,32 +1,32 @@
-import { useState } from 'react';
-import { motion } from 'motion/react';
-import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
-import { Button } from './ui/button';
-import { Textarea } from './ui/textarea';
-import { useApp } from './app-context';
-import { WorkCodileLogo } from './crocodile-icon';
-import { ChevronUp, ChevronDown } from 'lucide-react';
-import { formatDistanceToNow } from 'date-fns';
-import { es } from 'date-fns/locale';
+import { useState } from 'react'
+import { motion } from 'motion/react'
+import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar'
+import { Button } from './ui/button'
+import { Textarea } from './ui/textarea'
+import { useApp } from './app-context'
+import { WorkCodileLogo } from './crocodile-icon'
+import { ChevronUp, ChevronDown } from 'lucide-react'
+import { formatDistanceToNow } from 'date-fns'
+import { es } from 'date-fns/locale'
 
 interface CommentProps {
-  comment: any;
-  postId: string;
-  onCommentVote: (commentId: string, vote: 'up' | 'down') => void;
+  comment: any
+  postId: string
+  onCommentVote: (commentId: string, vote: 'up' | 'down') => void
 }
 
 export function Comment({ comment, postId, onCommentVote }: CommentProps) {
-  const { user, addComment } = useApp();
-  const [showReplyForm, setShowReplyForm] = useState(false);
-  const [replyContent, setReplyContent] = useState('');
+  const { user, addComment } = useApp()
+  const [showReplyForm, setShowReplyForm] = useState(false)
+  const [replyContent, setReplyContent] = useState('')
 
   const handleReplySubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!replyContent.trim()) return;
-    addComment(postId, replyContent, comment.id);
-    setReplyContent('');
-    setShowReplyForm(false);
-  };
+    e.preventDefault()
+    if (!replyContent.trim()) return
+    addComment(postId, replyContent, comment.id)
+    setReplyContent('')
+    setShowReplyForm(false)
+  }
 
   return (
     <motion.div
@@ -62,16 +62,27 @@ export function Comment({ comment, postId, onCommentVote }: CommentProps) {
             <Button
               variant={comment.userVote === 'up' ? 'default' : 'ghost'}
               size="sm"
-              onClick={() => onCommentVote(comment.id, 'up')}
+              onClick={(e: any) => {
+                e.stopPropagation()
+                onCommentVote(comment.id, 'up')
+              }}
+              // onClick={() => {
+              //   onCommentVote(comment.id, 'up')
+              // }}
               className="h-6 px-2 text-xs"
             >
               <ChevronUp className="h-3 w-3" />
             </Button>
-            <span className="text-sm font-medium min-w-[1.5rem] text-center">{comment.score}</span>
+            <span className="text-sm font-medium min-w-[1.5rem] text-center">
+              {comment.score}
+            </span>
             <Button
               variant={comment.userVote === 'down' ? 'secondary' : 'ghost'}
               size="sm"
-              onClick={() => onCommentVote(comment.id, 'down')}
+              onClick={(e) => {
+                e.stopPropagation()
+                onCommentVote(comment.id, 'down')
+              }}
               className="h-6 px-2 text-xs"
             >
               <ChevronDown className="h-3 w-3" />
@@ -79,7 +90,10 @@ export function Comment({ comment, postId, onCommentVote }: CommentProps) {
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => setShowReplyForm(!showReplyForm)}
+              onClick={(e) => {
+                e.stopPropagation()
+                setShowReplyForm(!showReplyForm)
+              }}
               className="h-6 px-2 text-xs ml-2"
             >
               Responder
@@ -93,9 +107,14 @@ export function Comment({ comment, postId, onCommentVote }: CommentProps) {
                 value={replyContent}
                 onChange={(e) => setReplyContent(e.target.value)}
                 className="min-h-[80px] resize-none"
-              />
+                onClick={(e) => e.stopPropagation()}
+              />{' '}
               <div className="flex justify-end">
-                <Button type="submit" size="sm">
+                <Button
+                  type="submit"
+                  size="sm"
+                  onClick={(e) => e.stopPropagation()}
+                >
                   Enviar respuesta
                 </Button>
               </div>
@@ -104,5 +123,5 @@ export function Comment({ comment, postId, onCommentVote }: CommentProps) {
         </div>
       </div>
     </motion.div>
-  );
+  )
 }

@@ -1,4 +1,4 @@
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom'
 import { useState, useEffect } from 'react'
 import { motion } from 'motion/react'
 import { Card, CardContent, CardHeader } from './ui/card'
@@ -8,9 +8,9 @@ import { Badge } from './ui/badge'
 import { Textarea } from './ui/textarea'
 import { useApp } from './app-context'
 import { PostActions } from './post-actions'
-import { CompactCrocodileRating } from './crocodile-rating'
+// import { CompactCrocodileRating } from './crocodile-rating'
 import { WorkCodileLogo } from './crocodile-icon'
-import { UserProfile } from './user-profile';
+import { UserProfile } from './user-profile'
 import {
   ChevronUp,
   ChevronDown,
@@ -113,7 +113,7 @@ const getFileIcon = (type: string) => {
 }
 
 export function PostCard({ post }: PostCardProps) {
-  const navigate = useNavigate();
+  const navigate = useNavigate()
   const {
     votePost,
     addComment,
@@ -129,17 +129,17 @@ export function PostCard({ post }: PostCardProps) {
   const [newComment, setNewComment] = useState('')
   const [isSubmittingComment, setIsSubmittingComment] = useState(false)
   const [hasIncrementedViews, setHasIncrementedViews] = useState(false)
-  const [showProfile, setShowProfile] = useState(false);
-  const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+  const [showProfile, setShowProfile] = useState(false)
+  const [selectedUserId, setSelectedUserId] = useState<string | null>(null)
 
   const handleShowProfile = (userId: string) => {
-    setSelectedUserId(userId);
-    setShowProfile(true);
-  };
+    setSelectedUserId(userId)
+    setShowProfile(true)
+  }
 
   const handleNavigate = () => {
-    navigate(`/post/${post.id}`);
-  };
+    navigate(`/post/${post.id}`)
+  }
 
   const handleVote = (vote: 'up' | 'down') => {
     votePost(post.id, vote)
@@ -173,9 +173,12 @@ export function PostCard({ post }: PostCardProps) {
   }
 
   const handleDownload = (e: React.MouseEvent, objectKey: string) => {
-    e.stopPropagation();
-    window.open(`http://localhost:3001/api/posts/attachment/${objectKey}`, '_blank');
-  };
+    e.stopPropagation()
+    window.open(
+      `http://localhost:3001/api/posts/attachment/${objectKey}`,
+      '_blank'
+    )
+  }
 
   // Increment views when component mounts (simulate viewing the post)
   useEffect(() => {
@@ -202,9 +205,18 @@ export function PostCard({ post }: PostCardProps) {
         <Card className="glass-card gradient-border shadow-modern hover:shadow-modern-lg transition-all duration-300 ease-out">
           <CardHeader className="pb-3">
             <div className="flex items-start justify-between">
-              <div className="flex items-center space-x-3" onClick={(e) => {e.stopPropagation(); handleShowProfile(post.author.id);}}>
+              <div
+                className="flex items-center space-x-3"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  handleShowProfile(post.author.id)
+                }}
+              >
                 <Avatar className="h-10 w-10">
-                  <AvatarImage src={post.author.avatar} alt={post.author.name} />
+                  <AvatarImage
+                    src={post.author.avatar}
+                    alt={post.author.name}
+                  />
                   <AvatarFallback className="bg-primary/10">
                     {post.author.avatar ? (
                       post.author.name.charAt(0).toUpperCase()
@@ -236,7 +248,11 @@ export function PostCard({ post }: PostCardProps) {
                   </div>
                 </div>
               </div>
-              <Button variant="ghost" size="sm" onClick={(e) => e.stopPropagation()}>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={(e) => e.stopPropagation()}
+              >
                 <MoreHorizontal className="h-4 w-4" />
               </Button>
             </div>
@@ -246,33 +262,41 @@ export function PostCard({ post }: PostCardProps) {
             <div className="flex space-x-4">
               {/* Vote buttons */}
               <div className="flex flex-col items-center space-y-1 min-w-0">
-                              <Button
-                                variant={post.userVote === 'up' ? 'default' : 'ghost'}
-                                size="sm"
-                                onClick={(e) => { e.stopPropagation(); handleVote('up'); }}
-                                className="h-8 w-8 p-0"
-                              >
-                                <ChevronUp className="h-4 w-4" />
-                              </Button>
-                
-                              <span
-                                className={`text-sm font-medium ${
-                                  netScore > 0
-                                    ? 'text-primary'
-                                    : netScore < 0
-                                      ? 'text-destructive'
-                                      : 'text-muted-foreground'
-                                }`}
-                              >
-                                {netScore}
-                              </span>
-                
-                              <Button
-                                variant={post.userVote === 'down' ? 'secondary' : 'ghost'}
-                                size="sm"
-                                onClick={(e) => { e.stopPropagation(); handleVote('down'); }}
-                                className="h-8 w-8 p-0"
-                              >                  <ChevronDown className="h-4 w-4" />
+                <Button
+                  variant={post.userVote === 'up' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    handleVote('up')
+                  }}
+                  className="h-8 w-8 p-0"
+                >
+                  <ChevronUp className="h-4 w-4" />
+                </Button>
+
+                <span
+                  className={`text-sm font-medium ${
+                    netScore > 0
+                      ? 'text-primary'
+                      : netScore < 0
+                        ? 'text-destructive'
+                        : 'text-muted-foreground'
+                  }`}
+                >
+                  {netScore}
+                </span>
+
+                <Button
+                  variant={post.userVote === 'down' ? 'secondary' : 'ghost'}
+                  size="sm"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    handleVote('down')
+                  }}
+                  className="h-8 w-8 p-0"
+                >
+                  {' '}
+                  <ChevronDown className="h-4 w-4" />
                 </Button>
               </div>
 
@@ -286,7 +310,10 @@ export function PostCard({ post }: PostCardProps) {
                     <span className="text-muted-foreground">{course.name}</span>
                   </div>
                 )}
-                <Link to={`/post/${post.id}`} onClick={(e) => e.stopPropagation()}>
+                <Link
+                  to={`/post/${post.id}`}
+                  onClick={(e) => e.stopPropagation()}
+                >
                   <h3 className="font-semibold text-lg mb-2 leading-tight hover:underline">
                     {post.title}
                   </h3>
@@ -327,11 +354,16 @@ export function PostCard({ post }: PostCardProps) {
                       {post.attachments.map((attachment, index) => (
                         <div
                           key={`${index}-${attachment.name}`}
-                          onClick={(e) => handleDownload(e, attachment.object_key!)}
+                          onClick={(e) =>
+                            handleDownload(e, attachment.object_key!)
+                          }
                         >
                           <motion.div
                             whileHover={{ scale: 1.02, y: -1 }}
-                            transition={{ duration: 0.2, ease: [0.4, 0, 0.2, 1] }}
+                            transition={{
+                              duration: 0.2,
+                              ease: [0.4, 0, 0.2, 1],
+                            }}
                             className="flex items-center space-x-2 p-3 bg-gradient-to-r from-workcodile-gray-light/50 to-workcodile-gray-subtle/30 border border-workcodile-border-light rounded-md hover:from-workcodile-green-subtle/30 hover:to-workcodile-gray-subtle/50 cursor-pointer transition-all duration-300 shadow-sm hover:shadow-md"
                           >
                             <span className="text-sm">
@@ -404,6 +436,7 @@ export function PostCard({ post }: PostCardProps) {
                           value={newComment}
                           onChange={(e) => setNewComment(e.target.value)}
                           className="min-h-[80px] resize-none"
+                          onClick={(e) => e.stopPropagation()}
                         />
                         <div className="flex justify-end">
                           <Button

@@ -239,6 +239,8 @@ const transformBackendComment = (comment: any): Comment => {
       university: 'UNAM',
       email: comment.author?.email || '',
     },
+    score: comment.score,
+    userVote: comment.user_vote,
     replies: comment.replies ? comment.replies.map(transformBackendComment) : [],
   }
 }
@@ -267,7 +269,7 @@ const transformBackendPost = (post: any): Post => ({
   totalRatings: post.total_ratings || 0,
   views: post.views || 0,
   isBookmarked: false,
-  userVote: undefined,
+  userVote: post.user_vote,
   userRating: 0,
 })
 

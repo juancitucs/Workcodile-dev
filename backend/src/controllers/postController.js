@@ -159,18 +159,19 @@ const votePost = async (req, res) => {
         update = {
           $inc: { upvote_count: -1 },
           $pull: { upvoted_by: userId },
-        }
+        };
+        await mongoose.connection.db.collection('posts').updateOne({ _id: new ObjectId(id) }, update);
       } else {
         // Add upvote
         update = {
           $inc: { upvote_count: 1 },
           $push: { upvoted_by: userId },
-        }
+        };
         if (alreadyDownvoted) {
           // Remove downvote if it exists
-          update.$inc.downvote_count = -1
-          update.$pull = { downvoted_by: userId }
+          await mongoose.connection.db.collection('posts').updateOne({ _id: new ObjectId(id) }, { $inc: { downvote_count: -1 }, $pull: { downvoted_by: userId } });
         }
+        await mongoose.connection.db.collection('posts').updateOne({ _id: new ObjectId(id) }, update);
       }
     } else if (vote === 'down') {
       if (alreadyDownvoted) {
@@ -178,26 +179,23 @@ const votePost = async (req, res) => {
         update = {
           $inc: { downvote_count: -1 },
           $pull: { downvoted_by: userId },
-        }
+        };
+        await mongoose.connection.db.collection('posts').updateOne({ _id: new ObjectId(id) }, update);
       } else {
         // Add downvote
         update = {
           $inc: { downvote_count: 1 },
           $push: { downvoted_by: userId },
-        }
+        };
         if (alreadyUpvoted) {
           // Remove upvote if it exists
-          update.$inc.upvote_count = -1
-          update.$pull = { upvoted_by: userId }
+          await mongoose.connection.db.collection('posts').updateOne({ _id: new ObjectId(id) }, { $inc: { upvote_count: -1 }, $pull: { upvoted_by: userId } });
         }
+        await mongoose.connection.db.collection('posts').updateOne({ _id: new ObjectId(id) }, update);
       }
     } else {
-      return res.status(400).json({ message: 'Invalid vote type' })
+      return res.status(400).json({ message: 'Invalid vote type' });
     }
-
-    await mongoose.connection.db
-      .collection('posts')
-      .updateOne({ _id: new ObjectId(id) }, update)
 
     if (post.author_id.toString() !== userId.toString()) {
       const notification = new Notification({
@@ -428,7 +426,7 @@ const voteComment = async (req, res) => {
       .collection('posts')
       .updateOne({ _id: new ObjectId(postId) }, update, { arrayFilters })
 
-    const updatedPost = await mongoose.connection.db
+    const updatedPostAgg = await mongoose.connection.db
       .collection('posts')
       .aggregate([
         { $match: { _id: new ObjectId(postId) } },
@@ -436,7 +434,29 @@ const voteComment = async (req, res) => {
       ])
       .toArray()
 
-    res.status(200).json(updatedPost[0])
+    const updatedPost = updatedPostAgg[0]
+
+    const populateCommentAuthors = async (comments) => {
+      for (const comment of comments) {
+        const author = await mongoose.connection.db
+          .collection('users')
+          .findOne({ _id: comment.author_id })
+        comment.author = {
+          _id: author._id,
+          name: author.name,
+          avatar_key: author.avatar_key,
+        }
+        if (comment.replies && comment.replies.length > 0) {
+          await populateCommentAuthors(comment.replies)
+        }
+      }
+    }
+
+    if (updatedPost.comments && updatedPost.comments.length > 0) {
+      await populateCommentAuthors(updatedPost.comments)
+    }
+
+    res.status(200).json(updatedPost)
   } catch (error) {
     console.error('Error voting on comment:', error)
     res.status(500).json({ message: 'Error voting on comment' })
