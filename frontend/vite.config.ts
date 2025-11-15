@@ -5,6 +5,7 @@ import path from 'path'
 
 export default defineConfig({
   plugins: [react()],
+  base: '/grupo2/',
   resolve: {
     extensions: ['.js', '.jsx', '.ts', '.tsx', '.json'],
     alias: {
