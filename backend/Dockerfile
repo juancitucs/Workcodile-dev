@@ -1,20 +1,20 @@
-# Stage 1: Builder - installs all dependencies
+# Stage 1: Builder - has source code and all dependencies
 FROM node:18-alpine AS builder
 WORKDIR /app
 COPY package*.json ./
 RUN npm install
-
-# Stage 2: Development - uses the builder stage for development
-FROM builder AS development
 COPY . .
+
+# Stage 2: Development - for local docker-compose
+FROM builder AS development
 EXPOSE 3001
 CMD ["npm", "run", "dev"]
 
-# Stage 3: Production - creates a lean production image
+# Stage 3: Production - for Render
 FROM node:18-alpine AS production
 WORKDIR /app
-COPY package*.json ./
+COPY --from=builder /app/package*.json ./
 RUN npm install --omit=dev
-COPY . .
+COPY --from=builder /app .
 EXPOSE 3001
 CMD ["npm", "start"]
