@@ -1,3 +1,4 @@
+import MarkdownRenderer from './markdown-renderer';
 import { Link, useNavigate } from 'react-router-dom'
 import { useState, useEffect } from 'react'
 import { motion } from 'motion/react'
@@ -318,9 +319,9 @@ export function PostCard({ post }: PostCardProps) {
                     {post.title}
                   </h3>
                 </Link>
-                <p className="text-muted-foreground mb-3 whitespace-pre-wrap">
-                  {post.content}
-                </p>
+                <div className="prose prose-sm dark:prose-invert max-w-none mb-3">
+                  <MarkdownRenderer>{post.content}</MarkdownRenderer>
+                </div>
 
                 {/* Hashtags */}
                 {post.hashtags.length > 0 && (
