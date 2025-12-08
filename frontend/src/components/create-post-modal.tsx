@@ -1,17 +1,19 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { motion } from 'motion/react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from './ui/dialog';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
-import { Textarea } from './ui/textarea';
 import { Label } from './ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Badge } from './ui/badge';
 import { useApp } from './app-context';
 import { FileAttachment, createFileAttachment, formatFileSize, getFileIcon, validateFileType, validateFileSize } from './file-utils';
-import { PlusCircle, X, GraduationCap, Upload, FileText, Hash, Trash2, Bold, Italic, Strikethrough, Image } from 'lucide-react';
+import { PlusCircle, X, GraduationCap, Upload, FileText, Hash, Trash2, Bold, Italic, Strikethrough, Image, Paperclip } from 'lucide-react';
 import MarkdownRenderer from './markdown-renderer';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from './ui/accordion';
+import { MentionsInput, Mention } from 'react-mentions';
+import mentionsInputStyle from './mentions-input-style';
+
 
 interface CreatePostModalProps {
   isOpen: boolean;
@@ -60,7 +62,7 @@ const uploadFiles = async (files: File[]): Promise<(Omit<FileAttachment, 'id'> &
 export function CreatePostModal({ isOpen, onClose }: CreatePostModalProps) {
   const { createPost, courses, getCoursesByCycle } = useApp();
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const textareaRef = useRef<HTMLTextAreaElement>(null); // Ref for textarea
+  const mentionsInputRef = useRef<any>(null); // Ref for MentionsInput
   const [formData, setFormData] = useState({
     title: '',
     content: '',
@@ -195,7 +197,7 @@ export function CreatePostModal({ isOpen, onClose }: CreatePostModalProps) {
   };
 
   const applyMarkdown = (prefix: string, suffix: string, placeholder?: string) => {
-    const textarea = textareaRef.current;
+    const textarea = mentionsInputRef.current?.input;
     if (!textarea) return;
 
     const start = textarea.selectionStart;
@@ -207,14 +209,13 @@ export function CreatePostModal({ isOpen, onClose }: CreatePostModalProps) {
       newContent = `${prefix}${selectedText}${suffix}`;
     } else {
       newContent = `${prefix}${placeholder || ''}${suffix}`;
-      // Position cursor inside the placeholder
-      textarea.selectionStart = start + prefix.length;
-      textarea.selectionEnd = start + prefix.length + (placeholder?.length || 0);
     }
+
+    const value = textarea.value.substring(0, start) + newContent + textarea.value.substring(end);
 
     setFormData(prev => ({
       ...prev,
-      content: textarea.value.substring(0, start) + newContent + textarea.value.substring(end)
+      content: value
     }));
 
     // Re-focus and set cursor position
@@ -229,6 +230,11 @@ export function CreatePostModal({ isOpen, onClose }: CreatePostModalProps) {
       }
     }, 0);
   };
+  
+  const attachmentMentions = attachments.map(att => ({
+    id: att.name,
+    display: att.name,
+  }));
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
@@ -383,16 +389,22 @@ export function CreatePostModal({ isOpen, onClose }: CreatePostModalProps) {
                       <Image className="h-4 w-4" />
                     </Button>
                   </div>
-                  <Textarea
-                    ref={textareaRef}
+                  <MentionsInput
+                    inputRef={mentionsInputRef}
                     id="content"
-                    placeholder="Describe detalladamente tu publicación. Puedes usar Markdown para formatear el texto, incluir imágenes y fórmulas LaTeX."
                     value={formData.content}
                     onChange={(e) => setFormData(prev => ({ ...prev, content: e.target.value }))}
-                    required
+                    placeholder="Describe detalladamente tu publicación. Usa Markdown y menciona archivos con '@'."
+                    style={mentionsInputStyle}
                     className="min-h-[200px] resize-y"
-                    maxLength={5000}
-                  />
+                  >
+                    <Mention
+                      trigger="@"
+                      data={attachmentMentions}
+                      markup={`@"__display__"`}
+                      displayTransform={(id, display) => `@${display}`}
+                    />
+                  </MentionsInput>
                   <p className="text-xs text-muted-foreground text-right">
                     {formData.content.length}/5000
                   </p>
@@ -585,7 +597,7 @@ export function CreatePostModal({ isOpen, onClose }: CreatePostModalProps) {
                     )}
                     
                     <div className="prose prose-sm dark:prose-invert max-w-none mb-4 text-sm">
-                      <MarkdownRenderer>{formData.content || ""}</MarkdownRenderer>
+                      <MarkdownRenderer attachments={attachments}>{formData.content || ""}</MarkdownRenderer>
                     </div>
                     
                     {hashtags.length > 0 && (
@@ -603,23 +615,34 @@ export function CreatePostModal({ isOpen, onClose }: CreatePostModalProps) {
                     )}
                     
                     {attachments.length > 0 && (
-                      <div className="space-y-2">
-                        <p className="text-xs text-muted-foreground font-medium">Archivos adjuntos:</p>
-                        {attachments.map((attachment) => (
-                          <motion.div
-                            key={attachment.id}
-                            initial={{ opacity: 0, scale: 0.95 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            className="flex items-center space-x-2 text-xs bg-muted/50 rounded p-2 border border-border"
-                          >
-                            <span className="text-sm">{getFileIcon(attachment.type)}</span>
-                            <div className="flex-1 min-w-0">
-                              <span className="truncate block font-medium">{attachment.name}</span>
-                              <span className="text-muted-foreground">({formatFileSize(attachment.size)})</span>
+                      <Accordion type="single" collapsible className="w-full">
+                        <AccordionItem value="attachments-preview">
+                          <AccordionTrigger>
+                            <div className="flex items-center space-x-2 text-sm text-muted-foreground">
+                              <Paperclip className="h-4 w-4" />
+                              <span>{attachments.length} archivo{attachments.length > 1 ? 's' : ''} adjunto{attachments.length > 1 ? 's' : ''}</span>
                             </div>
-                          </motion.div>
-                        ))}
-                      </div>
+                          </AccordionTrigger>
+                          <AccordionContent>
+                            <div className="space-y-2 pt-2">
+                              {attachments.map((attachment) => (
+                                <motion.div
+                                  key={attachment.id}
+                                  initial={{ opacity: 0, scale: 0.95 }}
+                                  animate={{ opacity: 1, scale: 1 }}
+                                  className="flex items-center space-x-2 text-xs bg-muted/50 rounded p-2 border border-border"
+                                >
+                                  <span className="text-sm">{getFileIcon(attachment.type)}</span>
+                                  <div className="flex-1 min-w-0">
+                                    <span className="truncate block font-medium">{attachment.name}</span>
+                                    <span className="text-muted-foreground">({formatFileSize(attachment.size)})</span>
+                                  </div>
+                                </motion.div>
+                              ))}
+                            </div>
+                          </AccordionContent>
+                        </AccordionItem>
+                      </Accordion>
                     )}
                     
                     {/* Post actions preview */}

@@ -11,6 +11,7 @@ import { useApp } from './app-context'
 import { PostActions } from './post-actions'
 import { WorkCodileLogo } from './crocodile-icon'
 import { UserProfile } from './user-profile'
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from './ui/accordion';
 import {
   ChevronUp,
   ChevronDown,
@@ -268,7 +269,7 @@ export function PostCard({ post, startWithCommentsOpen = false, highlightComment
                   </h3>
                 </Link>
                 <div className="prose prose-sm dark:prose-invert max-w-none mb-3">
-                  <MarkdownRenderer>{post.content}</MarkdownRenderer>
+                  <MarkdownRenderer attachments={post.attachments}>{post.content}</MarkdownRenderer>
                 </div>
 
                 {/* Hashtags */}
@@ -290,54 +291,60 @@ export function PostCard({ post, startWithCommentsOpen = false, highlightComment
 
                 {/* File Attachments */}
                 {post.attachments.length > 0 && (
-                  <div className="mb-4">
-                    <div className="flex items-center space-x-2 mb-2">
-                      <Paperclip className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-xs text-muted-foreground">
-                        {post.attachments.length} archivo
-                        {post.attachments.length > 1 ? 's' : ''} adjunto
-                        {post.attachments.length > 1 ? 's' : ''}
-                      </span>
-                    </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                      {post.attachments.map((attachment, index) => (
-                        <div
-                          key={`${index}-${attachment.name}`}
-                          onClick={(e) =>
-                            handleDownload(e, attachment.object_key!)
-                          }
-                        >
-                          <motion.div
-                            whileHover={{ scale: 1.02, y: -1 }}
-                            transition={{
-                              duration: 0.2,
-                              ease: [0.4, 0, 0.2, 1],
-                            }}
-                            className="flex items-center space-x-2 p-3 bg-gradient-to-r from-workcodile-gray-light/50 to-workcodile-gray-subtle/30 border border-workcodile-border-light rounded-md hover:from-workcodile-green-subtle/30 hover:to-workcodile-gray-subtle/50 cursor-pointer transition-all duration-300 shadow-sm hover:shadow-md"
-                          >
-                            <span className="text-sm">
-                              {getFileIcon(attachment.type)}
-                            </span>
-                            <div className="flex-1 min-w-0">
-                              <p className="text-xs font-medium truncate">
-                                {attachment.name}
-                              </p>
-                              <p className="text-xs text-muted-foreground">
-                                {formatFileSize(attachment.size)}
-                              </p>
-                            </div>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-6 w-6 p-0 hover:bg-primary/10"
-                            >
-                              <Download className="h-3 w-3" />
-                            </Button>
-                          </motion.div>
+                  <Accordion type="single" collapsible className="w-full mb-4">
+                    <AccordionItem value="attachments">
+                      <AccordionTrigger>
+                        <div className="flex items-center space-x-2 text-sm text-muted-foreground">
+                          <Paperclip className="h-4 w-4" />
+                          <span>
+                            {post.attachments.length} archivo
+                            {post.attachments.length > 1 ? 's' : ''} adjunto
+                            {post.attachments.length > 1 ? 's' : ''}
+                          </span>
                         </div>
-                      ))}
-                    </div>
-                  </div>
+                      </AccordionTrigger>
+                      <AccordionContent>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-2">
+                          {post.attachments.map((attachment, index) => (
+                            <div
+                              key={`${index}-${attachment.name}`}
+                              onClick={(e) =>
+                                handleDownload(e, attachment.object_key!)
+                              }
+                            >
+                              <motion.div
+                                whileHover={{ scale: 1.02, y: -1 }}
+                                transition={{
+                                  duration: 0.2,
+                                  ease: [0.4, 0, 0.2, 1],
+                                }}
+                                className="flex items-center space-x-2 p-3 bg-gradient-to-r from-workcodile-gray-light/50 to-workcodile-gray-subtle/30 border border-workcodile-border-light rounded-md hover:from-workcodile-green-subtle/30 hover:to-workcodile-gray-subtle/50 cursor-pointer transition-all duration-300 shadow-sm hover:shadow-md"
+                              >
+                                <span className="text-sm">
+                                  {getFileIcon(attachment.type)}
+                                </span>
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-xs font-medium truncate">
+                                    {attachment.name}
+                                  </p>
+                                  <p className="text-xs text-muted-foreground">
+                                    {formatFileSize(attachment.size)}
+                                  </p>
+                                </div>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-6 w-6 p-0 hover:bg-primary/10"
+                                >
+                                  <Download className="h-3 w-3" />
+                                </Button>
+                              </motion.div>
+                            </div>
+                          ))}
+                        </div>
+                      </AccordionContent>
+                    </AccordionItem>
+                  </Accordion>
                 )}
 
                 {/* Action buttons */}

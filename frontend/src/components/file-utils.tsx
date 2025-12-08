@@ -10,12 +10,23 @@ export interface FileAttachment {
 
 export const createFileAttachment = (file: File): FileAttachment => {
   return {
-    id: Date.now().toString() + Math.random(),
+    id: crypto.randomUUID(),
     name: file.name,
     size: file.size,
     type: file.type,
-    file
+    file,
+    url: URL.createObjectURL(file), // Create a local URL for preview
   };
+};
+
+export const getAttachmentUrl = (attachment: Partial<FileAttachment>): string | undefined => {
+  if (attachment.url) {
+    return attachment.url; // Local preview URL
+  }
+  if (attachment.object_key) {
+    return `http://localhost:3001/api/posts/attachment/${attachment.object_key}`; // Final backend URL
+  }
+  return undefined;
 };
 
 export const formatFileSize = (bytes: number): string => {
@@ -28,6 +39,8 @@ export const formatFileSize = (bytes: number): string => {
 
 export const getFileIcon = (type: string): string => {
   if (type.includes('image/')) return '🖼️';
+  if (type.includes('video/')) return '🎬';
+  if (type.includes('audio/')) return '🎵';
   if (type.includes('pdf')) return '📄';
   if (type.includes('zip') || type.includes('rar')) return '📦';
   if (type.includes('word')) return '📝';
@@ -43,6 +56,11 @@ export const validateFileType = (file: File): boolean => {
     'image/jpeg',
     'image/png',
     'image/gif',
+    'video/mp4',
+    'video/webm',
+    'audio/mpeg',
+    'audio/wav',
+    'audio/ogg',
     'text/plain',
     'application/msword',
     'application/vnd.openxmlformats-officedocument.wordprocessingml.document'

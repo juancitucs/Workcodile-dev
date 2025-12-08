@@ -119,24 +119,32 @@ const addUserVoteStatus = (item, currentUserId) => {
 
 const getAllPosts = async (req, res) => {
   try {
+    const page = parseInt(req.query.page, 10) || 1;
+    const limit = parseInt(req.query.limit, 10) || 10;
+    const skip = (page - 1) * limit;
+
+    const totalPosts = await mongoose.connection.db.collection('posts').countDocuments();
+
     const posts = await mongoose.connection.db
       .collection('posts')
       .aggregate([
+        { $sort: { createdAt: -1 } },
+        { $skip: skip },
+        { $limit: limit },
         ...postAggregationPipeline,
-        {
-          $sort: { createdAt: -1 },
-        },
       ])
       .toArray()
 
     const populateCommentAuthors = async (comments) => {
       for (const comment of comments) {
-        const author = await mongoose.connection.db.collection('users').findOne({ _id: comment.author_id });
-        comment.author = {
-            _id: author._id,
-            name: author.name,
-            avatar_key: author.avatar_key,
-        };
+        if(comment.author_id) {
+          const author = await mongoose.connection.db.collection('users').findOne({ _id: comment.author_id });
+          comment.author = {
+              _id: author._id,
+              name: author.name,
+              avatar_key: author.avatar_key,
+          };
+        }
         if (comment.replies && comment.replies.length > 0) {
             await populateCommentAuthors(comment.replies);
         }
@@ -149,8 +157,15 @@ const getAllPosts = async (req, res) => {
         }
         addUserVoteStatus(post, req.user ? req.user.id : null);
     }
+    
+    const totalPages = Math.ceil(totalPosts / limit);
 
-    res.status(200).json(posts)
+    res.status(200).json({
+      posts,
+      page,
+      totalPages,
+      hasNextPage: page < totalPages,
+    });
   } catch (error) {
     console.error('Error fetching posts:', error)
     res.status(500).json({ message: 'Error fetching posts' })
@@ -307,7 +322,7 @@ const addCommentToPost = async (req, res) => {
       const notification = new Notification({
         user: post.author_id,
         text: `${user.name} ha comentado en tu publicación: "${post.title}"`,
-        link: `/post/${id}`
+        link: `/post/${id}#comment-${comment._id}`
       });
       await notification.save();
     }
@@ -654,7 +669,7 @@ const getPostByCommentId = async (req, res) => {
     }
     
     // Fake req and res objects to call getPostById
-    const mockReq = { params: { id: post._id.toString() } };
+    const mockReq = { params: { id: post._id.toString() }, user: req.user };
     const mockRes = {
       status: (statusCode) => ({
         json: (data) => res.status(statusCode).json(data),
@@ -669,11 +684,58 @@ const getPostByCommentId = async (req, res) => {
   }
 };
 
+const getCommentReplies = async (req, res) => {
+  try {
+    const { postId, commentId } = req.params;
+    const userId = req.user ? req.user.id : null;
+
+    const post = await mongoose.connection.db.collection('posts').findOne({ _id: new ObjectId(postId) });
+
+    if (!post) {
+      return res.status(404).json({ message: 'Post not found' });
+    }
+
+    let parentComment = null;
+    const findComment = (comments) => {
+      for (const comment of comments) {
+        if (comment._id.equals(new ObjectId(commentId))) {
+          parentComment = comment;
+          return;
+        }
+        if (comment.replies && comment.replies.length > 0) {
+          findComment(comment.replies);
+        }
+        if (parentComment) return;
+      }
+    };
+
+    findComment(post.comments);
+
+    if (!parentComment) {
+      return res.status(404).json({ message: 'Comment not found' });
+    }
+
+    const replies = parentComment.replies || [];
+
+    await populateCommentAuthors(replies);
+    
+    replies.forEach(reply => {
+      addUserVoteStatus(reply, userId);
+    });
+
+    res.status(200).json(replies);
+  } catch (error) {
+    console.error('Error fetching replies:', error);
+    res.status(500).json({ message: 'Error fetching replies' });
+  }
+};
+
 
 module.exports = {
   getAllPosts,
   getPostById,
   getPostByCommentId,
+  getCommentReplies,
   votePost,
   createPost,
   addCommentToPost,
