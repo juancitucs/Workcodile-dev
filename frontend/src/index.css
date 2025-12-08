@@ -3461,7 +3461,7 @@ html {
   scroll-behavior: smooth;
 }
 
-.post-highlight {
+.post-highlight, .comment-highlight {
   animation: 2s ease-in-out highlight;
 }
 
@@ -4032,3 +4032,5 @@ html {
     height: 0;
   }
 }
+
+

@@ -1,4 +1,4 @@
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useLocation } from 'react-router-dom';
 import { useApp } from './app-context';
 import { PostCard } from './post-card';
 import { Button } from './ui/button';
@@ -7,8 +7,13 @@ import { ArrowLeft } from 'lucide-react';
 export function SinglePostView() {
   const { posts } = useApp();
   const { id } = useParams<{ id: string }>();
+  const location = useLocation();
 
   const post = posts.find(p => p.id === id);
+
+  const highlightCommentId = location.hash.startsWith('#comment-') 
+    ? location.hash.substring('#comment-'.length) 
+    : undefined;
 
   if (!post) {
     return (
@@ -37,7 +42,7 @@ export function SinglePostView() {
             </Button>
           </Link>
         </div>
-        <PostCard post={post} />
+        <PostCard post={post} startWithCommentsOpen={true} highlightCommentId={highlightCommentId} />
       </div>
     </div>
   );

@@ -31,8 +31,6 @@ import {
   MoreHorizontal,
   ExternalLink,
 } from 'lucide-react'
-// import { CrocodileRating } from './crocodile-rating'
-// import { CrocodileEmoji, WorkCodileLogo } from './crocodile-icon'
 
 interface PostActionsProps {
   postId: string
@@ -40,12 +38,8 @@ interface PostActionsProps {
   commentsCount: number
   viewsCount?: number
   isBookmarked?: boolean
-  rating: number
-  totalRatings: number
-  userRating?: number
   onToggleComments: () => void
   onBookmark?: () => void
-  onRate?: (rating: number) => void
   onReport?: () => void
 }
 
@@ -55,16 +49,11 @@ export function PostActions({
   commentsCount,
   viewsCount = 0,
   isBookmarked = false,
-  rating,
-  totalRatings,
-  userRating,
   onToggleComments,
   onBookmark,
-  onRate,
   onReport,
 }: PostActionsProps) {
   const [showShareDialog, setShowShareDialog] = useState(false)
-  const [showRatingDialog, setShowRatingDialog] = useState(false)
 
   const postUrl = `${window.location.origin}/post/${postId}`
 

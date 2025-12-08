@@ -9,7 +9,6 @@ import { Badge } from './ui/badge'
 import { Textarea } from './ui/textarea'
 import { useApp } from './app-context'
 import { PostActions } from './post-actions'
-// import { CompactCrocodileRating } from './crocodile-rating'
 import { WorkCodileLogo } from './crocodile-icon'
 import { UserProfile } from './user-profile'
 import {
@@ -70,15 +69,14 @@ interface Post {
   userVote?: 'up' | 'down'
   hashtags: string[]
   attachments: FileAttachment[]
-  rating: number
-  totalRatings: number
-  userRating?: number
   views: number
   isBookmarked?: boolean
 }
 
 interface PostCardProps {
   post: Post
+  startWithCommentsOpen?: boolean
+  highlightCommentId?: string
 }
 
 const getCycleColor = (cycle: number) => {
@@ -113,7 +111,7 @@ const getFileIcon = (type: string) => {
   return '📄'
 }
 
-export function PostCard({ post }: PostCardProps) {
+export function PostCard({ post, startWithCommentsOpen = false, highlightCommentId }: PostCardProps) {
   const navigate = useNavigate()
   const {
     votePost,
@@ -121,12 +119,11 @@ export function PostCard({ post }: PostCardProps) {
     voteComment,
     user,
     getCourseById,
-    ratePost,
     toggleBookmark,
     reportPost,
     incrementViews,
   } = useApp()
-  const [showComments, setShowComments] = useState(false)
+  const [showComments, setShowComments] = useState(startWithCommentsOpen)
   const [newComment, setNewComment] = useState('')
   const [isSubmittingComment, setIsSubmittingComment] = useState(false)
   const [hasIncrementedViews, setHasIncrementedViews] = useState(false)
@@ -159,10 +156,6 @@ export function PostCard({ post }: PostCardProps) {
     addComment(post.id, newComment)
     setNewComment('')
     setIsSubmittingComment(false)
-  }
-
-  const handleRate = (rating: number) => {
-    ratePost(post.id, rating)
   }
 
   const handleBookmark = () => {
@@ -231,7 +224,7 @@ export function PostCard({ post }: PostCardProps) {
                   <div className="flex items-center space-x-2 text-xs text-muted-foreground">
                     <Clock className="h-3 w-3" />
                     <span>
-                      {formatDistanceToNow(post.createdAt, {
+                      {formatDistanceToNow(new Date(post.createdAt), {
                         addSuffix: true,
                         locale: es,
                       })}
@@ -288,7 +281,7 @@ export function PostCard({ post }: PostCardProps) {
                 </span>
 
                 <Button
-                  variant={post.userVote === 'down' ? 'secondary' : 'ghost'}
+                  variant={post.userVote === 'down' ? 'destructive' : 'ghost'}
                   size="sm"
                   onClick={(e) => {
                     e.stopPropagation()
@@ -392,17 +385,6 @@ export function PostCard({ post }: PostCardProps) {
                   </div>
                 )}
 
-                {/* Rating display */}
-                {post.totalRatings > 0 && (
-                  <div className="mb-3 pb-3 border-b border-border/50">
-                    {/* <CompactCrocodileRating
-                      rating={post.rating}
-                      totalRatings={post.totalRatings}
-                      size="sm"
-                    /> */}
-                  </div>
-                )}
-
                 {/* Action buttons */}
                 <div className="mb-4" onClick={(e) => e.stopPropagation()}>
                   <PostActions
@@ -411,12 +393,8 @@ export function PostCard({ post }: PostCardProps) {
                     commentsCount={post.comments.length}
                     viewsCount={post.views}
                     isBookmarked={post.isBookmarked}
-                    rating={post.rating}
-                    totalRatings={post.totalRatings}
-                    userRating={post.userRating}
                     onToggleComments={() => setShowComments(!showComments)}
                     onBookmark={handleBookmark}
-                    onRate={handleRate}
                     onReport={handleReport}
                   />
                 </div>
@@ -457,6 +435,7 @@ export function PostCard({ post }: PostCardProps) {
                       comments={post.comments}
                       postId={post.id}
                       onCommentVote={handleCommentVote}
+                      highlightCommentId={highlightCommentId}
                     />
                   </motion.div>
                 )}

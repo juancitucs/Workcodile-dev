@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { motion } from 'motion/react'
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar'
 import { Button } from './ui/button'
@@ -13,12 +13,25 @@ interface CommentProps {
   comment: any
   postId: string
   onCommentVote: (commentId: string, vote: 'up' | 'down') => void
+  highlightCommentId?: string;
 }
 
-export function Comment({ comment, postId, onCommentVote }: CommentProps) {
+export function Comment({ comment, postId, onCommentVote, highlightCommentId }: CommentProps) {
   const { user, addComment } = useApp()
   const [showReplyForm, setShowReplyForm] = useState(false)
   const [replyContent, setReplyContent] = useState('')
+  const commentRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (commentRef.current && comment.id === highlightCommentId) {
+      commentRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      commentRef.current.classList.add('comment-highlight');
+      setTimeout(() => {
+        commentRef.current?.classList.remove('comment-highlight');
+      }, 2000); // Duration of the animation
+    }
+  }, [comment.id, highlightCommentId]);
+
 
   const handleReplySubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -30,6 +43,8 @@ export function Comment({ comment, postId, onCommentVote }: CommentProps) {
 
   return (
     <motion.div
+      ref={commentRef}
+      id={`comment-${comment.id}`}
       initial={{ opacity: 0, x: -20 }}
       animate={{ opacity: 1, x: 0 }}
       className="glass-card p-4 shadow-modern hover:shadow-modern-lg transition-all duration-300"
@@ -50,7 +65,7 @@ export function Comment({ comment, postId, onCommentVote }: CommentProps) {
           <div className="flex items-center space-x-2 mb-1">
             <p className="font-medium text-sm">{comment.author.name}</p>
             <span className="text-xs text-muted-foreground">
-              {formatDistanceToNow(comment.createdAt, {
+              {formatDistanceToNow(new Date(comment.createdAt), {
                 addSuffix: true,
                 locale: es,
               })}
@@ -66,9 +81,6 @@ export function Comment({ comment, postId, onCommentVote }: CommentProps) {
                 e.stopPropagation()
                 onCommentVote(comment.id, 'up')
               }}
-              // onClick={() => {
-              //   onCommentVote(comment.id, 'up')
-              // }}
               className="h-6 px-2 text-xs"
             >
               <ChevronUp className="h-3 w-3" />
@@ -77,7 +89,7 @@ export function Comment({ comment, postId, onCommentVote }: CommentProps) {
               {comment.score}
             </span>
             <Button
-              variant={comment.userVote === 'down' ? 'secondary' : 'ghost'}
+              variant={comment.userVote === 'down' ? 'destructive' : 'ghost'}
               size="sm"
               onClick={(e) => {
                 e.stopPropagation()

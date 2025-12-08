@@ -27,7 +27,8 @@ const postAggregationPipeline = [
       views: { $first: '$views' },
       upvote_count: { $first: '$upvote_count' },
       downvote_count: { $first: '$downvote_count' },
-      average_rating: { $first: '$average_rating' },
+      upvoted_by: { $first: '$upvoted_by' },
+      downvoted_by: { $first: '$downvoted_by' },
       comments: { $push: '$comments' },
     },
   },
@@ -71,7 +72,8 @@ const postAggregationPipeline = [
       views: 1,
       upvote_count: 1,
       downvote_count: 1,
-      average_rating: 1,
+      upvoted_by: 1,
+      downvoted_by: 1,
       author: {
         _id: '$author._id',
         name: '$author.name',
@@ -87,6 +89,33 @@ const postAggregationPipeline = [
     },
   },
 ]
+
+// Helper function to add user_vote status
+const addUserVoteStatus = (item, currentUserId) => {
+  if (!currentUserId) {
+    item.user_vote = null;
+    return;
+  }
+  const userIdObjectId = new ObjectId(currentUserId);
+
+  if (item.upvoted_by && item.upvoted_by.some(id => id.equals(userIdObjectId))) {
+    item.user_vote = 'up';
+  } else if (item.downvoted_by && item.downvoted_by.some(id => id.equals(userIdObjectId))) {
+    item.user_vote = 'down';
+  } else {
+    item.user_vote = null;
+  }
+
+  // Recursively apply to comments and replies
+  if (item.comments) {
+    item.comments.forEach(comment => {
+      addUserVoteStatus(comment, currentUserId);
+      if (comment.replies) {
+        comment.replies.forEach(reply => addUserVoteStatus(reply, currentUserId));
+      }
+    });
+  }
+};
 
 const getAllPosts = async (req, res) => {
   try {
@@ -118,6 +147,7 @@ const getAllPosts = async (req, res) => {
         if (post.comments && post.comments.length > 0) {
             await populateCommentAuthors(post.comments);
         }
+        addUserVoteStatus(post, req.user ? req.user.id : null);
     }
 
     res.status(200).json(posts)
@@ -213,6 +243,8 @@ const votePost = async (req, res) => {
         ...postAggregationPipeline,
       ])
       .toArray()
+    
+    addUserVoteStatus(updatedPost[0], req.user ? req.user.id : null);
     res.status(200).json(updatedPost[0])
   } catch (error) {
     console.error('Error voting on post:', error)
@@ -304,16 +336,25 @@ const addCommentToPost = async (req, res) => {
       }
     };
 
-    if (updatedPost.comments && updatedPost.comments.length > 0) {
-        await populateCommentAuthors(updatedPost.comments);
-    }
+        if (updatedPost.comments && updatedPost.comments.length > 0) {
 
-    res.status(200).json(updatedPost);
-  } catch (error) {
-    console.error('Error adding comment:', error);
-    res.status(500).json({ message: 'Error adding comment' });
-  }
-};
+            await populateCommentAuthors(updatedPost.comments);
+
+        }
+
+        addUserVoteStatus(updatedPost, req.user ? req.user.id : null);
+
+        res.status(200).json(updatedPost);
+
+      } catch (error) {
+
+        console.error('Error adding comment:', error);
+
+        res.status(500).json({ message: 'Error adding comment' });
+
+      }
+
+    };
 
 const createPost = async (req, res) => {
   console.log('Create post called');
@@ -337,8 +378,6 @@ const createPost = async (req, res) => {
       downvoted_by: [],
       comments: [],
       views: 0,
-      average_rating: 0,
-      total_ratings: 0,
     }
 
     const result = await mongoose.connection.db
@@ -347,14 +386,14 @@ const createPost = async (req, res) => {
     
     const createdPost = await mongoose.connection.db
       .collection('posts')
-      .aggregate([
-        { $match: { _id: result.insertedId } },
-        ...postAggregationPipeline,
-      ])
-      .toArray()
-
-    res.status(201).json(createdPost[0])
-  } catch (error) {
+            .aggregate([
+              { $match: { _id: result.insertedId } },
+              ...postAggregationPipeline,
+            ])
+            .toArray()
+          addUserVoteStatus(createdPost[0], req.user ? req.user.id : null);
+          res.status(201).json(createdPost[0])
+        } catch (error) {
     console.error('Error creating post:', error)
     res.status(500).json({ message: 'Error creating post' })
   }
@@ -452,72 +491,21 @@ const voteComment = async (req, res) => {
       }
     }
 
-    if (updatedPost.comments && updatedPost.comments.length > 0) {
-      await populateCommentAuthors(updatedPost.comments)
-    }
+        if (updatedPost.comments && updatedPost.comments.length > 0) {
 
-    res.status(200).json(updatedPost)
-  } catch (error) {
+          await populateCommentAuthors(updatedPost.comments)
+
+        }
+
+        addUserVoteStatus(updatedPost, req.user ? req.user.id : null);
+
+        res.status(200).json(updatedPost)
+
+      } catch (error) {
     console.error('Error voting on comment:', error)
     res.status(500).json({ message: 'Error voting on comment' })
   }
 }
-
-const ratePost = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { rating } = req.body;
-    const userId = new ObjectId(req.user.id);
-
-    const post = await mongoose.connection.db.collection('posts').findOne({ _id: new ObjectId(id) });
-
-    if (!post) {
-      return res.status(404).json({ message: 'Post not found' });
-    }
-
-    const userRating = post.ratings && post.ratings.find((r) => r.user_id.equals(userId));
-
-    let newTotalRatings = post.total_ratings || 0;
-    let currentTotal = (post.average_rating || 0) * newTotalRatings;
-
-    if (userRating) {
-      currentTotal -= userRating.value;
-      userRating.value = rating;
-    } else {
-      if (!post.ratings) {
-        post.ratings = [];
-      }
-      post.ratings.push({ user_id: userId, value: rating });
-      newTotalRatings++;
-    }
-
-    const newAverageRating = (currentTotal + rating) / newTotalRatings;
-
-    await mongoose.connection.db.collection('posts').updateOne(
-      { _id: new ObjectId(id) },
-      {
-        $set: {
-          ratings: post.ratings,
-          total_ratings: newTotalRatings,
-          average_rating: newAverageRating,
-        },
-      }
-    );
-
-    const updatedPost = await mongoose.connection.db
-      .collection('posts')
-      .aggregate([
-        { $match: { _id: new ObjectId(id) } },
-        ...postAggregationPipeline,
-      ])
-      .toArray();
-
-    res.status(200).json(updatedPost[0]);
-  } catch (error) {
-    console.error('Error rating post:', error);
-    res.status(500).json({ message: 'Error rating post' });
-  }
-};
 
 const bookmarkPost = async (req, res) => {
   try {
@@ -597,13 +585,99 @@ const downloadAttachment = async (req, res) => {
   }
 };
 
+const populateCommentAuthors = async (comments) => {
+      for (const comment of comments) {
+        const author = await mongoose.connection.db.collection('users').findOne({ _id: comment.author_id });
+        comment.author = {
+            _id: author._id,
+            name: author.name,
+            avatar_key: author.avatar_key,
+        };
+        if (comment.replies && comment.replies.length > 0) {
+            await populateCommentAuthors(comment.replies);
+        }
+      }
+    };
+
+const getPostById = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const postAgg = await mongoose.connection.db
+      .collection('posts')
+      .aggregate([
+        { $match: { _id: new ObjectId(id) } },
+        ...postAggregationPipeline,
+      ])
+      .toArray();
+
+    if (!postAgg.length) {
+      return res.status(404).json({ message: 'Post not found' });
+    }
+
+    const post = postAgg[0];
+
+        if (post.comments && post.comments.length > 0) {
+
+          await populateCommentAuthors(post.comments);
+
+        }
+
+        addUserVoteStatus(post, req.user ? req.user.id : null);
+
+        res.status(200).json(post);
+
+      } catch (error) {
+
+        console.error('Error fetching post by ID:', error);
+
+        res.status(500).json({ message: 'Error fetching post by ID' });
+
+      }
+
+    };
+
+const getPostByCommentId = async (req, res) => {
+  try {
+    const { commentId } = req.params;
+    const id = new ObjectId(commentId);
+
+    const post = await mongoose.connection.db.collection('posts').findOne({
+      $or: [
+        { "comments._id": id },
+        { "comments.replies._id": id }
+      ]
+    });
+
+    if (!post) {
+      return res.status(404).json({ message: 'Post not found for this comment' });
+    }
+    
+    // Fake req and res objects to call getPostById
+    const mockReq = { params: { id: post._id.toString() } };
+    const mockRes = {
+      status: (statusCode) => ({
+        json: (data) => res.status(statusCode).json(data),
+      }),
+    };
+
+    await getPostById(mockReq, mockRes);
+
+  } catch (error) {
+    console.error('Error fetching post by comment ID:', error);
+    res.status(500).json({ message: 'Error fetching post by comment ID' });
+  }
+};
+
+
 module.exports = {
   getAllPosts,
+  getPostById,
+  getPostByCommentId,
   votePost,
   createPost,
   addCommentToPost,
   voteComment,
-  ratePost,
   bookmarkPost,
   reportPost,
   incrementView,

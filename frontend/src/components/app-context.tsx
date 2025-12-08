@@ -46,11 +46,6 @@ interface Post {
   userVote?: 'up' | 'down'
   hashtags: string[]
   attachments: FileAttachment[]
-  // Rating system
-  rating: number // Average rating (0-5)
-  averageRating?: number // Same as rating, for compatibility
-  totalRatings: number // Total number of ratings
-  userRating?: number // Current user's rating (0-5, 0 means no rating)
   // Additional fields
   views: number
   isBookmarked?: boolean
@@ -110,7 +105,6 @@ interface AppContextType {
   theme: 'light' | 'dark'
   toggleTheme: () => void
   // New rating and additional features
-  ratePost: (postId: string, rating: number) => void
   toggleBookmark: (postId: string) => void
   reportPost: (postId: string) => void
   incrementViews: (postId: string) => void
@@ -265,12 +259,9 @@ const transformBackendPost = (post: any): Post => ({
   attachments: post.attachments ? post.attachments.map((att: any) => ({
     ...att,
   })) : [],
-  rating: post.average_rating || 0,
-  totalRatings: post.total_ratings || 0,
   views: post.views || 0,
   isBookmarked: false,
   userVote: post.user_vote,
-  userRating: 0,
 })
 
 const transformBackendNotification = (notification: any): Notification => ({
@@ -324,7 +315,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const fetchPosts = async () => {
       try {
-        const response = await fetch('http://localhost:3001/api/posts')
+        const token = localStorage.getItem('token');
+        const headers: HeadersInit = {};
+        if (token) {
+          headers['x-auth-token'] = token;
+        }
+
+        const response = await fetch('http://localhost:3001/api/posts', { headers });
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`)
         }
@@ -339,7 +336,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
 
     fetchPosts()
-  }, [])
+  }, [user]) // Re-fetch posts when user logs in or out
 
   useEffect(() => {
     const loadUser = async () => {
@@ -660,36 +657,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
     return courses.filter((course) => course.cycle === cycle)
   }
 
-  const ratePost = async (postId: string, rating: number) => {
-    if (!user) return
-    const token = localStorage.getItem('token')
-    if (!token) return
-
-    try {
-      const response = await fetch(`http://localhost:3001/api/posts/${postId}/rate`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-auth-token': token,
-        },
-        body: JSON.stringify({ rating }),
-      })
-
-      if (!response.ok) {
-        throw new Error('Failed to rate post')
-      }
-
-      const updatedPost = await response.json()
-      const transformedPost = transformBackendPost(updatedPost)
-
-      setPosts((prev) =>
-        prev.map((p) => (p.id === postId ? transformedPost : p))
-      )
-    } catch (error) {
-      console.error('Error rating post:', error)
-    }
-  }
-
   const toggleBookmark = async (postId: string) => {
     if (!user) return
     const token = localStorage.getItem('token')
@@ -793,7 +760,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
         getCoursesByCycle,
         theme,
         toggleTheme,
-        ratePost,
         toggleBookmark,
         reportPost,
         incrementViews,
