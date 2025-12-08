@@ -1,4 +1,4 @@
-import { useState, useMemo, forwardRef } from 'react';
+import { useState, useMemo, forwardRef, memo, useDeferredValue } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
@@ -46,13 +46,13 @@ interface ActivityItem {
   };
 }
 
-export function RecentActivity({ onUserClick }: RecentActivityProps) {
+export const RecentActivity = memo(function RecentActivity({ onUserClick }: RecentActivityProps) {
   const { posts, getCourseById } = useApp();
   const [showAll, setShowAll] = useState(false);
   const [activeTab, setActiveTab] = useState('all');
 
   // Generate activity items from posts and comments
-  const activityItems = useMemo(() => {
+  const rawActivityItems = useMemo(() => {
     const items: ActivityItem[] = [];
 
     // Add post creation activities
@@ -108,6 +108,9 @@ export function RecentActivity({ onUserClick }: RecentActivityProps) {
 
     return items.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
   }, [posts]);
+
+  // Defer the expensive calculation
+  const activityItems = useDeferredValue(rawActivityItems);
 
   const filteredActivities = useMemo(() => {
     let filtered = activityItems;
@@ -340,4 +343,4 @@ export function RecentActivity({ onUserClick }: RecentActivityProps) {
       </Card>
     </motion.div>
   );
-}
+});

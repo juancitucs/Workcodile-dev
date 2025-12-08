@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, memo } from 'react';
 import { motion } from 'motion/react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
@@ -32,7 +32,7 @@ interface HeaderProps {
   onSearch: (query: string) => void;
 }
 
-export function Header({ onCreatePost, onSearch }: HeaderProps) {
+export const Header = memo(function Header({ onCreatePost, onSearch }: HeaderProps) {
   const { user, logout, theme, toggleTheme, resetMainFeed } = useApp();
   const [searchQuery, setSearchQuery] = useState('');
   const [showProfile, setShowProfile] = useState(false);
@@ -180,4 +180,4 @@ export function Header({ onCreatePost, onSearch }: HeaderProps) {
       />}
     </motion.header>
   );
-}
+});

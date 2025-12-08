@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useRef } from 'react';
+import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { motion } from 'motion/react';
 import React from 'react';
 import { Header } from './header';
@@ -96,9 +96,13 @@ export function MainFeed() {
     });
   }, [filteredPosts, sortBy]);
 
-  const handleSearch = (query: string) => {
+  const memoizedHandleSearch = useCallback((query: string) => {
     setSearchQuery(query);
-  };
+  }, []);
+
+  const memoizedOnCreatePost = useCallback(() => {
+    setIsCreatePostOpen(true);
+  }, []);
 
   const handleRefresh = () => {
     resetMainFeed();
@@ -119,8 +123,8 @@ export function MainFeed() {
   return (
     <div className="min-h-screen workcodile-bg">
       <Header 
-        onCreatePost={() => setIsCreatePostOpen(true)}
-        onSearch={handleSearch}
+        onCreatePost={memoizedOnCreatePost}
+        onSearch={memoizedHandleSearch}
       />
       
       <main className="container max-w-[1400px] mx-auto px-4 py-6">
@@ -262,7 +266,7 @@ export function MainFeed() {
                       }
                     </p>
                     {!searchQuery && (
-                      <Button onClick={() => setIsCreatePostOpen(true)}>
+                      <Button onClick={memoizedOnCreatePost}>
                         Crear primera publicación
                       </Button>
                     )}

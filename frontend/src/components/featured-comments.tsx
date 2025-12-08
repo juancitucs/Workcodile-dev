@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, memo, useDeferredValue } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
@@ -8,10 +8,10 @@ import { MessageSquare, ChevronRight } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
 
-export function FeaturedComments() {
+export const FeaturedComments = memo(function FeaturedComments() {
   const { posts } = useApp();
 
-  const recentComments = useMemo(() => {
+  const rawRecentComments = useMemo(() => {
     const allComments = posts.flatMap(post => 
       post.comments.map(comment => ({ ...comment, postId: post.id, postTitle: post.title }))
     );
@@ -19,6 +19,9 @@ export function FeaturedComments() {
       .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
       .slice(0, 5);
   }, [posts]);
+
+  // Defer the expensive calculation
+  const recentComments = useDeferredValue(rawRecentComments);
 
   return (
     <motion.div
@@ -73,4 +76,4 @@ export function FeaturedComments() {
       </Card>
     </motion.div>
   );
-}
+});

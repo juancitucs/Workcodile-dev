@@ -1,4 +1,4 @@
-import { useState, useMemo, forwardRef } from 'react';
+import { useState, useMemo, forwardRef, memo } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
@@ -18,7 +18,7 @@ import {
   ChevronRight
 } from 'lucide-react';
 
-export function TrendingSection() {
+export const TrendingSection = memo(function TrendingSection() {
   const { posts, getCourseById } = useApp();
   const [timeFilter, setTimeFilter] = useState<'24h' | '7d' | '30d'>('24h');
 
@@ -266,4 +266,4 @@ export function TrendingSection() {
       </Card>
     </motion.div>
   );
-}
+});
