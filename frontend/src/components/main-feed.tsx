@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { motion } from 'motion/react';
 import React from 'react';
 import { Header } from './header';
@@ -9,24 +9,71 @@ import { PostCard } from './post-card';
 import { CreatePostModal } from './create-post-modal';
 import { Button } from './ui/button';
 import { Card } from './ui/card';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from './ui/select';
 import { useApp } from './app-context';
 import { Virtuoso } from 'react-virtuoso';
-import { 
-  TrendingUp, 
-  Clock, 
-  MessageCircle, 
+import {
+  TrendingUp,
+  Clock,
+  MessageCircle,
   Filter,
   RefreshCw
 } from 'lucide-react';
+import { Post } from './types'; // Import Post type
 
 type SortOption = 'recent' | 'popular' | 'commented';
 
 export function MainFeed() {
-  const { posts, searchPosts, getCourseById, mainFeedKey, fetchMorePosts, hasMorePosts, isFetchingPosts, resetMainFeed } = useApp();
+  const { posts, searchPosts, getCourseById, mainFeedKey, fetchMorePosts, hasMorePosts, isFetchingPosts, resetMainFeed, incrementViewsBatch } = useApp();
   const [isCreatePostOpen, setIsCreatePostOpen] = useState(false);
   const [selectedCourse, setSelectedCourse] = useState('all');
   const [sortBy, setSortBy] = useState<SortOption>('recent');
   const [searchQuery, setSearchQuery] = useState('');
+
+  const viewedPostIdsRef = useRef(new Set<string>());
+  const pendingViewBatch = useRef<Set<string>>(new Set());
+  const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (debounceTimeoutRef.current) {
+        clearTimeout(debounceTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  const processPendingViews = () => {
+    if (pendingViewBatch.current.size > 0) {
+      const idsToBatch = Array.from(pendingViewBatch.current);
+      incrementViewsBatch(idsToBatch);
+      idsToBatch.forEach(id => viewedPostIdsRef.current.add(id));
+      pendingViewBatch.current.clear();
+    }
+  };
+
+  const handleVisibleItemsChange = (data: {
+    startIndex: number;
+    endIndex: number;
+    visibleItems: { index: number; data: any }[];
+  }) => {
+    data.visibleItems.forEach(item => {
+      const postId = (posts[item.index] as Post).id;
+      if (postId && !viewedPostIdsRef.current.has(postId)) {
+        pendingViewBatch.current.add(postId);
+      }
+    });
+
+    if (debounceTimeoutRef.current) {
+      clearTimeout(debounceTimeoutRef.current);
+    }
+    debounceTimeoutRef.current = setTimeout(processPendingViews, 1000);
+  };
 
   const filteredPosts = useMemo(() => {
     let filtered = searchQuery ? searchPosts(searchQuery) : posts;
@@ -35,7 +82,6 @@ export function MainFeed() {
     }
     return filtered;
   }, [posts, selectedCourse, searchQuery, searchPosts]);
-
   const filteredAndSortedPosts = useMemo(() => {
     return [...filteredPosts].sort((a, b) => {
       switch (sortBy) {
@@ -172,6 +218,7 @@ export function MainFeed() {
                     </div>
                   );
                 }}
+                visibleItemsChanged={handleVisibleItemsChange}
                 components={{
                   Footer: () => {
                     return (

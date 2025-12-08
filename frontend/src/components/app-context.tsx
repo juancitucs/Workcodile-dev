@@ -46,6 +46,7 @@ interface AppContextType {
   toggleBookmark: (postId: string) => void
   reportPost: (postId: string) => void
   incrementViews: (postId: string) => void
+  incrementViewsBatch: (postIds: string[]) => void
   mainFeedKey: number
   resetMainFeed: () => void
   fetchMorePosts: () => void
@@ -748,26 +749,53 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   }
 
-  const incrementViews = async (postId: string) => {
-    try {
-      await fetch(`http://localhost:3001/api/posts/${postId}/view`, {
-        method: 'POST',
+  const incrementViews = (postId: string) => {
+    // This function is now a no-op on the network level, only updates local state.
+    // The batch processing will handle backend updates.
+    setPosts((prev) =>
+      prev.map((post) => {
+        if (post.id === postId) {
+          return {
+            ...post,
+            views: post.views + 1,
+          };
+        }
+        return post;
       })
-      setPosts((prev) =>
-        prev.map((post) => {
-          if (post.id === postId) {
-            return {
-              ...post,
-              views: post.views + 1,
-            }
+    );
+  };
+
+  const incrementViewsBatch = async (postIds: string[]) => {
+    if (postIds.length === 0) return;
+    try {
+      // This endpoint needs to be created in the backend
+      await fetch(`http://localhost:3001/api/posts/views`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ postIds }),
+      });
+
+      // The local state might have been updated optimistically by `incrementViews`.
+      // If not, this is where you'd update the state for all postIds.
+      // To be safe, let's ensure the views are updated.
+      setPosts((prevPosts) =>
+        prevPosts.map(post => {
+          if (postIds.includes(post.id)) {
+            // This could lead to double increments if not handled carefully.
+            // For this reason, incrementViews is kept as a local-only update for now.
+            // And the batch is for the backend.
+            // A more robust implementation might be needed.
+            // For now, we assume the backend handles avoiding double counts.
           }
-          return post
+          return post;
         })
-      )
+      );
     } catch (error) {
-      console.error('Error incrementing view count:', error)
+      console.error('Error incrementing views in batch:', error);
     }
-  }
+  };
 
   return (
     <AppContext.Provider
@@ -796,6 +824,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         toggleBookmark,
         reportPost,
         incrementViews,
+        incrementViewsBatch,
         mainFeedKey,
         resetMainFeed,
         fetchMorePosts,

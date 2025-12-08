@@ -82,7 +82,6 @@ export function PostCard({ post, startWithCommentsOpen = false, highlightComment
   const [showComments, setShowComments] = useState(startWithCommentsOpen)
   const [newComment, setNewComment] = useState('')
   const [isSubmittingComment, setIsSubmittingComment] = useState(false)
-  const [hasIncrementedViews, setHasIncrementedViews] = useState(false)
   const [showProfile, setShowProfile] = useState(false)
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null)
 
@@ -130,26 +129,14 @@ export function PostCard({ post, startWithCommentsOpen = false, highlightComment
     )
   }
 
-  // Increment views when component mounts (simulate viewing the post)
-  useEffect(() => {
-    if (!hasIncrementedViews) {
-      incrementViews(post.id)
-      setHasIncrementedViews(true)
-    }
-  }, [post.id, incrementViews, hasIncrementedViews])
-
   const netScore = post.upvotes - post.downvotes
   const course = getCourseById(post.course)
 
   return (
     <>
-      <motion.div
+      <div
         id={`post-${post.id}`}
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        whileHover={{ y: -3 }}
-        transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
-        className="hover-lift cursor-pointer"
+        className="cursor-pointer"
         onClick={handleNavigate}
       >
         <Card className="glass-card gradient-border shadow-modern hover:shadow-modern-lg transition-all duration-300 ease-out">
@@ -405,7 +392,7 @@ export function PostCard({ post, startWithCommentsOpen = false, highlightComment
             </div>
           </CardContent>
         </Card>
-      </motion.div>
+      </div>
       {showProfile && (
         <UserProfile
           isOpen={showProfile}
