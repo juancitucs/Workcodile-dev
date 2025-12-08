@@ -10,8 +10,7 @@ import { CreatePostModal } from './create-post-modal';
 import { Button } from './ui/button';
 import { Card } from './ui/card';
 import { useApp } from './app-context';
-
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
+import { Virtuoso } from 'react-virtuoso';
 import { 
   TrendingUp, 
   Clock, 
@@ -64,6 +63,12 @@ export function MainFeed() {
     { value: 'popular', label: 'Más populares', icon: TrendingUp },
     { value: 'commented', label: 'Más comentados', icon: MessageCircle }
   ];
+
+  const loadMore = () => {
+    if (hasMorePosts) {
+      fetchMorePosts();
+    }
+  };
 
   return (
     <div className="min-h-screen workcodile-bg">
@@ -155,78 +160,67 @@ export function MainFeed() {
 
 
             {/* Posts Feed */}
-            <div ref={parentRef} className="space-y-4" style={{ height: '100vh', overflow: 'auto' }}>
-              {filteredAndSortedPosts.length > 0 ? (
-                <div style={{ height: `${rowVirtualizer.getTotalSize()}px`, width: '100%', position: 'relative' }}>
-                  {rowVirtualizer.getVirtualItems().map((virtualItem) => {
-                    const post = filteredAndSortedPosts[virtualItem.index];
-                    return (
-                      <motion.div
-                        key={virtualItem.key}
-                        style={{
-                          position: 'absolute',
-                          top: 0,
-                          left: 0,
-                          width: '100%',
-                          height: `${virtualItem.size}px`,
-                          transform: `translateY(${virtualItem.start}px)`,
-                        }}
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: virtualItem.index * 0.05 }}
-                      >
-                        <PostCard post={post} />
-                      </motion.div>
-                    );
-                  })}
-                </div>
-              ) : (
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  className="text-center py-16"
-                >
-                  <Card className="glass-card p-8 border-dashed shadow-modern-lg">
-                    <div className="max-w-md mx-auto">
-                      <MessageCircle className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-                      <h3 className="text-lg font-semibold mb-2">
-                        {searchQuery ? 'No se encontraron resultados' : 'No hay publicaciones'}
-                      </h3>
-                      <p className="text-muted-foreground mb-6">
-                        {searchQuery 
-                          ? `No se encontraron publicaciones que coincidan con "${searchQuery}"`
-                          : selectedCourse === 'all'
-                          ? 'Sé el primero en crear una publicación'
-                          : `No hay publicaciones en el curso seleccionado`
-                        }
-                      </p>
-                      {!searchQuery && (
-                        <Button onClick={() => setIsCreatePostOpen(true)}>
-                          Crear primera publicación
-                        </Button>
-                      )}
+            {filteredAndSortedPosts.length > 0 ? (
+              <Virtuoso
+                style={{ height: '100vh' }}
+                data={filteredAndSortedPosts}
+                endReached={loadMore}
+                itemContent={(index, post) => {
+                  return (
+                    <div style={{ paddingBottom: '1rem' }}>
+                      <PostCard post={post} />
                     </div>
-                  </Card>
-                </motion.div>
-              )}
-            </div>
-
-            {/* Load More */}
-            {hasMorePosts && (
+                  );
+                }}
+                components={{
+                  Footer: () => {
+                    return (
+                      <div className="text-center py-8">
+                        {isFetchingPosts ? (
+                          <p>Cargando...</p>
+                        ) : hasMorePosts ? (
+                          <Button
+                            variant="outline"
+                            className="w-full max-w-sm"
+                            onClick={loadMore}
+                          >
+                            Cargar más publicaciones
+                          </Button>
+                        ) : (
+                          <p>No hay más publicaciones.</p>
+                        )}
+                      </div>
+                    );
+                  },
+                }}
+              />
+            ) : (
               <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.5 }}
-                className="text-center py-8"
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="text-center py-16"
               >
-                <Button 
-                  variant="outline" 
-                  className="w-full max-w-sm"
-                  onClick={fetchMorePosts}
-                  disabled={isFetchingPosts}
-                >
-                  {isFetchingPosts ? 'Cargando...' : 'Cargar más publicaciones'}
-                </Button>
+                <Card className="glass-card p-8 border-dashed shadow-modern-lg">
+                  <div className="max-w-md mx-auto">
+                    <MessageCircle className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+                    <h3 className="text-lg font-semibold mb-2">
+                      {searchQuery ? 'No se encontraron resultados' : 'No hay publicaciones'}
+                    </h3>
+                    <p className="text-muted-foreground mb-6">
+                      {searchQuery 
+                        ? `No se encontraron publicaciones que coincidan con "${searchQuery}"`
+                        : selectedCourse === 'all'
+                        ? 'Sé el primero en crear una publicación'
+                        : `No hay publicaciones en el curso seleccionado`
+                      }
+                    </p>
+                    {!searchQuery && (
+                      <Button onClick={() => setIsCreatePostOpen(true)}>
+                        Crear primera publicación
+                      </Button>
+                    )}
+                  </div>
+                </Card>
               </motion.div>
             )}
           </motion.div>
