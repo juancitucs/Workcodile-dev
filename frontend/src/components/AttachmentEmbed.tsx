@@ -34,9 +34,9 @@ export function AttachmentEmbed({ fileName, attachments }: AttachmentEmbedProps)
 
   if (isImage && url) {
     return (
-      <span className="inline-block my-4 relative group"> {/* Use span and inline-block */}
-        <img src={url} alt={attachment.name} className="max-w-full max-h-96 rounded-lg border object-contain" />
-        <p className="text-xs text-center text-muted-foreground mt-1">{attachment.name}</p>
+      <span className="inline-block mb-2 mr-2 relative group align-top">
+        <img src={url} alt={attachment.name} className="max-w-[calc(50%-10px)] max-h-56 rounded-lg border object-contain" />
+        <p className="text-xs text-center text-muted-foreground mt-1 max-w-[200px] truncate">{attachment.name}</p>
         {/* Download button for images */}
         <Button
           variant="ghost"
@@ -53,9 +53,9 @@ export function AttachmentEmbed({ fileName, attachments }: AttachmentEmbedProps)
 
   if (isVideo && url) {
     return (
-      <span className="inline-block my-4 relative group w-full">
-        <video src={url} controls className="max-w-full rounded-lg border" />
-        <p className="text-xs text-center text-muted-foreground mt-1">{attachment.name}</p>
+      <span className="inline-block mb-2 mr-2 relative group align-top max-w-[calc(50%-10px)]">
+        <video src={url} controls className="max-w-full max-h-56 rounded-lg border" />
+        <p className="text-xs text-center text-muted-foreground mt-1 max-w-[200px] truncate">{attachment.name}</p>
         <Button
           variant="ghost"
           size="icon"
@@ -71,9 +71,9 @@ export function AttachmentEmbed({ fileName, attachments }: AttachmentEmbedProps)
 
   if (isAudio && url) {
     return (
-      <span className="inline-block my-4 relative group w-full">
-        <audio src={url} controls className="w-full rounded-lg border" />
-        <p className="text-xs text-center text-muted-foreground mt-1">{attachment.name}</p>
+      <span className="inline-block mb-2 mr-2 relative group align-top max-w-[calc(50%-10px)]">
+        <audio src={url} controls className="max-w-full rounded-lg border" />
+        <p className="text-xs text-center text-muted-foreground mt-1 max-w-[200px] truncate">{attachment.name}</p>
         <Button
           variant="ghost"
           size="icon"
@@ -95,7 +95,7 @@ export function AttachmentEmbed({ fileName, attachments }: AttachmentEmbedProps)
         ease: [0.4, 0, 0.2, 1],
       }}
       onClick={handleDownload}
-      className="inline-flex items-center space-x-2 p-3 bg-gradient-to-r from-workcodile-gray-light/50 to-workcodile-gray-subtle/30 border border-workcodile-border-light rounded-md hover:from-workcodile-green-subtle/30 hover:to-workcodile-gray-subtle/50 cursor-pointer transition-all duration-300 shadow-sm hover:shadow-md mx-1"
+      className="inline-flex items-center space-x-2 p-3 bg-gradient-to-r from-workcodile-gray-light/50 to-workcodile-gray-subtle/30 border border-workcodile-border-light rounded-md hover:from-workcodile-green-subtle/30 hover:to-workcodile-gray-subtle/50 cursor-pointer transition-all duration-300 shadow-sm hover:shadow-md mr-2 mb-2 align-top"
     >
       <span className="text-lg">{getFileIcon(attachment.type)}</span>
       <div className="flex-1 min-w-0">

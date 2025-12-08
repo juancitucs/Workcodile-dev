@@ -575,7 +575,8 @@ export function CreatePostModal({ isOpen, onClose }: CreatePostModalProps) {
             
             <div className="flex-1 overflow-y-auto p-6">
               <div className="space-y-4">
-                {(formData.title || formData.content || hashtags.length > 0 || attachments.length > 0 || selectedCourse) ? (
+                {/* Render full preview only if there's content to show */}
+                { (formData.title || formData.content || hashtags.length > 0 || attachments.length > 0 || selectedCourse) ? (
                   <motion.div
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
@@ -584,7 +585,7 @@ export function CreatePostModal({ isOpen, onClose }: CreatePostModalProps) {
                     {selectedCourse && (
                       <div className="flex items-center space-x-2 text-xs text-primary mb-3 p-2 bg-primary/10 rounded-md">
                         <GraduationCap className="h-3 w-3" />
-                        <span className="font-medium">{selectedCourse.id}</span>
+                        <span className="font-medium text-primary">{selectedCourse.id}</span>
                         <span className="text-muted-foreground">•</span>
                         <span>Ciclo {selectedCourse.cycle}</span>
                       </div>

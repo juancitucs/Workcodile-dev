@@ -1,6 +1,5 @@
 export default {
   control: {
-    backgroundColor: '#fff',
     fontSize: 14,
     fontWeight: 'normal',
     border: '1px solid #d1d5db',
@@ -37,7 +36,6 @@ export default {
 
   suggestions: {
     list: {
-      backgroundColor: 'white',
       border: '1px solid rgba(0,0,0,0.15)',
       fontSize: 14,
       borderRadius: '0.375rem',
