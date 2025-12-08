@@ -546,7 +546,57 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const token = localStorage.getItem('token')
     if (!token) return
 
+    // Store the original posts state for rollback in case of error
+    let originalPosts: Post[] = [];
+
     try {
+      setPosts((prev) => {
+        originalPosts = prev; // Store the state before optimistic update
+        const postIndex = prev.findIndex(p => p.id === postId);
+        if (postIndex === -1) return prev; // Post not found
+
+        const originalPost = prev[postIndex];
+        let newUpvotes = originalPost.upvotes;
+        let newDownvotes = originalPost.downvotes;
+        let newUserVote = originalPost.userVote;
+
+        // Determine new vote counts and userVote status
+        if (vote === 'up') {
+          if (originalPost.userVote === 'up') { // User is un-upvoting
+            newUpvotes--;
+            newUserVote = null;
+          } else { // User is upvoting
+            newUpvotes++;
+            if (originalPost.userVote === 'down') { // User was downvoting, remove downvote
+              newDownvotes--;
+            }
+            newUserVote = 'up';
+          }
+        } else { // vote === 'down'
+          if (originalPost.userVote === 'down') { // User is un-downvoting
+            newDownvotes--;
+            newUserVote = null;
+          } else { // User is downvoting
+            newDownvotes++;
+            if (originalPost.userVote === 'up') { // User was upvoting, remove upvote
+              newUpvotes--;
+            }
+            newUserVote = 'down';
+          }
+        }
+
+        const optimisticPost = {
+          ...originalPost,
+          upvotes: newUpvotes,
+          downvotes: newDownvotes,
+          userVote: newUserVote,
+        };
+
+        const newPosts = [...prev];
+        newPosts[postIndex] = optimisticPost;
+        return newPosts;
+      });
+
       const response = await fetch(
         `http://localhost:3001/api/posts/${postId}/vote`,
         {
@@ -560,17 +610,22 @@ export function AppProvider({ children }: { children: ReactNode }) {
       )
 
       if (!response.ok) {
-        throw new Error('Failed to vote on post')
+        throw new Error('Failed to vote on post'); // Error during API call
       }
 
-      const updatedPost = await response.json()
-      const transformedPost = transformBackendPost(updatedPost)
+      // Reconcile with backend's response (optional, but good for consistency)
+      const updatedPostFromServer = await response.json();
+      const transformedPostFromServer = transformBackendPost(updatedPostFromServer);
 
       setPosts((prev) =>
-        prev.map((p) => (p.id === postId ? transformedPost : p))
-      )
+        prev.map((p) => (p.id === postId ? transformedPostFromServer : p))
+      );
+
     } catch (error) {
-      console.error('Error voting on post:', error)
+      console.error('Error voting on post:', error);
+      // Rollback to original state if API call fails
+      setPosts(originalPosts);
+      // Optionally show a toast notification for the error
     }
   }
 
@@ -611,6 +666,57 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   }
 
+// Helper function to find and optimistically update a comment in a nested structure
+const findAndUpdateCommentRecursive = (
+  comments: Comment[],
+  targetCommentId: string,
+  vote: 'up' | 'down',
+  userId: string // Not directly used for userVote anymore, but can be for score if needed
+): Comment[] => {
+  return comments.map(comment => {
+                if (comment.id === targetCommentId) {
+                  let newScore = comment.score;
+                  let newUserVote = comment.userVote;
+                  console.log(`Optimistically updating comment: ${targetCommentId}, new userVote: ${newUserVote}, new score: ${newScore}`);      if (vote === 'up') {
+        if (comment.userVote === 'up') { // Un-upvoting
+          newScore--;
+          newUserVote = null;
+        } else { // Upvoting
+          newScore++;
+          newUserVote = 'up';
+          if (comment.userVote === 'down') { // Was downvoting
+            newScore++; // Undo previous downvote from score
+          }
+        }
+      } else { // vote === 'down'
+        if (comment.userVote === 'down') { // Un-downvoting
+          newScore++;
+          newUserVote = null;
+        } else { // Downvoting
+          newScore--;
+          newUserVote = 'down';
+          if (comment.userVote === 'up') { // Was upvoting
+            newScore--; // Undo previous upvote from score
+          }
+        }
+      }
+
+      return {
+        ...comment,
+        score: newScore,
+        userVote: newUserVote,
+      };
+    } else if (comment.replies && comment.replies.length > 0) {
+      // Recursively check replies
+      return {
+        ...comment,
+        replies: findAndUpdateCommentRecursive(comment.replies, targetCommentId, vote, userId),
+      };
+    }
+    return comment; // No change to this comment or its replies
+  });
+};
+
   const voteComment = async (
     postId: string,
     commentId: string,
@@ -618,8 +724,36 @@ export function AppProvider({ children }: { children: ReactNode }) {
   ) => {
     const token = localStorage.getItem('token')
     if (!token) return
+    if (!user) return; // Must be logged in to vote
+
+    let originalPosts: Post[] = [];
 
     try {
+      setPosts((prevPosts) => {
+        originalPosts = prevPosts; // Store original state for rollback
+        const postIndex = prevPosts.findIndex(p => p.id === postId);
+        if (postIndex === -1) return prevPosts;
+
+        const postToUpdate = { ...prevPosts[postIndex] }; // Deep copy the post
+        
+        // Optimistically update the comment within the post's comments tree
+        const updatedComments = findAndUpdateCommentRecursive(
+          postToUpdate.comments,
+          commentId,
+          vote,
+          user.id
+        );
+
+        const optimisticPost = {
+          ...postToUpdate,
+          comments: updatedComments,
+        };
+
+        const newPosts = [...prevPosts];
+        newPosts[postIndex] = optimisticPost;
+        return newPosts;
+      });
+
       const response = await fetch(
         `http://localhost:3001/api/posts/${postId}/comments/${commentId}/vote`,
         {
@@ -636,14 +770,19 @@ export function AppProvider({ children }: { children: ReactNode }) {
         throw new Error('Failed to vote on comment')
       }
 
-      const updatedPost = await response.json()
-      const transformedPost = transformBackendPost(updatedPost)
+      // Reconcile with backend's response
+      const updatedPostFromServer = await response.json();
+      const transformedPostFromServer = transformBackendPost(updatedPostFromServer);
 
-      setPosts((prev) =>
-        prev.map((p) => (p.id === postId ? transformedPost : p))
-      )
+      setPosts((prevPosts) =>
+        prevPosts.map((p) => (p.id === postId ? transformedPostFromServer : p))
+      );
+
     } catch (error) {
       console.error('Error voting on comment:', error)
+      // Rollback to original state
+      setPosts(originalPosts);
+      // Optionally show a toast notification for the error
     }
   }
 

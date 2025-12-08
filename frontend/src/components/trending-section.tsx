@@ -141,11 +141,7 @@ export const TrendingSection = memo(function TrendingSection() {
   PostItem.displayName = 'PostItem';
 
   return (
-    <motion.div
-      initial={{ opacity: 0, x: -20 }}
-      animate={{ opacity: 1, x: 0 }}
-      transition={{ delay: 0.3 }}
-    >
+    <motion.div>
       <Card className="overflow-hidden">
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">

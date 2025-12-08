@@ -11,7 +11,7 @@ export function CommentTree({ comments, postId, onCommentVote, highlightCommentI
   return (
     <div className="space-y-4">
       {comments.map((comment) => (
-        <div key={comment.id}>
+        <div key={`${comment.id}-${comment.userVote}`}>
           <Comment comment={comment} postId={postId} onCommentVote={onCommentVote} highlightCommentId={highlightCommentId} />
         </div>
       ))}

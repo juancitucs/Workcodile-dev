@@ -24,11 +24,7 @@ export const FeaturedComments = memo(function FeaturedComments() {
   const recentComments = useDeferredValue(rawRecentComments);
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: 0.5 }}
-    >
+    <motion.div>
       <Card>
         <CardHeader>
           <CardTitle className="text-base sm:text-lg flex items-center space-x-2">

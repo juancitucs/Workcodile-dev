@@ -414,6 +414,19 @@ const createPost = async (req, res) => {
   }
 }
 
+const findCommentRecursive = (comments, targetCommentId) => {
+  for (const comment of comments) {
+    if (comment._id.equals(targetCommentId)) {
+      return comment;
+    }
+    if (comment.replies && comment.replies.length > 0) {
+      const found = findCommentRecursive(comment.replies, targetCommentId);
+      if (found) return found;
+    }
+  }
+  return null;
+};
+
 const voteComment = async (req, res) => {
   try {
     const { postId, commentId } = req.params
@@ -428,57 +441,63 @@ const voteComment = async (req, res) => {
       return res.status(404).json({ message: 'Post not found' })
     }
 
-    const comment = post.comments.find((c) => c._id.equals(new ObjectId(commentId)))
+    const commentToVote = findCommentRecursive(post.comments, new ObjectId(commentId));
 
-    if (!comment) {
+    if (!commentToVote) {
       return res.status(404).json({ message: 'Comment not found' })
     }
 
-    const upvoted = comment.upvoted_by && comment.upvoted_by.some((id) => id.equals(userId))
-    const downvoted = comment.downvoted_by && comment.downvoted_by.some((id) => id.equals(userId))
+    // Ensure upvoted_by and downvoted_by arrays exist
+    if (!commentToVote.upvoted_by) {
+      commentToVote.upvoted_by = [];
+    }
+    if (!commentToVote.downvoted_by) {
+      commentToVote.downvoted_by = [];
+    }
 
-    let update = {}
-    const arrayFilters = [{ 'comment._id': new ObjectId(commentId) }]
+    // Determine current vote status for this user on this comment
+    const upvoted = commentToVote.upvoted_by.some((id) => id.equals(userId))
+    const downvoted = commentToVote.downvoted_by.some((id) => id.equals(userId))
 
     if (vote === 'up') {
       if (upvoted) {
-        update = {
-          $inc: { 'comments.$[comment].score': -1 },
-          $pull: { 'comments.$[comment].upvoted_by': userId },
-        }
+        // User is un-upvoting
+        commentToVote.score--;
+        commentToVote.upvoted_by = commentToVote.upvoted_by.filter(id => !id.equals(userId));
       } else {
-        update = {
-          $inc: { 'comments.$[comment].score': 1 },
-          $push: { 'comments.$[comment].upvoted_by': userId },
-        }
+        // User is upvoting
+        commentToVote.score++;
+        commentToVote.upvoted_by.push(userId);
         if (downvoted) {
-          update.$inc['comments.$[comment].score'] += 1
-          update.$pull = { 'comments.$[comment].downvoted_by': userId }
+          // User was downvoting, remove downvote
+          commentToVote.score++; // Compensate for the previous downvote
+          commentToVote.downvoted_by = commentToVote.downvoted_by.filter(id => !id.equals(userId));
         }
       }
     } else if (vote === 'down') {
       if (downvoted) {
-        update = {
-          $inc: { 'comments.$[comment].score': 1 },
-          $pull: { 'comments.$[comment].downvoted_by': userId },
-        }
+        // User is un-downvoting
+        commentToVote.score++;
+        commentToVote.downvoted_by = commentToVote.downvoted_by.filter(id => !id.equals(userId));
       } else {
-        update = {
-          $inc: { 'comments.$[comment].score': -1 },
-          $push: { 'comments.$[comment].downvoted_by': userId },
-        }
+        // User is downvoting
+        commentToVote.score--;
+        commentToVote.downvoted_by.push(userId);
         if (upvoted) {
-          update.$inc['comments.$[comment].score'] -= 1
-          update.$pull = { 'comments.$[comment].upvoted_by': userId }
+          // User was upvoting, remove upvote
+          commentToVote.score--; // Compensate for the previous upvote
+          commentToVote.upvoted_by = commentToVote.upvoted_by.filter(id => !id.equals(userId));
         }
       }
     } else {
       return res.status(400).json({ message: 'Invalid vote type' })
     }
 
-    await mongoose.connection.db
-      .collection('posts')
-      .updateOne({ _id: new ObjectId(postId) }, update, { arrayFilters })
+    // Update the entire comments array in the database
+    await mongoose.connection.db.collection('posts').updateOne(
+      { _id: new ObjectId(postId) },
+      { $set: { comments: post.comments } }
+    );
 
     const updatedPostAgg = await mongoose.connection.db
       .collection('posts')

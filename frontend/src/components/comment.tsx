@@ -19,13 +19,21 @@ interface CommentProps {
 }
 
 export function Comment({ comment, postId, onCommentVote, highlightCommentId }: CommentProps) {
+  console.log(`Comment ${comment.id} re-rendered. userVote: ${comment.userVote}, score: ${comment.score}`); // Add this line for debugging
   const { user, addComment, fetchCommentReplies } = useApp()
   const [showReplyForm, setShowReplyForm] = useState(false)
   const [replyContent, setReplyContent] = useState('')
-  const [replies, setReplies] = useState<any[]>([])
+  const [replies, setReplies] = useState<CommentType[]>(comment.replies || []); // Initialize with prop or empty array
   const [areRepliesVisible, setAreRepliesVisible] = useState(false)
   const [isLoadingReplies, setIsLoadingReplies] = useState(false)
   const commentRef = useRef<HTMLDivElement>(null);
+
+  // Add this useEffect to synchronize local replies state with comment.replies prop
+  useEffect(() => {
+    if (comment.replies) {
+      setReplies(comment.replies);
+    }
+  }, [comment.replies]); // Dependency on comment.replies prop
 
   const isCommentInSubtree = (comments: any[], targetId: string): boolean => {
     for (const c of comments) {
@@ -42,20 +50,25 @@ export function Comment({ comment, postId, onCommentVote, highlightCommentId }: 
   };
 
   useEffect(() => {
-    if (commentRef.current && comment.id === highlightCommentId) {
-      commentRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      commentRef.current.classList.add('comment-highlight');
-      setTimeout(() => {
-        commentRef.current?.classList.remove('comment-highlight');
-      }, 2000); // Duration of the animation
+    if (comment.id === highlightCommentId) {
+      const timer = setTimeout(() => {
+        if (commentRef.current) {
+          commentRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          commentRef.current.classList.add('comment-highlight');
+          setTimeout(() => {
+            commentRef.current?.classList.remove('comment-highlight');
+          }, 2000); // Duration of the animation
+        }
+      }, 300); // Small delay to allow DOM to render and refs to be set
+      return () => clearTimeout(timer);
     }
-  }, [comment.id, highlightCommentId]);
+  }, [comment.id, highlightCommentId, areRepliesVisible, replies]);
 
   useEffect(() => {
     if (highlightCommentId && comment.replies && comment.replies.length > 0) {
       if (isCommentInSubtree(comment.replies, highlightCommentId)) {
         if (!areRepliesVisible) {
-          handleLoadReplies();
+          setAreRepliesVisible(true);
         }
       }
     }
@@ -115,13 +128,15 @@ export function Comment({ comment, postId, onCommentVote, highlightCommentId }: 
 
           <div className="flex items-center space-x-1">
             <Button
-              variant={comment.userVote === 'up' ? 'default' : 'ghost'}
+              key={`upvote-${comment.id}-${comment.userVote}`} // Add dynamic key
+              // Temporarily remove variant prop to test direct className
+              // variant={comment.userVote === 'up' ? 'default' : 'ghost'}
               size="sm"
               onClick={(e: any) => {
                 e.stopPropagation()
                 onCommentVote(comment.id, 'up')
               }}
-              className="h-6 px-2 text-xs"
+              className={`h-6 px-2 text-xs ${comment.userVote === 'up' ? 'bg-green-500 text-white' : 'bg-transparent hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50'}`}
             >
               <ChevronUp className="h-3 w-3" />
             </Button>
@@ -129,13 +144,15 @@ export function Comment({ comment, postId, onCommentVote, highlightCommentId }: 
               {comment.score}
             </span>
             <Button
-              variant={comment.userVote === 'down' ? 'destructive' : 'ghost'}
+              key={`downvote-${comment.id}-${comment.userVote}`} // Add dynamic key
+              // Temporarily remove variant prop to test direct className
+              // variant={comment.userVote === 'down' ? 'destructive' : 'ghost'}
               size="sm"
               onClick={(e) => {
                 e.stopPropagation()
                 onCommentVote(comment.id, 'down')
               }}
-              className="h-6 px-2 text-xs"
+              className={`h-6 px-2 text-xs ${comment.userVote === 'down' ? 'bg-red-500 text-white' : 'bg-transparent hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50'}`}
             >
               <ChevronDown className="h-3 w-3" />
             </Button>

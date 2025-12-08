@@ -218,7 +218,7 @@ export function MainFeed() {
                 itemContent={(index, post) => {
                   return (
                     <div style={{ paddingBottom: '1rem' }}>
-                      <PostCard post={post} />
+                      <PostCard post={post} isDashboardView={true} />
                     </div>
                   );
                 }}

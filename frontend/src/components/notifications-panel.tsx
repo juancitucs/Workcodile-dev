@@ -61,10 +61,7 @@ export function NotificationsPanel() {
             No tienes notificaciones nuevas.
           </div>
         )}
-        <DropdownMenuSeparator />
-        <div className="p-2 flex justify-center">
-          <Button variant="link" size="sm">Ver todas las notificaciones</Button>
-        </div>
+
       </DropdownMenuContent>
     </DropdownMenu>
   );

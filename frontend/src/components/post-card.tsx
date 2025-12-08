@@ -33,6 +33,7 @@ interface PostCardProps {
   post: Post
   startWithCommentsOpen?: boolean
   highlightCommentId?: string
+  isDashboardView?: boolean // Add this line
 }
 
 const getCycleColor = (cycle: number) => {
@@ -67,7 +68,7 @@ const getFileIcon = (type: string) => {
   return '📄'
 }
 
-export function PostCard({ post, startWithCommentsOpen = false, highlightCommentId }: PostCardProps) {
+export function PostCard({ post, startWithCommentsOpen = false, highlightCommentId, isDashboardView }: PostCardProps) {
   const navigate = useNavigate()
   const {
     votePost,
@@ -255,9 +256,20 @@ export function PostCard({ post, startWithCommentsOpen = false, highlightComment
                     {post.title}
                   </h3>
                 </Link>
-                <div className="prose prose-sm dark:prose-invert max-w-none mb-3">
+                <div className={`prose prose-sm dark:prose-invert max-w-none mb-3 ${isDashboardView ? 'max-h-64 overflow-hidden relative' : ''}`}>
                   <MarkdownRenderer attachments={post.attachments}>{post.content}</MarkdownRenderer>
+                  {isDashboardView && (
+                    <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-card to-transparent pointer-events-none"></div>
+                  )}
                 </div>
+
+                {isDashboardView && (
+                  <Link to={`/post/${post.id}`} onClick={(e) => e.stopPropagation()}>
+                    <Button variant="link" size="sm" className="-ml-3 mt-1">
+                      Ver más
+                    </Button>
+                  </Link>
+                )}
 
                 {/* Hashtags */}
                 {post.hashtags.length > 0 && (
