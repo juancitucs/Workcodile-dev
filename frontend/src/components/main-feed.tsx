@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
 import { motion } from 'motion/react';
+import React from 'react';
 import { Header } from './header';
 import { Sidebar } from './sidebar';
 import { RightSidebar } from './right-sidebar';
@@ -22,22 +23,22 @@ import {
 type SortOption = 'recent' | 'popular' | 'commented';
 
 export function MainFeed() {
-  const { posts, searchPosts, getCourseById, mainFeedKey, fetchMorePosts, hasMorePosts, isFetchingPosts } = useApp();
+  const { posts, searchPosts, getCourseById, mainFeedKey, fetchMorePosts, hasMorePosts, isFetchingPosts, resetMainFeed } = useApp();
   const [isCreatePostOpen, setIsCreatePostOpen] = useState(false);
   const [selectedCourse, setSelectedCourse] = useState('all');
   const [sortBy, setSortBy] = useState<SortOption>('recent');
   const [searchQuery, setSearchQuery] = useState('');
 
-  const filteredAndSortedPosts = useMemo(() => {
-    let filteredPosts = searchQuery ? searchPosts(searchQuery) : posts;
-    
-    // Filter by course
+  const filteredPosts = useMemo(() => {
+    let filtered = searchQuery ? searchPosts(searchQuery) : posts;
     if (selectedCourse !== 'all') {
-      filteredPosts = filteredPosts.filter(post => post.course === selectedCourse);
+      filtered = filtered.filter(post => post.course === selectedCourse);
     }
+    return filtered;
+  }, [posts, selectedCourse, searchQuery, searchPosts]);
 
-    // Sort posts
-    const sortedPosts = [...filteredPosts].sort((a, b) => {
+  const filteredAndSortedPosts = useMemo(() => {
+    return [...filteredPosts].sort((a, b) => {
       switch (sortBy) {
         case 'popular':
           return (b.upvotes - b.downvotes) - (a.upvotes - a.downvotes);
@@ -48,17 +49,14 @@ export function MainFeed() {
           return b.createdAt.getTime() - a.createdAt.getTime();
       }
     });
-
-    return sortedPosts;
-  }, [posts, selectedCourse, sortBy, searchQuery, searchPosts]);
+  }, [filteredPosts, sortBy]);
 
   const handleSearch = (query: string) => {
     setSearchQuery(query);
   };
 
   const handleRefresh = () => {
-    // In a real app, this would refetch data
-    window.location.reload();
+    resetMainFeed();
   };
 
   const sortOptions = [
@@ -157,18 +155,31 @@ export function MainFeed() {
 
 
             {/* Posts Feed */}
-            <div className="space-y-4">
+            <div ref={parentRef} className="space-y-4" style={{ height: '100vh', overflow: 'auto' }}>
               {filteredAndSortedPosts.length > 0 ? (
-                filteredAndSortedPosts.map((post, index) => (
-                  <motion.div
-                    key={post.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: index * 0.1 }}
-                  >
-                    <PostCard post={post} />
-                  </motion.div>
-                ))
+                <div style={{ height: `${rowVirtualizer.getTotalSize()}px`, width: '100%', position: 'relative' }}>
+                  {rowVirtualizer.getVirtualItems().map((virtualItem) => {
+                    const post = filteredAndSortedPosts[virtualItem.index];
+                    return (
+                      <motion.div
+                        key={virtualItem.key}
+                        style={{
+                          position: 'absolute',
+                          top: 0,
+                          left: 0,
+                          width: '100%',
+                          height: `${virtualItem.size}px`,
+                          transform: `translateY(${virtualItem.start}px)`,
+                        }}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: virtualItem.index * 0.05 }}
+                      >
+                        <PostCard post={post} />
+                      </motion.div>
+                    );
+                  })}
+                </div>
               ) : (
                 <motion.div
                   initial={{ opacity: 0, scale: 0.9 }}
