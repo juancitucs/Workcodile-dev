@@ -5,70 +5,7 @@ import {
   ReactNode,
   useEffect,
 } from 'react'
-
-interface User {
-  id: string
-  name: string
-  email: string
-  avatar?: string
-  avatar_key?: string
-  university: string
-  theme?: string
-  bookmarked_posts?: string[]
-}
-
-interface Course {
-  id: string
-  name: string
-  cycle: number
-}
-
-interface FileAttachment {
-  id: string
-  name: string
-  size: number
-  type: string
-  url?: string // For uploaded files
-  file?: File // For local files
-  object_key?: string
-}
-
-interface Post {
-  id: string
-  title: string
-  content: string
-  author: User
-  createdAt: Date
-  course: string // Course ID
-  upvotes: number
-  downvotes: number
-  comments: Comment[]
-  userVote?: 'up' | 'down'
-  hashtags: string[]
-  attachments: FileAttachment[]
-  // Additional fields
-  views: number
-  isBookmarked?: boolean
-}
-
-interface Comment {
-  id: string
-  content: string
-  author: User
-  createdAt: Date
-  score: number
-  userVote?: 'up' | 'down'
-  replies: Comment[]
-  parentId?: string
-}
-
-interface Notification {
-  id: string
-  text: string
-  createdAt: Date
-  read: boolean
-  link?: string
-}
+import { User, Course, FileAttachment, Post, Comment, Notification } from './types'
 
 interface AppContextType {
   authStatus: 'loading' | 'authenticated' | 'unauthenticated'
@@ -76,6 +13,7 @@ interface AppContextType {
   posts: Post[]
   courses: Course[]
   notifications: Notification[]
+  fetchPostById: (postId: string) => Promise<Post | undefined>
   markNotificationAsRead: (notificationId: string) => void
   login: (email: string, password: string) => Promise<void>
   register: (name: string, email: string, password: string) => Promise<void>
@@ -99,17 +37,20 @@ interface AppContextType {
     commentId: string,
     vote: 'up' | 'down'
   ) => Promise<void>
+  fetchCommentReplies: (postId: string, commentId: string) => Promise<Comment[]>
   searchPosts: (query: string) => Post[]
   getCourseById: (courseId: string) => Course | undefined
   getCoursesByCycle: (cycle: number) => Course[]
   theme: 'light' | 'dark'
   toggleTheme: () => void
-  // New rating and additional features
   toggleBookmark: (postId: string) => void
   reportPost: (postId: string) => void
   incrementViews: (postId: string) => void
   mainFeedKey: number
   resetMainFeed: () => void
+  fetchMorePosts: () => void
+  hasMorePosts: boolean
+  isFetchingPosts: boolean
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined)
@@ -281,6 +222,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [theme, setTheme] = useState<'light' | 'dark'>('light')
   const [mainFeedKey, setMainFeedKey] = useState(0)
+  const [postPage, setPostPage] = useState(1);
+  const [hasMorePosts, setHasMorePosts] = useState(true);
+  const [isFetchingPosts, setIsFetchingPosts] = useState(false);
 
   useEffect(() => {
     const root = window.document.documentElement
@@ -312,31 +256,95 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   }
 
-  useEffect(() => {
-    const fetchPosts = async () => {
-      try {
-        const token = localStorage.getItem('token');
-        const headers: HeadersInit = {};
-        if (token) {
-          headers['x-auth-token'] = token;
-        }
-
-        const response = await fetch('http://localhost:3001/api/posts', { headers });
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`)
-        }
-        const data = await response.json()
-
-        const transformedPosts: Post[] = data.map(transformBackendPost)
-
-        setPosts(transformedPosts)
-      } catch (error) {
-        console.error('Failed to fetch posts:', error)
+  const fetchInitialPosts = async () => {
+    setIsFetchingPosts(true);
+    try {
+      const token = localStorage.getItem('token');
+      const headers: HeadersInit = {};
+      if (token) {
+        headers['x-auth-token'] = token;
       }
-    }
 
-    fetchPosts()
-  }, [user]) // Re-fetch posts when user logs in or out
+      const response = await fetch('http://localhost:3001/api/posts?page=1', { headers });
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+      const data = await response.json();
+
+      const transformedPosts: Post[] = data.posts.map(transformBackendPost);
+      setPosts(transformedPosts);
+      setPostPage(1);
+      setHasMorePosts(data.hasNextPage);
+    } catch (error) {
+      console.error('Failed to fetch posts:', error);
+    } finally {
+      setIsFetchingPosts(false);
+    }
+  }
+
+  const fetchMorePosts = async () => {
+    if (isFetchingPosts || !hasMorePosts) return;
+
+    setIsFetchingPosts(true);
+    const nextPage = postPage + 1;
+    try {
+      const token = localStorage.getItem('token');
+      const headers: HeadersInit = {};
+      if (token) {
+        headers['x-auth-token'] = token;
+      }
+
+      const response = await fetch(`http://localhost:3001/api/posts?page=${nextPage}`, { headers });
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+      const data = await response.json();
+
+      const transformedPosts: Post[] = data.posts.map(transformBackendPost);
+      setPosts(prevPosts => [...prevPosts, ...transformedPosts]);
+      setPostPage(nextPage);
+      setHasMorePosts(data.hasNextPage);
+    } catch (error) {
+      console.error('Failed to fetch more posts:', error);
+    } finally {
+      setIsFetchingPosts(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchInitialPosts();
+  }, [user]);
+
+  const fetchPostById = async (postId: string): Promise<Post | undefined> => {
+    try {
+      const token = localStorage.getItem('token');
+      const headers: HeadersInit = {};
+      if (token) {
+        headers['x-auth-token'] = token;
+      }
+
+      const response = await fetch(`http://localhost:3001/api/posts/${postId}`, { headers });
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const data = await response.json();
+      const transformedPost = transformBackendPost(data);
+      
+      // Optionally, update the global posts state
+      setPosts(prevPosts => {
+        const postExists = prevPosts.some(p => p.id === transformedPost.id);
+        if (postExists) {
+          return prevPosts.map(p => p.id === transformedPost.id ? transformedPost : p);
+        }
+        return [...prevPosts, transformedPost];
+      });
+
+      return transformedPost;
+    } catch (error) {
+      console.error('Failed to fetch post by ID:', error);
+      return undefined;
+    }
+  };
 
   useEffect(() => {
     const loadUser = async () => {
@@ -426,7 +434,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   }
 
-  const resetMainFeed = () => setMainFeedKey((prev) => prev + 1)
+  const resetMainFeed = () => {
+    setMainFeedKey((prev) => prev + 1)
+    fetchInitialPosts()
+  }
 
   const login = async (email: string, password: string) => {
     const response = await fetch('http://localhost:3001/api/auth/login', {
@@ -657,6 +668,26 @@ export function AppProvider({ children }: { children: ReactNode }) {
     return courses.filter((course) => course.cycle === cycle)
   }
 
+  const fetchCommentReplies = async (postId: string, commentId: string): Promise<Comment[]> => {
+    try {
+      const token = localStorage.getItem('token');
+      const headers: HeadersInit = {};
+      if (token) {
+        headers['x-auth-token'] = token;
+      }
+
+      const response = await fetch(`http://localhost:3001/api/posts/${postId}/comments/${commentId}/replies`, { headers });
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+      const data = await response.json();
+      return data.map(transformBackendComment);
+    } catch (error) {
+      console.error('Failed to fetch replies:', error);
+      return [];
+    }
+  }
+
   const toggleBookmark = async (postId: string) => {
     if (!user) return
     const token = localStorage.getItem('token')
@@ -746,6 +777,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         posts,
         courses,
         notifications,
+        fetchPostById,
         markNotificationAsRead,
         login,
         register,
@@ -755,6 +787,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         votePost,
         addComment,
         voteComment,
+        fetchCommentReplies,
         searchPosts,
         getCourseById,
         getCoursesByCycle,
@@ -765,6 +798,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
         incrementViews,
         mainFeedKey,
         resetMainFeed,
+        fetchMorePosts,
+        hasMorePosts,
+        isFetchingPosts,
       }}
     >
       {children}

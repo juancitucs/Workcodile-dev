@@ -22,7 +22,7 @@ import {
 type SortOption = 'recent' | 'popular' | 'commented';
 
 export function MainFeed() {
-  const { posts, searchPosts, getCourseById, mainFeedKey } = useApp();
+  const { posts, searchPosts, getCourseById, mainFeedKey, fetchMorePosts, hasMorePosts, isFetchingPosts } = useApp();
   const [isCreatePostOpen, setIsCreatePostOpen] = useState(false);
   const [selectedCourse, setSelectedCourse] = useState('all');
   const [sortBy, setSortBy] = useState<SortOption>('recent');
@@ -200,16 +200,21 @@ export function MainFeed() {
               )}
             </div>
 
-            {/* Load More (placeholder for future pagination) */}
-            {filteredAndSortedPosts.length > 0 && (
+            {/* Load More */}
+            {hasMorePosts && (
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.5 }}
                 className="text-center py-8"
               >
-                <Button variant="outline" className="w-full max-w-sm">
-                  Cargar más publicaciones
+                <Button 
+                  variant="outline" 
+                  className="w-full max-w-sm"
+                  onClick={fetchMorePosts}
+                  disabled={isFetchingPosts}
+                >
+                  {isFetchingPosts ? 'Cargando...' : 'Cargar más publicaciones'}
                 </Button>
               </motion.div>
             )}

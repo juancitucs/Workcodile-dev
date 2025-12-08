@@ -26,52 +26,7 @@ import {
 import { formatDistanceToNow } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { CommentTree } from './comment-tree'
-
-interface FileAttachment {
-  id: string
-  name: string
-  size: number
-  type: string
-  url?: string
-  object_key?: string
-}
-
-interface Post {
-  id: string
-  title: string
-  content: string
-  author: {
-    id: string
-    name: string
-    email: string
-    avatar?: string
-    university: string
-  }
-  createdAt: Date
-  course: string
-  upvotes: number
-  downvotes: number
-  comments: Array<{
-    id: string
-    content: string
-    author: {
-      id: string
-      name: string
-      email: string
-      avatar?: string
-      university: string
-    }
-    createdAt: Date
-    upvotes: number
-    downvotes: number
-    userVote?: 'up' | 'down'
-  }>
-  userVote?: 'up' | 'down'
-  hashtags: string[]
-  attachments: FileAttachment[]
-  views: number
-  isBookmarked?: boolean
-}
+import { Post } from './types';
 
 interface PostCardProps {
   post: Post

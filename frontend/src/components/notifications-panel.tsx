@@ -5,11 +5,22 @@ import { Bell } from 'lucide-react';
 import { motion } from 'motion/react';
 import { formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { useNavigate } from 'react-router-dom';
 
 export function NotificationsPanel() {
-  const { notifications } = useApp();
+  const { notifications, markNotificationAsRead } = useApp();
+  const navigate = useNavigate();
 
   const unreadCount = notifications.filter(n => !n.read).length;
+
+  const handleNotificationSelect = (notification: any) => {
+    if (!notification.read) {
+      markNotificationAsRead(notification.id);
+    }
+    if (notification.link) {
+      navigate(notification.link);
+    }
+  };
 
   return (
     <DropdownMenu>
@@ -30,7 +41,11 @@ export function NotificationsPanel() {
         <DropdownMenuSeparator />
         <div className="max-h-96 overflow-y-auto">
           {notifications.map(notification => (
-            <DropdownMenuItem key={notification.id} className={`flex items-start p-2 ${!notification.read ? 'bg-blue-50 dark:bg-blue-950/30' : ''}`}>
+            <DropdownMenuItem
+              key={notification.id}
+              onSelect={() => handleNotificationSelect(notification)}
+              className={`flex items-start p-2 ${!notification.read ? 'bg-blue-50 dark:bg-blue-950/30' : ''} ${notification.link ? 'cursor-pointer' : ''}`}
+            >
               <div className={`h-2 w-2 rounded-full mt-1.5 mr-2 ${!notification.read ? 'bg-primary' : 'bg-transparent'}`} />
               <div>
                 <p className="text-sm">{notification.text}</p>
