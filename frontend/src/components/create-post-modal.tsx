@@ -1,26 +1,68 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { motion } from 'motion/react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from './ui/dialog';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
-import { Textarea } from './ui/textarea';
 import { Label } from './ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Badge } from './ui/badge';
 import { useApp } from './app-context';
 import { FileAttachment, createFileAttachment, formatFileSize, getFileIcon, validateFileType, validateFileSize } from './file-utils';
-import { PlusCircle, X, GraduationCap, Upload, FileText, Hash, Trash2 } from 'lucide-react';
+import { PlusCircle, X, GraduationCap, Upload, FileText, Hash, Trash2, Bold, Italic, Strikethrough, Image, Paperclip } from 'lucide-react';
+import MarkdownRenderer from './markdown-renderer';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from './ui/accordion';
+import { MentionsInput, Mention } from 'react-mentions';
+import mentionsInputStyle from './mentions-input-style';
+
 
 interface CreatePostModalProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
+const uploadFiles = async (files: File[]): Promise<(Omit<FileAttachment, 'id'> & { object_key: string })[]> => {
+  const uploadPromises = files.map(async (file) => {
+    const formData = new FormData();
+    console.log('Uploading file:', file);
+    formData.append('file', file);
 
+    try {
+      const response = await fetch('http://localhost:3001/api/storage', {
+        method: 'POST',
+        headers: {
+          'x-auth-token': localStorage.getItem('token') || '',
+        },
+        body: formData,
+      });
+
+      console.log('Upload response:', response);
+
+      if (!response.ok) {
+        throw new Error(`Error uploading file: ${file.name}`);
+      }
+
+      const result = await response.json();
+      return {
+        name: file.name,
+        size: file.size,
+        type: file.type,
+        object_key: result.objectName,
+      };
+    } catch (error) {
+      console.error(error);
+      // You might want to handle this more gracefully
+      return null;
+    }
+  });
+
+  const results = await Promise.all(uploadPromises);
+  return results.filter((result): result is (Omit<FileAttachment, 'id'> & { object_key: string }) => result !== null);
+};
 
 export function CreatePostModal({ isOpen, onClose }: CreatePostModalProps) {
   const { createPost, courses, getCoursesByCycle } = useApp();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const mentionsInputRef = useRef<any>(null); // Ref for MentionsInput
   const [formData, setFormData] = useState({
     title: '',
     content: '',
@@ -42,25 +84,39 @@ export function CreatePostModal({ isOpen, onClose }: CreatePostModalProps) {
     }
 
     setIsSubmitting(true);
-    
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    createPost(formData.title, formData.content, formData.course, hashtags, attachments);
-    
-    // Reset form
-    setFormData({
-      title: '',
-      content: '',
-      cycle: '',
-      course: ''
-    });
-    setHashtags([]);
-    setHashtagInput('');
-    setAttachments([]);
-    
-    setIsSubmitting(false);
-    onClose();
+
+    try {
+      const filesToUpload = attachments.map(a => a.file).filter(f => f) as File[];
+      console.log('Files to upload:', filesToUpload);
+      const uploadedAttachmentsData = await uploadFiles(filesToUpload);
+      console.log('Uploaded attachments data:', uploadedAttachmentsData);
+
+      const newAttachments: (Omit<FileAttachment, 'id'> & { object_key: string; })[] = uploadedAttachmentsData.map((uploadedFile) => ({
+        name: uploadedFile.name,
+        size: uploadedFile.size,
+        type: uploadedFile.type,
+        object_key: uploadedFile.object_key,
+      }));
+
+      await createPost(formData.title, formData.content, formData.course, hashtags, newAttachments.map(a => ({...a, id: crypto.randomUUID() })));
+
+      // Reset form
+      setFormData({
+        title: '',
+        content: '',
+        cycle: '',
+        course: ''
+      });
+      setHashtags([]);
+      setHashtagInput('');
+      setAttachments([]);
+    } catch (error) {
+      console.error("Failed to create post:", error);
+      // Optionally, show an error message to the user
+    } finally {
+      setIsSubmitting(false);
+      onClose();
+    }
   };
 
   const handleClose = () => {
@@ -140,6 +196,46 @@ export function CreatePostModal({ isOpen, onClose }: CreatePostModalProps) {
     }
   };
 
+  const applyMarkdown = (prefix: string, suffix: string, placeholder?: string) => {
+    const textarea = mentionsInputRef.current?.input;
+    if (!textarea) return;
+
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const selectedText = textarea.value.substring(start, end);
+
+    let newContent;
+    if (selectedText) {
+      newContent = `${prefix}${selectedText}${suffix}`;
+    } else {
+      newContent = `${prefix}${placeholder || ''}${suffix}`;
+    }
+
+    const value = textarea.value.substring(0, start) + newContent + textarea.value.substring(end);
+
+    setFormData(prev => ({
+      ...prev,
+      content: value
+    }));
+
+    // Re-focus and set cursor position
+    setTimeout(() => {
+      textarea.focus();
+      if (!selectedText) {
+        textarea.selectionStart = start + prefix.length;
+        textarea.selectionEnd = start + prefix.length + (placeholder?.length || 0);
+      } else {
+        textarea.selectionStart = start + newContent.length;
+        textarea.selectionEnd = start + newContent.length;
+      }
+    }, 0);
+  };
+  
+  const attachmentMentions = attachments.map(att => ({
+    id: att.name,
+    display: att.name,
+  }));
+
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-7xl w-[95vw] max-h-[90vh] p-0 overflow-hidden">
@@ -169,222 +265,269 @@ export function CreatePostModal({ isOpen, onClose }: CreatePostModalProps) {
             </div>
 
             <div className="flex-1 overflow-y-auto p-6">
-              <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Cycle Selection */}
-          <div className="space-y-3">
-            <Label className="flex items-center space-x-2">
-              <GraduationCap className="h-4 w-4 text-primary" />
-              <span>Ciclo</span>
-            </Label>
-            <Select
-              value={formData.cycle}
-              onValueChange={handleCycleChange}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Selecciona un ciclo" />
-              </SelectTrigger>
-              <SelectContent>
-                {cycles.map((cycle) => (
-                  <SelectItem key={cycle} value={cycle.toString()}>
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Cycle Selection */}
+                  <div className="space-y-2">
+                    <Label className="flex items-center space-x-2">
+                      <GraduationCap className="h-4 w-4 text-primary" />
+                      <span>Ciclo</span>
+                    </Label>
+                    <Select
+                      value={formData.cycle}
+                      onValueChange={handleCycleChange}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecciona un ciclo" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {cycles.map((cycle) => (
+                          <SelectItem key={cycle} value={cycle.toString()}>
+                            <div className="flex items-center space-x-2">
+                              <GraduationCap className="h-4 w-4 text-primary" />
+                              <span>Ciclo {cycle}</span>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Course Selection */}
+                  <div className="space-y-2">
+                    <Label>Curso</Label>
+                    <Select
+                      value={formData.course}
+                      onValueChange={(value) => setFormData(prev => ({ ...prev, course: value }))}
+                      disabled={!formData.cycle}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder={formData.cycle ? "Selecciona un curso" : "Primero selecciona un ciclo"} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {availableCourses.map((course) => (
+                          <SelectItem key={course.id} value={course.id}>
+                            <div className="flex flex-col items-start">
+                              <span className="font-medium">{course.id}</span>
+                              <span className="text-xs text-muted-foreground max-w-[300px] truncate">
+                                {course.name}
+                              </span>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                {/* Selected Course Info */}
+                {selectedCourse && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    className="p-3 bg-primary/10 border border-primary/20 rounded-lg text-sm"
+                  >
                     <div className="flex items-center space-x-2">
                       <GraduationCap className="h-4 w-4 text-primary" />
-                      <span>Ciclo {cycle}</span>
+                      <span className="font-medium text-primary">{selectedCourse.id}</span>
+                      <span className="text-muted-foreground">-</span>
+                      <span className="text-primary">Ciclo {selectedCourse.cycle}</span>
+                      <span className="text-muted-foreground hidden md:inline">-</span>
+                      <span className="text-muted-foreground truncate hidden md:inline">{selectedCourse.name}</span>
                     </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+                  </motion.div>
+                )}
 
-          {/* Course Selection */}
-          <div className="space-y-3">
-            <Label>Curso</Label>
-            <Select
-              value={formData.course}
-              onValueChange={(value) => setFormData(prev => ({ ...prev, course: value }))}
-              disabled={!formData.cycle}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder={formData.cycle ? "Selecciona un curso" : "Primero selecciona un ciclo"} />
-              </SelectTrigger>
-              <SelectContent>
-                {availableCourses.map((course) => (
-                  <SelectItem key={course.id} value={course.id}>
-                    <div className="flex flex-col items-start">
-                      <span className="font-medium">{course.id}</span>
-                      <span className="text-xs text-muted-foreground max-w-[300px] truncate">
-                        {course.name}
-                      </span>
-                    </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Selected Course Info */}
-          {selectedCourse && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              className="p-3 bg-primary/10 border border-primary/20 rounded-lg"
-            >
-              <div className="flex items-center space-x-2 text-sm">
-                <GraduationCap className="h-4 w-4 text-primary" />
-                <span className="font-medium text-primary">{selectedCourse.id}</span>
-                <span className="text-muted-foreground">-</span>
-                <span className="text-primary">Ciclo {selectedCourse.cycle}</span>
-              </div>
-              <p className="text-xs text-muted-foreground mt-1">
-                {selectedCourse.name}
-              </p>
-            </motion.div>
-          )}
-
-          {/* Title */}
-          <div className="space-y-2">
-            <Label htmlFor="title">Título</Label>
-            <Input
-              id="title"
-              placeholder="Ej: Busco tutor para el curso, Ofrezco servicios de programación..."
-              value={formData.title}
-              onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
-              required
-              maxLength={150}
-            />
-            <p className="text-xs text-muted-foreground">
-              {formData.title.length}/150 caracteres
-            </p>
-          </div>
-
-          {/* Content */}
-          <div className="space-y-2">
-            <Label htmlFor="content">Descripción</Label>
-            <Textarea
-              id="content"
-              placeholder="Describe detalladamente tu publicación. Incluye información relevante como horarios, precios, requisitos, etc."
-              value={formData.content}
-              onChange={(e) => setFormData(prev => ({ ...prev, content: e.target.value }))}
-              required
-              className="min-h-[120px] resize-none"
-              maxLength={1000}
-            />
-            <p className="text-xs text-muted-foreground">
-              {formData.content.length}/1000 caracteres
-            </p>
-          </div>
-
-          {/* Hashtags */}
-          <div className="space-y-3">
-            <Label className="flex items-center space-x-2">
-              <Hash className="h-4 w-4 text-primary" />
-              <span>Hashtags (opcional)</span>
-            </Label>
-            <div className="space-y-2">
-              <Input
-                placeholder="Añade hashtags relevantes (máximo 10)"
-                value={hashtagInput}
-                onChange={(e) => setHashtagInput(e.target.value)}
-                onKeyDown={handleHashtagKeyPress}
-                disabled={hashtags.length >= 10}
-              />
-              {hashtags.length > 0 && (
-                <div className="flex flex-wrap gap-2">
-                  {hashtags.map((tag) => (
-                    <Badge
-                      key={tag}
-                      variant="secondary"
-                      className="text-xs flex items-center space-x-1 bg-primary/10 text-primary border-primary/20"
-                    >
-                      <Hash className="h-3 w-3" />
-                      <span>{tag}</span>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        className="h-auto p-0 ml-1 text-primary hover:text-destructive"
-                        onClick={() => removeHashtag(tag)}
-                      >
-                        <X className="h-3 w-3" />
-                      </Button>
-                    </Badge>
-                  ))}
-                </div>
-              )}
-              <p className="text-xs text-muted-foreground">
-                {hashtags.length}/10 hashtags • Presiona Enter o Espacio para agregar
-              </p>
-            </div>
-          </div>
-
-          {/* File Attachments */}
-          <div className="space-y-3">
-            <Label className="flex items-center space-x-2">
-              <Upload className="h-4 w-4 text-primary" />
-              <span>Archivos adjuntos (opcional)</span>
-            </Label>
-            <div className="space-y-2">
-              <div className="flex flex-col space-y-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => fileInputRef.current?.click()}
-                  className="border-dashed border-2 h-20 flex flex-col items-center justify-center space-y-1 hover:bg-muted/50"
-                >
-                  <Upload className="h-6 w-6 text-muted-foreground" />
-                  <span className="text-sm text-muted-foreground">
-                    Seleccionar archivos
-                  </span>
-                </Button>
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  multiple
-                  accept=".pdf,.zip,.rar,.jpg,.jpeg,.png,.gif,.txt,.doc,.docx"
-                  onChange={handleFileSelect}
-                  className="hidden"
-                />
-              </div>
-              
-              {attachments.length > 0 && (
+                {/* Title */}
                 <div className="space-y-2">
-                  {attachments.map((attachment) => (
-                    <motion.div
-                      key={attachment.id}
-                      initial={{ opacity: 0, height: 0 }}
-                      animate={{ opacity: 1, height: 'auto' }}
-                      exit={{ opacity: 0, height: 0 }}
-                      className="flex items-center justify-between p-3 bg-muted/30 border border-border rounded-lg"
-                    >
-                      <div className="flex items-center space-x-3">
-                        <span className="text-lg">{getFileIcon(attachment.type)}</span>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium truncate max-w-[200px]">{attachment.name}</p>
-                          <p className="text-xs text-muted-foreground">
-                            {formatFileSize(attachment.size)}
-                          </p>
-                        </div>
-                      </div>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => removeAttachment(attachment.id)}
-                        className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </motion.div>
-                  ))}
+                  <Label htmlFor="title">Título</Label>
+                  <Input
+                    id="title"
+                    placeholder="Ej: Busco tutor para el curso, Ofrezco servicios de programación..."
+                    value={formData.title}
+                    onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
+                    required
+                    maxLength={150}
+                    className="text-base"
+                  />
                 </div>
-              )}
-              
-              <p className="text-xs text-muted-foreground">
-                Tipos permitidos: PDF, ZIP, RAR, JPG, PNG, GIF, TXT, DOC, DOCX • Máximo 10MB por archivo
-              </p>
-            </div>
-          </div>
 
+                {/* Content */}
+                <div className="space-y-2">
+                  <Label htmlFor="content">Descripción</Label>
+                  <div className="flex space-x-1 mb-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => applyMarkdown('**', '**', 'negrita')}
+                    >
+                      <Bold className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => applyMarkdown('*', '*', 'cursiva')}
+                    >
+                      <Italic className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => applyMarkdown('~~', '~~', 'tachado')}
+                    >
+                      <Strikethrough className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => applyMarkdown('![alt text](', ')', 'https://example.com/image.jpg')}
+                    >
+                      <Image className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  <MentionsInput
+                    inputRef={mentionsInputRef}
+                    id="content"
+                    value={formData.content}
+                    onChange={(e) => setFormData(prev => ({ ...prev, content: e.target.value }))}
+                    placeholder="Describe detalladamente tu publicación. Usa Markdown y menciona archivos con '@'."
+                    style={mentionsInputStyle}
+                    className="min-h-[200px] resize-y"
+                  >
+                    <Mention
+                      trigger="@"
+                      data={attachmentMentions}
+                      markup={`@"__display__"`}
+                      displayTransform={(id, display) => `@${display}`}
+                    />
+                  </MentionsInput>
+                  <p className="text-xs text-muted-foreground text-right">
+                    {formData.content.length}/5000
+                  </p>
+                </div>
+
+                <Accordion type="multiple" className="w-full">
+                  {/* Hashtags */}
+                  <AccordionItem value="hashtags">
+                    <AccordionTrigger>
+                      <Label className="flex items-center space-x-2 cursor-pointer">
+                        <Hash className="h-4 w-4 text-primary" />
+                        <span>Hashtags ({hashtags.length}/10)</span>
+                      </Label>
+                    </AccordionTrigger>
+                    <AccordionContent>
+                      <div className="space-y-2 pt-2">
+                        <Input
+                          placeholder="Añade hashtags relevantes (máximo 10)"
+                          value={hashtagInput}
+                          onChange={(e) => setHashtagInput(e.target.value)}
+                          onKeyDown={handleHashtagKeyPress}
+                          disabled={hashtags.length >= 10}
+                        />
+                        {hashtags.length > 0 && (
+                          <div className="flex flex-wrap gap-2">
+                            {hashtags.map((tag) => (
+                              <Badge
+                                key={tag}
+                                variant="secondary"
+                                className="text-xs flex items-center space-x-1 bg-primary/10 text-primary border-primary/20"
+                              >
+                                <Hash className="h-3 w-3" />
+                                <span>{tag}</span>
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-auto p-0 ml-1 text-primary hover:text-destructive"
+                                  onClick={() => removeHashtag(tag)}
+                                >
+                                  <X className="h-3 w-3" />
+                                </Button>
+                              </Badge>
+                            ))}
+                          </div>
+                        )}
+                        <p className="text-xs text-muted-foreground">
+                          Presiona Enter o Espacio para agregar
+                        </p>
+                      </div>
+                    </AccordionContent>
+                  </AccordionItem>
+                  
+                  {/* File Attachments */}
+                  <AccordionItem value="attachments">
+                    <AccordionTrigger>
+                      <Label className="flex items-center space-x-2 cursor-pointer">
+                        <Upload className="h-4 w-4 text-primary" />
+                        <span>Archivos adjuntos ({attachments.length})</span>
+                      </Label>
+                    </AccordionTrigger>
+                    <AccordionContent>
+                      <div className="space-y-2 pt-2">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => fileInputRef.current?.click()}
+                          className="border-dashed border-2 h-20 flex flex-col items-center justify-center space-y-1 hover:bg-muted/50 w-full"
+                        >
+                          <Upload className="h-6 w-6 text-muted-foreground" />
+                          <span className="text-sm text-muted-foreground">
+                            Seleccionar archivos
+                          </span>
+                        </Button>
+                        <input
+                          ref={fileInputRef}
+                          type="file"
+                          multiple
+                          accept=".pdf,.zip,.rar,.jpg,.jpeg,.png,.gif,.txt,.doc,.docx"
+                          onChange={handleFileSelect}
+                          className="hidden"
+                        />
+                        
+                        {attachments.length > 0 && (
+                          <div className="space-y-2">
+                            {attachments.map((attachment) => (
+                              <motion.div
+                                key={attachment.id}
+                                initial={{ opacity: 0, height: 0 }}
+                                animate={{ opacity: 1, height: 'auto' }}
+                                exit={{ opacity: 0, height: 0 }}
+                                className="flex items-center justify-between p-3 bg-muted/30 border border-border rounded-lg"
+                              >
+                                <div className="flex items-center space-x-3">
+                                  <span className="text-lg">{getFileIcon(attachment.type)}</span>
+                                  <div className="flex-1 min-w-0">
+                                    <p className="text-sm font-medium truncate max-w-[200px]">{attachment.name}</p>
+                                    <p className="text-xs text-muted-foreground">
+                                      {formatFileSize(attachment.size)}
+                                    </p>
+                                  </div>
+                                </div>
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => removeAttachment(attachment.id)}
+                                  className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </motion.div>
+                            ))}
+                          </div>
+                        )}
+                        
+                        <p className="text-xs text-muted-foreground">
+                          Máximo 10MB por archivo
+                        </p>
+                      </div>
+                    </AccordionContent>
+                  </AccordionItem>
+                </Accordion>
               </form>
             </div>
 
@@ -422,7 +565,7 @@ export function CreatePostModal({ isOpen, onClose }: CreatePostModalProps) {
           </div>
 
           {/* Right side - Preview */}
-          <div className="w-[400px] flex flex-col bg-muted/20">
+          <div className="w-1/2 flex flex-col bg-muted/20">
             <div className="p-6 border-b border-border">
               <h4 className="font-medium text-sm text-muted-foreground flex items-center space-x-2">
                 <FileText className="h-4 w-4" />
@@ -432,7 +575,8 @@ export function CreatePostModal({ isOpen, onClose }: CreatePostModalProps) {
             
             <div className="flex-1 overflow-y-auto p-6">
               <div className="space-y-4">
-                {(formData.title || formData.content || hashtags.length > 0 || attachments.length > 0 || selectedCourse) ? (
+                {/* Render full preview only if there's content to show */}
+                { (formData.title || formData.content || hashtags.length > 0 || attachments.length > 0 || selectedCourse) ? (
                   <motion.div
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
@@ -441,7 +585,7 @@ export function CreatePostModal({ isOpen, onClose }: CreatePostModalProps) {
                     {selectedCourse && (
                       <div className="flex items-center space-x-2 text-xs text-primary mb-3 p-2 bg-primary/10 rounded-md">
                         <GraduationCap className="h-3 w-3" />
-                        <span className="font-medium">{selectedCourse.id}</span>
+                        <span className="font-medium text-primary">{selectedCourse.id}</span>
                         <span className="text-muted-foreground">•</span>
                         <span>Ciclo {selectedCourse.cycle}</span>
                       </div>
@@ -453,17 +597,9 @@ export function CreatePostModal({ isOpen, onClose }: CreatePostModalProps) {
                       <div className="h-6 bg-muted/50 rounded mb-3 animate-pulse"></div>
                     )}
                     
-                    {formData.content ? (
-                      <p className="text-muted-foreground whitespace-pre-wrap mb-4 text-sm leading-relaxed">
-                        {formData.content}
-                      </p>
-                    ) : (
-                      <div className="space-y-2 mb-4">
-                        <div className="h-4 bg-muted/50 rounded animate-pulse"></div>
-                        <div className="h-4 bg-muted/50 rounded w-3/4 animate-pulse"></div>
-                        <div className="h-4 bg-muted/50 rounded w-1/2 animate-pulse"></div>
-                      </div>
-                    )}
+                    <div className="prose prose-sm dark:prose-invert max-w-none mb-4 text-sm">
+                      <MarkdownRenderer attachments={attachments}>{formData.content || ""}</MarkdownRenderer>
+                    </div>
                     
                     {hashtags.length > 0 && (
                       <div className="flex flex-wrap gap-1 mb-4">
@@ -480,23 +616,34 @@ export function CreatePostModal({ isOpen, onClose }: CreatePostModalProps) {
                     )}
                     
                     {attachments.length > 0 && (
-                      <div className="space-y-2">
-                        <p className="text-xs text-muted-foreground font-medium">Archivos adjuntos:</p>
-                        {attachments.map((attachment) => (
-                          <motion.div
-                            key={attachment.id}
-                            initial={{ opacity: 0, scale: 0.95 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            className="flex items-center space-x-2 text-xs bg-muted/50 rounded p-2 border border-border"
-                          >
-                            <span className="text-sm">{getFileIcon(attachment.type)}</span>
-                            <div className="flex-1 min-w-0">
-                              <span className="truncate block font-medium">{attachment.name}</span>
-                              <span className="text-muted-foreground">({formatFileSize(attachment.size)})</span>
+                      <Accordion type="single" collapsible className="w-full">
+                        <AccordionItem value="attachments-preview">
+                          <AccordionTrigger>
+                            <div className="flex items-center space-x-2 text-sm text-muted-foreground">
+                              <Paperclip className="h-4 w-4" />
+                              <span>{attachments.length} archivo{attachments.length > 1 ? 's' : ''} adjunto{attachments.length > 1 ? 's' : ''}</span>
                             </div>
-                          </motion.div>
-                        ))}
-                      </div>
+                          </AccordionTrigger>
+                          <AccordionContent>
+                            <div className="space-y-2 pt-2">
+                              {attachments.map((attachment) => (
+                                <motion.div
+                                  key={attachment.id}
+                                  initial={{ opacity: 0, scale: 0.95 }}
+                                  animate={{ opacity: 1, scale: 1 }}
+                                  className="flex items-center space-x-2 text-xs bg-muted/50 rounded p-2 border border-border"
+                                >
+                                  <span className="text-sm">{getFileIcon(attachment.type)}</span>
+                                  <div className="flex-1 min-w-0">
+                                    <span className="truncate block font-medium">{attachment.name}</span>
+                                    <span className="text-muted-foreground">({formatFileSize(attachment.size)})</span>
+                                  </div>
+                                </motion.div>
+                              ))}
+                            </div>
+                          </AccordionContent>
+                        </AccordionItem>
+                      </Accordion>
                     )}
                     
                     {/* Post actions preview */}

@@ -1,4 +1,5 @@
-import { useState, useMemo, forwardRef } from 'react';
+import { useState, useMemo, forwardRef, memo, useDeferredValue } from 'react';
+import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
@@ -22,13 +23,12 @@ import {
 } from 'lucide-react';
 
 interface RecentActivityProps {
-  onPostClick?: (postId: string) => void;
   onUserClick?: (userId: string) => void;
 }
 
 interface ActivityItem {
   id: string;
-  type: 'post' | 'comment' | 'rating' | 'vote';
+  type: 'post' | 'comment' | 'vote';
   timestamp: Date;
   user: {
     id: string;
@@ -41,19 +41,18 @@ interface ActivityItem {
     course: string;
   };
   details?: {
-    rating?: number;
     voteType?: 'up' | 'down';
     commentText?: string;
   };
 }
 
-export function RecentActivity({ onPostClick, onUserClick }: RecentActivityProps) {
+export const RecentActivity = memo(function RecentActivity({ onUserClick }: RecentActivityProps) {
   const { posts, getCourseById } = useApp();
   const [showAll, setShowAll] = useState(false);
   const [activeTab, setActiveTab] = useState('all');
 
   // Generate activity items from posts and comments
-  const activityItems = useMemo(() => {
+  const rawActivityItems = useMemo(() => {
     const items: ActivityItem[] = [];
 
     // Add post creation activities
@@ -61,7 +60,7 @@ export function RecentActivity({ onPostClick, onUserClick }: RecentActivityProps
       items.push({
         id: `post-${post.id}`,
         type: 'post',
-        timestamp: post.createdAt,
+        timestamp: new Date(post.createdAt),
         user: post.author,
         post: {
           id: post.id,
@@ -75,7 +74,7 @@ export function RecentActivity({ onPostClick, onUserClick }: RecentActivityProps
         items.push({
           id: `comment-${comment.id}`,
           type: 'comment',
-          timestamp: comment.createdAt,
+          timestamp: new Date(comment.createdAt),
           user: comment.author,
           post: {
             id: post.id,
@@ -88,31 +87,12 @@ export function RecentActivity({ onPostClick, onUserClick }: RecentActivityProps
         });
       });
 
-      // Simulate some rating activities (in a real app, these would come from actual rating events)
-      if (post.averageRating && post.averageRating > 0) {
-        // Add a simulated rating activity
-        items.push({
-          id: `rating-${post.id}`,
-          type: 'rating',
-          timestamp: new Date(post.createdAt.getTime() + Math.random() * 24 * 60 * 60 * 1000),
-          user: post.author, // In reality, this would be different users rating the post
-          post: {
-            id: post.id,
-            title: post.title,
-            course: post.course
-          },
-          details: {
-            rating: Math.floor(post.averageRating)
-          }
-        });
-      }
-
       // Simulate vote activities
       if (post.upvotes > 0) {
         items.push({
           id: `upvote-${post.id}`,
           type: 'vote',
-          timestamp: new Date(post.createdAt.getTime() + Math.random() * 12 * 60 * 60 * 1000),
+          timestamp: new Date(new Date(post.createdAt).getTime() + Math.random() * 12 * 60 * 60 * 1000),
           user: post.author, // In reality, this would be different users voting
           post: {
             id: post.id,
@@ -128,6 +108,9 @@ export function RecentActivity({ onPostClick, onUserClick }: RecentActivityProps
 
     return items.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
   }, [posts]);
+
+  // Defer the expensive calculation
+  const activityItems = useDeferredValue(rawActivityItems);
 
   const filteredActivities = useMemo(() => {
     let filtered = activityItems;
@@ -157,7 +140,6 @@ export function RecentActivity({ onPostClick, onUserClick }: RecentActivityProps
     switch (type) {
       case 'post': return <Plus className="h-3 w-3" />;
       case 'comment': return <MessageSquare className="h-3 w-3" />;
-      case 'rating': return <Star className="h-3 w-3" />;
       case 'vote': return <TrendingUp className="h-3 w-3" />;
       default: return <Activity className="h-3 w-3" />;
     }
@@ -167,7 +149,6 @@ export function RecentActivity({ onPostClick, onUserClick }: RecentActivityProps
     switch (type) {
       case 'post': return 'text-blue-500';
       case 'comment': return 'text-green-500';
-      case 'rating': return 'text-yellow-500';
       case 'vote': return 'text-purple-500';
       default: return 'text-muted-foreground';
     }
@@ -194,20 +175,6 @@ export function RecentActivity({ onPostClick, onUserClick }: RecentActivityProps
             <Badge variant="secondary" className="text-xs mx-1">{courseName}</Badge>
           </div>
         );
-      case 'rating':
-        return (
-          <div>
-            <span className="text-primary font-medium">{item.user.name.split(' ')[0]}</span>
-            <span className="text-muted-foreground"> calificó con </span>
-            <div className="inline-flex items-center space-x-1 mx-1">
-              {Array.from({ length: item.details?.rating || 0 }, (_, i) => (
-                <WorkCodileLogo key={i} className="w-3 h-3" />
-              ))}
-            </div>
-            <span className="text-muted-foreground"> en </span>
-            <Badge variant="secondary" className="text-xs mx-1">{courseName}</Badge>
-          </div>
-        );
       case 'vote':
         return (
           <div>
@@ -226,46 +193,53 @@ export function RecentActivity({ onPostClick, onUserClick }: RecentActivityProps
   };
 
   const ActivityItem = forwardRef<HTMLDivElement, { item: ActivityItem; index: number }>(
-    ({ item, index }, ref) => (
-      <motion.div
-        ref={ref}
-        initial={{ opacity: 0, x: -10 }}
-        animate={{ opacity: 1, x: 0 }}
-        exit={{ opacity: 0, x: 10 }}
-        transition={{ delay: 0.03 * index }}
-        className="group flex items-start space-x-3 p-3 rounded-lg hover:bg-muted/30 transition-all duration-200 cursor-pointer"
-        onClick={() => onPostClick?.(item.post.id)}
-      >
-        <div className="flex-shrink-0">
-          <div className={`p-1.5 rounded-full bg-muted/50 ${getActivityColor(item.type)}`}>
-            {getActivityIcon(item.type)}
-          </div>
-        </div>
-        
-        <div className="flex-1 min-w-0">
-          <div className="text-sm mb-1">
-            {getActivityText(item)}
-          </div>
-          
-          <p className="text-sm font-medium text-foreground line-clamp-2 group-hover:text-primary transition-colors">
-            {item.post.title}
-          </p>
-          
-          {item.details?.commentText && (
-            <p className="text-xs text-muted-foreground mt-1 line-clamp-1 italic">
-              "{item.details.commentText}"
-            </p>
-          )}
-          
-          <div className="flex items-center justify-between mt-2">
-            <span className="text-xs text-muted-foreground">
-              {formatTimeAgo(item.timestamp)}
-            </span>
-            <ChevronRight className="h-3 w-3 text-muted-foreground group-hover:text-primary transition-colors" />
-          </div>
-        </div>
-      </motion.div>
-    )
+    ({ item, index }, ref) => {
+      const linkTo = item.type === 'comment' 
+        ? `/post/${item.post.id}#comment-${item.id}` 
+        : `/post/${item.post.id}`;
+
+      return (
+        <Link to={linkTo}>
+          <motion.div
+            ref={ref}
+            initial={{ opacity: 0, x: -10 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: 10 }}
+            transition={{ delay: 0.03 * index }}
+            className="group flex items-start space-x-3 p-3 rounded-lg hover:bg-muted/30 transition-all duration-200 cursor-pointer"
+          >
+            <div className="flex-shrink-0">
+              <div className={`p-1.5 rounded-full bg-muted/50 ${getActivityColor(item.type)}`}>
+                {getActivityIcon(item.type)}
+              </div>
+            </div>
+            
+            <div className="flex-1 min-w-0">
+              <div className="text-sm mb-1">
+                {getActivityText(item)}
+              </div>
+              
+              <p className="text-sm font-medium text-foreground line-clamp-2 group-hover:text-primary transition-colors">
+                {item.post.title}
+              </p>
+              
+              {item.details?.commentText && (
+                <p className="text-xs text-muted-foreground mt-1 line-clamp-1 italic">
+                  "{item.details.commentText}"
+                </p>
+              )}
+              
+              <div className="flex items-center justify-between mt-2">
+                <span className="text-xs text-muted-foreground">
+                  {formatTimeAgo(item.timestamp)}
+                </span>
+                <ChevronRight className="h-3 w-3 text-muted-foreground group-hover:text-primary transition-colors" />
+              </div>
+            </div>
+          </motion.div>
+        </Link>
+      );
+    }
   );
 
   ActivityItem.displayName = 'ActivityItem';
@@ -276,11 +250,7 @@ export function RecentActivity({ onPostClick, onUserClick }: RecentActivityProps
   };
 
   return (
-    <motion.div
-      initial={{ opacity: 0, x: -20 }}
-      animate={{ opacity: 1, x: 0 }}
-      transition={{ delay: 0.4 }}
-    >
+    <motion.div>
       <Card className="overflow-hidden">
         <CardHeader className="pb-3">
           <CardTitle className="text-base sm:text-lg flex items-center space-x-2">
@@ -294,61 +264,24 @@ export function RecentActivity({ onPostClick, onUserClick }: RecentActivityProps
         
         <CardContent className="p-0">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <div className="space-y-2 mx-4 mb-4">
-              <TabsList className="grid w-full grid-cols-3 gap-1 h-auto p-1">
-                <TabsTrigger value="all" className="text-xs py-2 px-2 flex-col h-auto">
-                  <div className="flex items-center space-x-1">
-                    <Activity className="h-3 w-3" />
-                    <span>Todo</span>
-                  </div>
-                  <Badge variant="secondary" className="text-xs h-4 px-1 mt-1">
-                    {getTabCount('all')}
-                  </Badge>
+            <div className="px-4">
+              <TabsList className="flex items-center -mb-px border-b border-border">
+                <TabsTrigger value="all" className="text-xs sm:text-sm whitespace-nowrap border-b-2 border-transparent px-3 py-2 text-muted-foreground hover:text-foreground data-[state=active]:border-primary data-[state=active]:text-primary">
+                  Todo
                 </TabsTrigger>
-                <TabsTrigger value="post" className="text-xs py-2 px-2 flex-col h-auto">
-                  <div className="flex items-center space-x-1">
-                    <Plus className="h-3 w-3" />
-                    <span>Posts</span>
-                  </div>
-                  <Badge variant="secondary" className="text-xs h-4 px-1 mt-1">
-                    {getTabCount('post')}
-                  </Badge>
+                <TabsTrigger value="post" className="text-xs sm:text-sm whitespace-nowrap border-b-2 border-transparent px-3 py-2 text-muted-foreground hover:text-foreground data-[state=active]:border-primary data-[state=active]:text-primary">
+                  Posts
                 </TabsTrigger>
-                <TabsTrigger value="comment" className="text-xs py-2 px-2 flex-col h-auto">
-                  <div className="flex items-center space-x-1">
-                    <MessageSquare className="h-3 w-3" />
-                    <span className="hidden sm:inline">Comentarios</span>
-                    <span className="sm:hidden">Com.</span>
-                  </div>
-                  <Badge variant="secondary" className="text-xs h-4 px-1 mt-1">
-                    {getTabCount('comment')}
-                  </Badge>
+                <TabsTrigger value="comment" className="text-xs sm:text-sm whitespace-nowrap border-b-2 border-transparent px-3 py-2 text-muted-foreground hover:text-foreground data-[state=active]:border-primary data-[state=active]:text-primary">
+                  Comentarios
                 </TabsTrigger>
-              </TabsList>
-              
-              <TabsList className="grid w-full grid-cols-2 gap-1 h-auto p-1">
-                <TabsTrigger value="rating" className="text-xs py-2 px-2 flex-col h-auto">
-                  <div className="flex items-center space-x-1">
-                    <Star className="h-3 w-3" />
-                    <span>Ratings</span>
-                  </div>
-                  <Badge variant="secondary" className="text-xs h-4 px-1 mt-1">
-                    {getTabCount('rating')}
-                  </Badge>
-                </TabsTrigger>
-                <TabsTrigger value="vote" className="text-xs py-2 px-2 flex-col h-auto">
-                  <div className="flex items-center space-x-1">
-                    <TrendingUp className="h-3 w-3" />
-                    <span>Votos</span>
-                  </div>
-                  <Badge variant="secondary" className="text-xs h-4 px-1 mt-1">
-                    {getTabCount('vote')}
-                  </Badge>
+                <TabsTrigger value="vote" className="text-xs sm:text-sm whitespace-nowrap border-b-2 border-transparent px-3 py-2 text-muted-foreground hover:text-foreground data-[state=active]:border-primary data-[state=active]:text-primary">
+                  Votos
                 </TabsTrigger>
               </TabsList>
             </div>
 
-            <div className="px-4 pb-4">
+            <div className="px-4 pb-4 pt-4">
               <TabsContent value={activeTab} className="mt-0">
                 {filteredActivities.length > 0 ? (
                   <div className="space-y-1">
@@ -406,4 +339,4 @@ export function RecentActivity({ onPostClick, onUserClick }: RecentActivityProps
       </Card>
     </motion.div>
   );
-}
+});

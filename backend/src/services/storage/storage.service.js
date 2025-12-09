@@ -1,7 +1,7 @@
 
 // backend/src/services/storage/storage.service.js
-import minioClient from './storage.provider.js';
-import { ensureBucketExists } from './storage.provider.js';
+const { minioClient, ensureBucketExists } = require('./storage.provider');
+const { URL } = require('url');
 
 const BUCKET_NAME = process.env.MINIO_BUCKET_NAME || 'workcodile-files';
 
@@ -14,7 +14,7 @@ ensureBucketExists(BUCKET_NAME);
  * @param {Buffer|string} file - El buffer del archivo o la ruta al archivo.
  * @returns {Promise<string>} - La URL pública del archivo subido.
  */
-export async function uploadFile(objectName, file) {
+async function uploadFile(objectName, file) {
   try {
     await minioClient.putObject(BUCKET_NAME, objectName, file);
     const url = `${process.env.MINIO_ENDPOINT}:${process.env.MINIO_PORT}/${BUCKET_NAME}/${objectName}`;
@@ -31,8 +31,20 @@ export async function uploadFile(objectName, file) {
  * @param {string} objectName - El nombre del archivo en el bucket.
  * @returns {string} - La URL pública del archivo.
  */
-export function getFileUrl(objectName) {
-  return `${process.env.MINIO_ENDPOINT}:${process.env.MINIO_PORT}/${BUCKET_NAME}/${objectName}`;
+async function getFileUrl(objectName) {
+  try {
+    const originalEndpoint = minioClient.host;
+    minioClient.host = process.env.MINIO_PUBLIC_ENDPOINT || 'localhost';
+
+    const presignedUrl = await minioClient.presignedGetObject(BUCKET_NAME, objectName, 24 * 60 * 60);
+
+    minioClient.host = originalEndpoint;
+
+    return presignedUrl;
+  } catch (error) {
+    console.error('Error al generar la URL prefirmada:', error);
+    throw new Error('No se pudo obtener la URL del archivo.');
+  }
 }
 
 /**
@@ -40,7 +52,7 @@ export function getFileUrl(objectName) {
  * @param {string} objectName - El nombre del archivo a eliminar.
  * @returns {Promise<void>}
  */
-export async function deleteFile(objectName) {
+async function deleteFile(objectName) {
   try {
     await minioClient.removeObject(BUCKET_NAME, objectName);
     console.log(`Archivo eliminado: ${objectName}`);
@@ -49,3 +61,9 @@ export async function deleteFile(objectName) {
     throw new Error('No se pudo eliminar el archivo.');
   }
 }
+
+module.exports = {
+    uploadFile,
+    getFileUrl,
+    deleteFile,
+};

@@ -5,78 +5,19 @@ import {
   ReactNode,
   useEffect,
 } from 'react'
-
-interface User {
-  id: string
-  name: string
-  email: string
-  avatar?: string
-  university: string
-}
-
-interface Course {
-  id: string
-  name: string
-  cycle: number
-}
-
-interface FileAttachment {
-  id: string
-  name: string
-  size: number
-  type: string
-  url?: string // For uploaded files
-  file?: File // For local files
-}
-
-interface Post {
-  id: string
-  title: string
-  content: string
-  author: User
-  createdAt: Date
-  course: string // Course ID
-  upvotes: number
-  downvotes: number
-  comments: Comment[]
-  userVote?: 'up' | 'down'
-  hashtags: string[]
-  attachments: FileAttachment[]
-  // Rating system
-  rating: number // Average rating (0-5)
-  averageRating?: number // Same as rating, for compatibility
-  totalRatings: number // Total number of ratings
-  userRating?: number // Current user's rating (0-5, 0 means no rating)
-  // Additional fields
-  views: number
-  isBookmarked?: boolean
-}
-
-interface Comment {
-  id: string
-  content: string
-  author: User
-  createdAt: Date
-  score: number
-  userVote?: 'up' | 'down'
-  replies: Comment[]
-  parentId?: string
-}
-
-interface Notification {
-  id: string
-  text: string
-  createdAt: Date
-  read: boolean
-}
+import { User, Course, FileAttachment, Post, Comment, Notification } from './types'
 
 interface AppContextType {
+  authStatus: 'loading' | 'authenticated' | 'unauthenticated'
   user: User | null
   posts: Post[]
   courses: Course[]
   notifications: Notification[]
+  fetchPostById: (postId: string) => Promise<Post | undefined>
+  markNotificationAsRead: (notificationId: string) => void
   login: (email: string, password: string) => Promise<void>
-  register: (name: string, email: string, password: string) => Promise<void>
+  sendVerificationCode: (name: string, email: string, password: string) => Promise<any>
+  verifyAndRegister: (email: string, password: string, verificationCode: string) => Promise<any>
   logout: () => void
   updateProfile: (profileData: Partial<User>) => void
   createPost: (
@@ -85,24 +26,33 @@ interface AppContextType {
     course: string,
     hashtags: string[],
     attachments: FileAttachment[]
-  ) => void
-  votePost: (postId: string, vote: 'up' | 'down') => void
-  addComment: (postId: string, content: string, parentId?: string) => void
-  voteComment: (postId: string, commentId: string, vote: 'up' | 'down') => void
+  ) => Promise<void>
+  votePost: (postId: string, vote: 'up' | 'down') => Promise<void>
+  addComment: (
+    postId: string,
+    content: string,
+    parentId?: string
+  ) => Promise<void>
+  voteComment: (
+    postId: string,
+    commentId: string,
+    vote: 'up' | 'down'
+  ) => Promise<void>
+  fetchCommentReplies: (postId: string, commentId: string) => Promise<Comment[]>
   searchPosts: (query: string) => Post[]
   getCourseById: (courseId: string) => Course | undefined
   getCoursesByCycle: (cycle: number) => Course[]
-  isDarkMode: boolean
-  toggleDarkMode: () => void
-  // New rating and additional features
-  ratePost: (postId: string, rating: number) => void
+  theme: 'light' | 'dark'
+  toggleTheme: () => void
   toggleBookmark: (postId: string) => void
   reportPost: (postId: string) => void
   incrementViews: (postId: string) => void
+  incrementViewsBatch: (postIds: string[]) => void
   mainFeedKey: number
   resetMainFeed: () => void
-  selectedPostId: string | null
-  selectPost: (postId: string | null) => void
+  fetchMorePosts: () => void
+  hasMorePosts: boolean
+  isFetchingPosts: boolean
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined)
@@ -214,118 +164,374 @@ const courses: Course[] = [
   { id: 'IS-1027', name: 'ELECTIVO II: TOPICOS AVANZADOS II', cycle: 10 },
 ]
 
-const mockNotifications: Notification[] = [
-  {
-    id: '1',
-    text: 'Carlos Mendoza ha comentado en tu publicación "Busco tutor para Matemática II".',
-    createdAt: new Date(new Date().getTime() - 1000 * 60 * 5),
-    read: false,
+const transformBackendComment = (comment: any): Comment => {
+  return {
+    ...comment,
+    id: comment._id,
+    createdAt: new Date(comment.createdAt),
+    author: {
+      id: comment.author?._id?.toString() || '',
+      name: comment.author?.name || 'Usuario Anónimo',
+      avatar: comment.author?.avatar_key ? `http://localhost:9000/workcodile-files/${comment.author.avatar_key}` : undefined,
+      university: 'UNAM',
+      email: comment.author?.email || '',
+    },
+    score: comment.score,
+    userVote: comment.user_vote,
+    replies: comment.replies ? comment.replies.map(transformBackendComment) : [],
+  }
+}
+
+const transformBackendPost = (post: any): Post => ({
+  id: post._id,
+  title: post.title,
+  content: post.content,
+  author: {
+    id: post.author?._id?.toString() || '',
+    name: post.author?.name || 'Usuario Anónimo',
+    avatar: post.author?.avatar_key ? `http://localhost:9000/workcodile-files/${post.author.avatar_key}` : undefined,
+    university: 'UNAM',
+    email: post.author?.email || '',
   },
-  {
-    id: '2',
-    text: 'Tu publicación "Ofrezco servicios para Aplicaciones Web I" ha recibido 5 nuevos votos.',
-    createdAt: new Date(new Date().getTime() - 1000 * 60 * 60),
-    read: false,
-  },
-  {
-    id: '3',
-    text: 'María Rodriguez ha respondido a tu comentario en "Grupo de estudio para Estadística Básica".',
-    createdAt: new Date(new Date().getTime() - 1000 * 60 * 60 * 3),
-    read: true,
-  },
-]
+  createdAt: new Date(post.createdAt),
+  course: post.course_id || '',
+  upvotes: post.upvote_count || 0,
+  downvotes: post.downvote_count || 0,
+  comments: post.comments ? post.comments.map(transformBackendComment) : [],
+  hashtags: post.hashtags || [],
+  attachments: post.attachments ? post.attachments.map((att: any) => ({
+    ...att,
+  })) : [],
+  views: post.views || 0,
+  isBookmarked: false,
+  userVote: post.user_vote,
+})
+
+const transformBackendNotification = (notification: any): Notification => ({
+  id: notification._id,
+  text: notification.text,
+  createdAt: new Date(notification.createdAt),
+  read: notification.read,
+  link: notification.link,
+})
 
 export function AppProvider({ children }: { children: ReactNode }) {
+  const [authStatus, setAuthStatus] = useState<
+    'loading' | 'authenticated' | 'unauthenticated'
+  >('loading')
   const [user, setUser] = useState<User | null>(null)
   const [posts, setPosts] = useState<Post[]>([])
-  const [notifications, setNotifications] =
-    useState<Notification[]>(mockNotifications)
-  const [isDarkMode, setIsDarkMode] = useState(false)
+  const [notifications, setNotifications] = useState<Notification[]>([])
+  const [theme, setTheme] = useState<'light' | 'dark'>('light')
   const [mainFeedKey, setMainFeedKey] = useState(0)
-  const [selectedPostId, setSelectedPostId] = useState<string | null>(null)
+  const [postPage, setPostPage] = useState(1);
+  const [hasMorePosts, setHasMorePosts] = useState(true);
+  const [isFetchingPosts, setIsFetchingPosts] = useState(false);
 
   useEffect(() => {
-    const fetchPosts = async () => {
-      try {
-        const response = await fetch('http://localhost:3001/api/posts')
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`)
+    const root = window.document.documentElement
+    root.classList.remove('light', 'dark')
+    root.classList.add(theme)
+  }, [theme])
+
+  const toggleTheme = () => {
+    const newTheme = theme === 'light' ? 'dark' : 'light'
+    setTheme(newTheme)
+    updateUserTheme(newTheme)
+  }
+
+  const updateUserTheme = async (newTheme: 'light' | 'dark') => {
+    const token = localStorage.getItem('token')
+    if (!token) return
+
+    try {
+      await fetch('http://localhost:3001/api/auth/user/theme', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-auth-token': token,
+        },
+        body: JSON.stringify({ theme: newTheme }),
+      })
+    } catch (error) {
+      console.error('Failed to update theme:', error)
+    }
+  }
+
+  const fetchInitialPosts = async () => {
+    setIsFetchingPosts(true);
+    try {
+      const token = localStorage.getItem('token');
+      const headers: HeadersInit = {};
+      if (token) {
+        headers['x-auth-token'] = token;
+      }
+
+      const response = await fetch('http://localhost:3001/api/posts?page=1', { headers });
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+      const data = await response.json();
+
+      const transformedPosts: Post[] = data.posts.map(transformBackendPost);
+      setPosts(transformedPosts);
+      setPostPage(1);
+      setHasMorePosts(data.hasNextPage);
+    } catch (error) {
+      console.error('Failed to fetch posts:', error);
+    } finally {
+      setIsFetchingPosts(false);
+    }
+  }
+
+  const fetchMorePosts = async () => {
+    if (isFetchingPosts || !hasMorePosts) return;
+
+    setIsFetchingPosts(true);
+    const nextPage = postPage + 1;
+    try {
+      const token = localStorage.getItem('token');
+      const headers: HeadersInit = {};
+      if (token) {
+        headers['x-auth-token'] = token;
+      }
+
+      const response = await fetch(`http://localhost:3001/api/posts?page=${nextPage}`, { headers });
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+      const data = await response.json();
+
+      const transformedPosts: Post[] = data.posts.map(transformBackendPost);
+      setPosts(prevPosts => [...prevPosts, ...transformedPosts]);
+      setPostPage(nextPage);
+      setHasMorePosts(data.hasNextPage);
+    } catch (error) {
+      console.error('Failed to fetch more posts:', error);
+    } finally {
+      setIsFetchingPosts(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchInitialPosts();
+  }, [user]);
+
+  const fetchPostById = async (postId: string): Promise<Post | undefined> => {
+    try {
+      const token = localStorage.getItem('token');
+      const headers: HeadersInit = {};
+      if (token) {
+        headers['x-auth-token'] = token;
+      }
+
+      const response = await fetch(`http://localhost:3001/api/posts/${postId}`, { headers });
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const data = await response.json();
+      const transformedPost = transformBackendPost(data);
+      
+      // Optionally, update the global posts state
+      setPosts(prevPosts => {
+        const postExists = prevPosts.some(p => p.id === transformedPost.id);
+        if (postExists) {
+          return prevPosts.map(p => p.id === transformedPost.id ? transformedPost : p);
         }
-        const data = await response.json()
+        return [...prevPosts, transformedPost];
+      });
 
-        // Transform backend data to frontend Post interface
-        const transformedPosts: Post[] = data.map((post: any) => ({
-          id: post._id,
-          title: post.title,
-          content: post.content,
-          author: {
-            id: post.author?._id?.toString() || '',
-            name: post.author?.name || 'Usuario Anónimo',
-            avatar: post.author?.avatar_key, // This might need to be a full URL later
-            university: 'UNAM', // Placeholder
-            email: post.author?.email || '', // Placeholder
-          },
-          createdAt: new Date(post.createdAt),
-          course: post.course_id || '',
-          upvotes: post.upvote_count || 0,
-          downvotes: post.downvote_count || 0,
-          comments: post.comments || [],
-          hashtags: post.hashtags || [],
-          attachments: post.attachments || [],
-          rating: post.average_rating || 0,
-          totalRatings: post.total_ratings || 0,
-          views: post.views || 0,
-          isBookmarked: false, // Default
-          userVote: undefined, // Default
-          userRating: 0, // Default
-        }))
+      return transformedPost;
+    } catch (error) {
+      console.error('Failed to fetch post by ID:', error);
+      return undefined;
+    }
+  };
 
-        setPosts(transformedPosts)
-      } catch (error) {
-        console.error('Failed to fetch posts:', error)
+  useEffect(() => {
+    const loadUser = async () => {
+      const token = localStorage.getItem('token')
+      if (token) {
+        try {
+          const response = await fetch('http://localhost:3001/api/auth/me', {
+            headers: {
+              'x-auth-token': token,
+            },
+          })
+
+          if (!response.ok) {
+            logout()
+            setAuthStatus('unauthenticated')
+            return
+          }
+
+          const userData = await response.json()
+          if (userData.avatar_key) {
+            userData.avatar = `http://localhost:9000/workcodile-files/${userData.avatar_key}`;
+          }
+          setUser(userData)
+          if (userData.theme) {
+            setTheme(userData.theme)
+          }
+          setAuthStatus('authenticated')
+        } catch (error) {
+          console.error('Failed to load user session:', error)
+          logout()
+          setAuthStatus('unauthenticated')
+        }
+      } else {
+        setAuthStatus('unauthenticated')
       }
     }
 
-    fetchPosts()
+    loadUser()
   }, [])
 
-  const resetMainFeed = () => setMainFeedKey((prev) => prev + 1)
-  const selectPost = (postId: string | null) => setSelectedPostId(postId)
+  useEffect(() => {
+    const fetchNotifications = async () => {
+      const token = localStorage.getItem('token')
+      if (authStatus === 'authenticated' && token) {
+        try {
+          const response = await fetch('http://localhost:3001/api/notifications', {
+            headers: {
+              'x-auth-token': token,
+            },
+          })
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`)
+          }
+          const data = await response.json()
+          const transformedNotifications: Notification[] = data.map(transformBackendNotification)
+          setNotifications(transformedNotifications)
+        } catch (error) {
+          console.error('Failed to fetch notifications:', error)
+        }
+      }
+    }
 
-  const login = async (email: string, password: string) => {
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1000))
-    const foundUser = mockUsers.find((u) => u.email === email)
-    if (foundUser) {
-      setUser(foundUser)
-    } else {
-      throw new Error('Usuario no encontrado')
+    fetchNotifications()
+  }, [authStatus])
+
+  const markNotificationAsRead = async (notificationId: string) => {
+    const token = localStorage.getItem('token')
+    if (!token) return
+
+    try {
+      const response = await fetch(`http://localhost:3001/api/notifications/${notificationId}/read`, {
+        method: 'PUT',
+        headers: {
+          'x-auth-token': token,
+        },
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to mark notification as read')
+      }
+
+      setNotifications(prev =>
+        prev.map(n => n.id === notificationId ? { ...n, read: true } : n)
+      )
+    } catch (error) {
+      console.error('Error marking notification as read:', error)
     }
   }
 
-  const register = async (name: string, email: string, password: string) => {
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1000))
-    const newUser: User = {
-      id: Date.now().toString(),
-      name,
-      email,
-      university: 'UNAM',
+  const resetMainFeed = () => {
+    setMainFeedKey((prev) => prev + 1)
+    fetchInitialPosts()
+  }
+
+  const login = async (email: string, password: string) => {
+    const response = await fetch('http://localhost:3001/api/auth/login', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ email, password }),
+    })
+
+    if (!response.ok) {
+      const errorData = await response.json()
+      throw new Error(errorData.msg || 'Error al iniciar sesión')
     }
-    setUser(newUser)
+
+    const { token, user: userData } = await response.json()
+    localStorage.setItem('token', token)
+    if (userData.avatar_key) {
+      userData.avatar = `http://localhost:9000/workcodile-files/${userData.avatar_key}`;
+    }
+    setUser(userData)
+    if (userData.theme) {
+      setTheme(userData.theme)
+    }
+    setAuthStatus('authenticated')
+  }
+
+  const sendVerificationCode = async (name: string, email: string, password: string) => {
+    const response = await fetch('http://localhost:3001/api/auth/send-verification-code', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ name, email, password }),
+    })
+
+    const responseData = await response.json();
+
+    if (!response.ok) {
+      throw new Error(responseData.msg || 'Error al enviar el código de verificación')
+    }
+
+    return responseData; // Returns { msg: 'Verification code sent...' }
+  }
+
+  const verifyAndRegister = async (email: string, password: string, verificationCode: string) => {
+    const response = await fetch('http://localhost:3001/api/auth/verify-and-register', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ email, password, verificationCode }),
+    })
+
+    const responseData = await response.json();
+
+    if (!response.ok) {
+      throw new Error(responseData.msg || 'Error al verificar el código o registrar el usuario')
+    }
+
+    // On successful verification and registration, log in the user directly
+    const { token, user: userData } = responseData;
+    localStorage.setItem('token', token);
+    if (userData.avatar_key) {
+      userData.avatar = `http://localhost:9000/workcodile-files/${userData.avatar_key}`;
+    }
+    setUser(userData);
+    if (userData.theme) {
+      setTheme(userData.theme);
+    }
+    setAuthStatus('authenticated');
+    return responseData; // Returns { token, user }
   }
 
   const logout = () => {
+    localStorage.removeItem('token')
     setUser(null)
+    setAuthStatus('unauthenticated')
+    setNotifications([])
   }
 
   const updateProfile = (profileData: Partial<User>) => {
     if (user) {
-      setUser({ ...user, ...profileData })
+      const newProfile = { ...user, ...profileData };
+      if (newProfile.avatar_key) {
+        newProfile.avatar = `http://localhost:9000/workcodile-files/${newProfile.avatar_key}`;
+      }
+      setUser(newProfile);
     }
   }
 
-  const createPost = (
+  const createPost = async (
     title: string,
     content: string,
     course: string,
@@ -333,163 +539,273 @@ export function AppProvider({ children }: { children: ReactNode }) {
     attachments: FileAttachment[]
   ) => {
     if (!user) return
+    const token = localStorage.getItem('token')
+    if (!token) return
 
-    const newPost: Post = {
-      id: Date.now().toString(),
-      title,
-      content,
-      author: user,
-      createdAt: new Date(),
-      course,
-      upvotes: 0,
-      downvotes: 0,
-      comments: [],
-      hashtags,
-      attachments,
-      rating: 0,
-      averageRating: 0,
-      totalRatings: 0,
-      userRating: 0,
-      views: 0,
-      isBookmarked: false,
+    try {
+      const response = await fetch('http://localhost:3001/api/posts', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-auth-token': token,
+        },
+        body: JSON.stringify({ title, content, course, hashtags, attachments }),
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to create post')
+      }
+
+      const newPost = await response.json()
+      const transformedPost = transformBackendPost(newPost)
+      setPosts((prev) => [transformedPost, ...prev])
+    } catch (error) {
+      console.error('Error creating post:', error)
     }
-
-    setPosts((prev) => [newPost, ...prev])
   }
 
-  const votePost = (postId: string, vote: 'up' | 'down') => {
-    setPosts((prev) =>
-      prev.map((post) => {
-        if (post.id === postId) {
-          const currentVote = post.userVote
-          let newUpvotes = post.upvotes
-          let newDownvotes = post.downvotes
+  const votePost = async (postId: string, vote: 'up' | 'down') => {
+    const token = localStorage.getItem('token')
+    if (!token) return
 
-          // Handle vote changes
-          if (currentVote === vote) {
-            // User is undoing their vote
-            if (vote === 'up') newUpvotes--
-            else newDownvotes--
-            return {
-              ...post,
-              upvotes: newUpvotes,
-              downvotes: newDownvotes,
-              userVote: undefined,
+    // Store the original posts state for rollback in case of error
+    let originalPosts: Post[] = [];
+
+    try {
+      setPosts((prev) => {
+        originalPosts = prev; // Store the state before optimistic update
+        const postIndex = prev.findIndex(p => p.id === postId);
+        if (postIndex === -1) return prev; // Post not found
+
+        const originalPost = prev[postIndex];
+        let newUpvotes = originalPost.upvotes;
+        let newDownvotes = originalPost.downvotes;
+        let newUserVote = originalPost.userVote;
+
+        // Determine new vote counts and userVote status
+        if (vote === 'up') {
+          if (originalPost.userVote === 'up') { // User is un-upvoting
+            newUpvotes--;
+            newUserVote = null;
+          } else { // User is upvoting
+            newUpvotes++;
+            if (originalPost.userVote === 'down') { // User was downvoting, remove downvote
+              newDownvotes--;
             }
-          } else {
-            // New vote or changing vote
-            if (currentVote === 'up') newUpvotes--
-            if (currentVote === 'down') newDownvotes--
-
-            if (vote === 'up') newUpvotes++
-            else newDownvotes++
-
-            return {
-              ...post,
-              upvotes: newUpvotes,
-              downvotes: newDownvotes,
-              userVote: vote,
+            newUserVote = 'up';
+          }
+        } else { // vote === 'down'
+          if (originalPost.userVote === 'down') { // User is un-downvoting
+            newDownvotes--;
+            newUserVote = null;
+          } else { // User is downvoting
+            newDownvotes++;
+            if (originalPost.userVote === 'up') { // User was upvoting, remove upvote
+              newUpvotes--;
             }
+            newUserVote = 'down';
           }
         }
-        return post
-      })
-    )
+
+        const optimisticPost = {
+          ...originalPost,
+          upvotes: newUpvotes,
+          downvotes: newDownvotes,
+          userVote: newUserVote,
+        };
+
+        const newPosts = [...prev];
+        newPosts[postIndex] = optimisticPost;
+        return newPosts;
+      });
+
+      const response = await fetch(
+        `http://localhost:3001/api/posts/${postId}/vote`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-auth-token': token,
+          },
+          body: JSON.stringify({ vote }),
+        }
+      )
+
+      if (!response.ok) {
+        throw new Error('Failed to vote on post'); // Error during API call
+      }
+
+      // Reconcile with backend's response (optional, but good for consistency)
+      const updatedPostFromServer = await response.json();
+      const transformedPostFromServer = transformBackendPost(updatedPostFromServer);
+
+      setPosts((prev) =>
+        prev.map((p) => (p.id === postId ? transformedPostFromServer : p))
+      );
+
+    } catch (error) {
+      console.error('Error voting on post:', error);
+      // Rollback to original state if API call fails
+      setPosts(originalPosts);
+      // Optionally show a toast notification for the error
+    }
   }
 
-  const addComment = (postId: string, content: string, parentId?: string) => {
+  const addComment = async (
+    postId: string,
+    content: string,
+    parentId?: string
+  ) => {
     if (!user) return
+    const token = localStorage.getItem('token')
+    if (!token) return
 
-    const newComment: Comment = {
-      id: Date.now().toString(),
-      content,
-      author: user,
-      createdAt: new Date(),
-      score: 0,
-      replies: [],
-      parentId,
-    }
-
-    setPosts((prev) =>
-      prev.map((post) => {
-        if (post.id === postId) {
-          if (parentId) {
-            // Add a reply to a nested comment
-            const addReplyToComment = (comments: Comment[]): Comment[] => {
-              return comments.map((comment) => {
-                if (comment.id === parentId) {
-                  return {
-                    ...comment,
-                    replies: [...comment.replies, newComment],
-                  }
-                }
-                if (comment.replies.length > 0) {
-                  return {
-                    ...comment,
-                    replies: addReplyToComment(comment.replies),
-                  }
-                }
-                return comment
-              })
-            }
-            return {
-              ...post,
-              comments: addReplyToComment(post.comments),
-            }
-          } else {
-            // Add a top-level comment
-            return {
-              ...post,
-              comments: [...post.comments, newComment],
-            }
-          }
+    try {
+      const response = await fetch(
+        `http://localhost:3001/api/posts/${postId}/comments`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-auth-token': token,
+          },
+          body: JSON.stringify({ content, parentId }),
         }
-        return post
-      })
-    )
+      )
+
+      if (!response.ok) {
+        throw new Error('Failed to add comment')
+      }
+
+      const updatedPost = await response.json()
+      const transformedPost = transformBackendPost(updatedPost)
+
+      setPosts((prev) =>
+        prev.map((p) => (p.id === postId ? transformedPost : p))
+      )
+    } catch (error) {
+      console.error('Error adding comment:', error)
+    }
   }
 
-  const voteComment = (
+// Helper function to find and optimistically update a comment in a nested structure
+const findAndUpdateCommentRecursive = (
+  comments: Comment[],
+  targetCommentId: string,
+  vote: 'up' | 'down',
+  userId: string // Not directly used for userVote anymore, but can be for score if needed
+): Comment[] => {
+  return comments.map(comment => {
+                if (comment.id === targetCommentId) {
+                  let newScore = comment.score;
+                  let newUserVote = comment.userVote;
+                  console.log(`Optimistically updating comment: ${targetCommentId}, new userVote: ${newUserVote}, new score: ${newScore}`);      if (vote === 'up') {
+        if (comment.userVote === 'up') { // Un-upvoting
+          newScore--;
+          newUserVote = null;
+        } else { // Upvoting
+          newScore++;
+          newUserVote = 'up';
+          if (comment.userVote === 'down') { // Was downvoting
+            newScore++; // Undo previous downvote from score
+          }
+        }
+      } else { // vote === 'down'
+        if (comment.userVote === 'down') { // Un-downvoting
+          newScore++;
+          newUserVote = null;
+        } else { // Downvoting
+          newScore--;
+          newUserVote = 'down';
+          if (comment.userVote === 'up') { // Was upvoting
+            newScore--; // Undo previous upvote from score
+          }
+        }
+      }
+
+      return {
+        ...comment,
+        score: newScore,
+        userVote: newUserVote,
+      };
+    } else if (comment.replies && comment.replies.length > 0) {
+      // Recursively check replies
+      return {
+        ...comment,
+        replies: findAndUpdateCommentRecursive(comment.replies, targetCommentId, vote, userId),
+      };
+    }
+    return comment; // No change to this comment or its replies
+  });
+};
+
+  const voteComment = async (
     postId: string,
     commentId: string,
     vote: 'up' | 'down'
   ) => {
-    setPosts((prev) =>
-      prev.map((post) => {
-        if (post.id === postId) {
-          const updateCommentVotes = (comments: Comment[]): Comment[] => {
-            return comments.map((comment) => {
-              if (comment.id === commentId) {
-                const currentVote = comment.userVote
-                let newScore = comment.score
+    const token = localStorage.getItem('token')
+    if (!token) return
+    if (!user) return; // Must be logged in to vote
 
-                if (currentVote === vote) {
-                  // Undoing vote
-                  newScore += vote === 'up' ? -1 : 1
-                  return { ...comment, score: newScore, userVote: undefined }
-                } else {
-                  // New vote or changing vote
-                  if (currentVote === 'up') newScore -= 1
-                  if (currentVote === 'down') newScore += 1
-                  newScore += vote === 'up' ? 1 : -1
-                  return { ...comment, score: newScore, userVote: vote }
-                }
-              }
-              // Recursively update replies
-              if (comment.replies && comment.replies.length > 0) {
-                return {
-                  ...comment,
-                  replies: updateCommentVotes(comment.replies),
-                }
-              }
-              return comment
-            })
-          }
-          return { ...post, comments: updateCommentVotes(post.comments) }
+    let originalPosts: Post[] = [];
+
+    try {
+      setPosts((prevPosts) => {
+        originalPosts = prevPosts; // Store original state for rollback
+        const postIndex = prevPosts.findIndex(p => p.id === postId);
+        if (postIndex === -1) return prevPosts;
+
+        const postToUpdate = { ...prevPosts[postIndex] }; // Deep copy the post
+        
+        // Optimistically update the comment within the post's comments tree
+        const updatedComments = findAndUpdateCommentRecursive(
+          postToUpdate.comments,
+          commentId,
+          vote,
+          user.id
+        );
+
+        const optimisticPost = {
+          ...postToUpdate,
+          comments: updatedComments,
+        };
+
+        const newPosts = [...prevPosts];
+        newPosts[postIndex] = optimisticPost;
+        return newPosts;
+      });
+
+      const response = await fetch(
+        `http://localhost:3001/api/posts/${postId}/comments/${commentId}/vote`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-auth-token': token,
+          },
+          body: JSON.stringify({ vote }),
         }
-        return post
-      })
-    )
+      )
+
+      if (!response.ok) {
+        throw new Error('Failed to vote on comment')
+      }
+
+      // Reconcile with backend's response
+      const updatedPostFromServer = await response.json();
+      const transformedPostFromServer = transformBackendPost(updatedPostFromServer);
+
+      setPosts((prevPosts) =>
+        prevPosts.map((p) => (p.id === postId ? transformedPostFromServer : p))
+      );
+
+    } catch (error) {
+      console.error('Error voting on comment:', error)
+      // Rollback to original state
+      setPosts(originalPosts);
+      // Optionally show a toast notification for the error
+    }
   }
 
   const searchPosts = (query: string) => {
@@ -514,107 +830,168 @@ export function AppProvider({ children }: { children: ReactNode }) {
     return courses.filter((course) => course.cycle === cycle)
   }
 
-  const toggleDarkMode = () => {
-    setIsDarkMode((prev) => !prev)
-    document.documentElement.classList.toggle('dark')
+  const fetchCommentReplies = async (postId: string, commentId: string): Promise<Comment[]> => {
+    try {
+      const token = localStorage.getItem('token');
+      const headers: HeadersInit = {};
+      if (token) {
+        headers['x-auth-token'] = token;
+      }
+
+      const response = await fetch(`http://localhost:3001/api/posts/${postId}/comments/${commentId}/replies`, { headers });
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+      const data = await response.json();
+      return data.map(transformBackendComment);
+    } catch (error) {
+      console.error('Failed to fetch replies:', error);
+      return [];
+    }
   }
 
-  const ratePost = (postId: string, rating: number) => {
-    if (!user) return // Ensure user is logged in
+  const toggleBookmark = async (postId: string) => {
+    if (!user) return
+    const token = localStorage.getItem('token')
+    if (!token) return
 
-    setPosts((prev) =>
-      prev.map((post) => {
-        if (post.id === postId) {
-          const wasUserRated = post.userRating && post.userRating > 0
-          const newTotalRatings = wasUserRated
-            ? post.totalRatings
-            : post.totalRatings + 1
-
-          // Calculate new average rating
-          const currentTotal = post.rating * post.totalRatings
-          const newTotal = wasUserRated
-            ? currentTotal - (post.userRating || 0) + rating
-            : currentTotal + rating
-          const newAverageRating =
-            newTotalRatings > 0 ? newTotal / newTotalRatings : 0
-
-          console.log(
-            `Usuario ${user.name} calificó el post "${post.title}" con ${rating} cocodrilos`
-          )
-
-          return {
-            ...post,
-            rating: newAverageRating,
-            totalRatings: newTotalRatings,
-            userRating: rating,
-          }
-        }
-        return post
+    try {
+      const response = await fetch(`http://localhost:3001/api/posts/${postId}/bookmark`, {
+        method: 'POST',
+        headers: {
+          'x-auth-token': token,
+        },
       })
-    )
-  }
 
-  const toggleBookmark = (postId: string) => {
-    setPosts((prev) =>
-      prev.map((post) => {
-        if (post.id === postId) {
-          return {
-            ...post,
-            isBookmarked: !post.isBookmarked,
+      if (!response.ok) {
+        throw new Error('Failed to bookmark post')
+      }
+
+      const { bookmarked } = await response.json()
+
+      setPosts((prev) =>
+        prev.map((post) => {
+          if (post.id === postId) {
+            return {
+              ...post,
+              isBookmarked: bookmarked,
+            }
           }
-        }
-        return post
-      })
-    )
+          return post
+        })
+      )
+    } catch (error) {
+      console.error('Error bookmarking post:', error)
+    }
   }
 
-  const reportPost = (postId: string) => {
-    // In a real app, this would send a report to the backend
-    console.log(`Post ${postId} reported by user ${user?.id}`)
+  const reportPost = async (postId: string, reason: string = 'No reason provided') => {
+    if (!user) return
+    const token = localStorage.getItem('token')
+    if (!token) return
+
+    try {
+      const response = await fetch(`http://localhost:3001/api/posts/${postId}/report`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-auth-token': token,
+        },
+        body: JSON.stringify({ reason }),
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to report post')
+      }
+
+      console.log(`Post ${postId} reported by user ${user?.id}`)
+    } catch (error) {
+      console.error('Error reporting post:', error)
+    }
   }
 
   const incrementViews = (postId: string) => {
+    // This function is now a no-op on the network level, only updates local state.
+    // The batch processing will handle backend updates.
     setPosts((prev) =>
       prev.map((post) => {
         if (post.id === postId) {
           return {
             ...post,
             views: post.views + 1,
-          }
+          };
         }
-        return post
+        return post;
       })
-    )
-  }
+    );
+  };
+
+  const incrementViewsBatch = async (postIds: string[]) => {
+    if (postIds.length === 0) return;
+    try {
+      // This endpoint needs to be created in the backend
+      await fetch(`http://localhost:3001/api/posts/views`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ postIds }),
+      });
+
+      // The local state might have been updated optimistically by `incrementViews`.
+      // If not, this is where you'd update the state for all postIds.
+      // To be safe, let's ensure the views are updated.
+      setPosts((prevPosts) =>
+        prevPosts.map(post => {
+          if (postIds.includes(post.id)) {
+            // This could lead to double increments if not handled carefully.
+            // For this reason, incrementViews is kept as a local-only update for now.
+            // And the batch is for the backend.
+            // A more robust implementation might be needed.
+            // For now, we assume the backend handles avoiding double counts.
+          }
+          return post;
+        })
+      );
+    } catch (error) {
+      console.error('Error incrementing views in batch:', error);
+    }
+  };
 
   return (
     <AppContext.Provider
       value={{
+        authStatus,
         user,
         posts,
         courses,
         notifications,
+        fetchPostById,
+        markNotificationAsRead,
         login,
-        register,
+        sendVerificationCode, // new function
+        verifyAndRegister,    // new function
         logout,
         updateProfile,
         createPost,
         votePost,
         addComment,
         voteComment,
+        fetchCommentReplies,
         searchPosts,
         getCourseById,
         getCoursesByCycle,
-        isDarkMode,
-        toggleDarkMode,
-        ratePost,
+        theme,
+        toggleTheme,
         toggleBookmark,
         reportPost,
         incrementViews,
+        incrementViewsBatch,
         mainFeedKey,
         resetMainFeed,
-        selectedPostId,
-        selectPost,
+        fetchMorePosts,
+        hasMorePosts,
+        isFetchingPosts,
       }}
     >
       {children}

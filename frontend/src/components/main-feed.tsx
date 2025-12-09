@@ -1,5 +1,6 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { motion } from 'motion/react';
+import React from 'react';
 import { Header } from './header';
 import { Sidebar } from './sidebar';
 import { RightSidebar } from './right-sidebar';
@@ -8,36 +9,81 @@ import { PostCard } from './post-card';
 import { CreatePostModal } from './create-post-modal';
 import { Button } from './ui/button';
 import { Card } from './ui/card';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from './ui/select';
 import { useApp } from './app-context';
-
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
-import { 
-  TrendingUp, 
-  Clock, 
-  MessageCircle, 
+import { Virtuoso } from 'react-virtuoso';
+import {
+  TrendingUp,
+  Clock,
+  MessageCircle,
   Filter,
   RefreshCw
 } from 'lucide-react';
+import { Post } from './types'; // Import Post type
 
 type SortOption = 'recent' | 'popular' | 'commented';
 
 export function MainFeed() {
-  const { posts, searchPosts, getCourseById, mainFeedKey } = useApp();
+  const { posts, searchPosts, getCourseById, mainFeedKey, fetchMorePosts, hasMorePosts, isFetchingPosts, resetMainFeed, incrementViewsBatch } = useApp();
   const [isCreatePostOpen, setIsCreatePostOpen] = useState(false);
   const [selectedCourse, setSelectedCourse] = useState('all');
   const [sortBy, setSortBy] = useState<SortOption>('recent');
   const [searchQuery, setSearchQuery] = useState('');
 
-  const filteredAndSortedPosts = useMemo(() => {
-    let filteredPosts = searchQuery ? searchPosts(searchQuery) : posts;
-    
-    // Filter by course
-    if (selectedCourse !== 'all') {
-      filteredPosts = filteredPosts.filter(post => post.course === selectedCourse);
-    }
+  const viewedPostIdsRef = useRef(new Set<string>());
+  const pendingViewBatch = useRef<Set<string>>(new Set());
+  const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-    // Sort posts
-    const sortedPosts = [...filteredPosts].sort((a, b) => {
+  useEffect(() => {
+    return () => {
+      if (debounceTimeoutRef.current) {
+        clearTimeout(debounceTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  const processPendingViews = () => {
+    if (pendingViewBatch.current.size > 0) {
+      const idsToBatch = Array.from(pendingViewBatch.current);
+      incrementViewsBatch(idsToBatch);
+      idsToBatch.forEach(id => viewedPostIdsRef.current.add(id));
+      pendingViewBatch.current.clear();
+    }
+  };
+
+  const handleVisibleItemsChange = (data: {
+    startIndex: number;
+    endIndex: number;
+    visibleItems: { index: number; data: any }[];
+  }) => {
+    data.visibleItems.forEach(item => {
+      const postId = (posts[item.index] as Post).id;
+      if (postId && !viewedPostIdsRef.current.has(postId)) {
+        pendingViewBatch.current.add(postId);
+      }
+    });
+
+    if (debounceTimeoutRef.current) {
+      clearTimeout(debounceTimeoutRef.current);
+    }
+    debounceTimeoutRef.current = setTimeout(processPendingViews, 1000);
+  };
+
+  const filteredPosts = useMemo(() => {
+    let filtered = searchQuery ? searchPosts(searchQuery) : posts;
+    if (selectedCourse !== 'all') {
+      filtered = filtered.filter(post => post.course === selectedCourse);
+    }
+    return filtered;
+  }, [posts, selectedCourse, searchQuery, searchPosts]);
+  const filteredAndSortedPosts = useMemo(() => {
+    return [...filteredPosts].sort((a, b) => {
       switch (sortBy) {
         case 'popular':
           return (b.upvotes - b.downvotes) - (a.upvotes - a.downvotes);
@@ -48,17 +94,18 @@ export function MainFeed() {
           return b.createdAt.getTime() - a.createdAt.getTime();
       }
     });
+  }, [filteredPosts, sortBy]);
 
-    return sortedPosts;
-  }, [posts, selectedCourse, sortBy, searchQuery, searchPosts]);
-
-  const handleSearch = (query: string) => {
+  const memoizedHandleSearch = useCallback((query: string) => {
     setSearchQuery(query);
-  };
+  }, []);
+
+  const memoizedOnCreatePost = useCallback(() => {
+    setIsCreatePostOpen(true);
+  }, []);
 
   const handleRefresh = () => {
-    // In a real app, this would refetch data
-    window.location.reload();
+    resetMainFeed();
   };
 
   const sortOptions = [
@@ -67,11 +114,17 @@ export function MainFeed() {
     { value: 'commented', label: 'Más comentados', icon: MessageCircle }
   ];
 
+  const loadMore = () => {
+    if (hasMorePosts) {
+      fetchMorePosts();
+    }
+  };
+
   return (
     <div className="min-h-screen workcodile-bg">
       <Header 
-        onCreatePost={() => setIsCreatePostOpen(true)}
-        onSearch={handleSearch}
+        onCreatePost={memoizedOnCreatePost}
+        onSearch={memoizedHandleSearch}
       />
       
       <main className="container max-w-[1400px] mx-auto px-4 py-6">
@@ -157,60 +210,68 @@ export function MainFeed() {
 
 
             {/* Posts Feed */}
-            <div className="space-y-4">
-              {filteredAndSortedPosts.length > 0 ? (
-                filteredAndSortedPosts.map((post, index) => (
-                  <motion.div
-                    key={post.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: index * 0.1 }}
-                  >
-                    <PostCard post={post} />
-                  </motion.div>
-                ))
-              ) : (
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  className="text-center py-16"
-                >
-                  <Card className="glass-card p-8 border-dashed shadow-modern-lg">
-                    <div className="max-w-md mx-auto">
-                      <MessageCircle className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-                      <h3 className="text-lg font-semibold mb-2">
-                        {searchQuery ? 'No se encontraron resultados' : 'No hay publicaciones'}
-                      </h3>
-                      <p className="text-muted-foreground mb-6">
-                        {searchQuery 
-                          ? `No se encontraron publicaciones que coincidan con "${searchQuery}"`
-                          : selectedCourse === 'all'
-                          ? 'Sé el primero en crear una publicación'
-                          : `No hay publicaciones en el curso seleccionado`
-                        }
-                      </p>
-                      {!searchQuery && (
-                        <Button onClick={() => setIsCreatePostOpen(true)}>
-                          Crear primera publicación
-                        </Button>
-                      )}
+            {filteredAndSortedPosts.length > 0 ? (
+              <Virtuoso
+                style={{ height: '100vh' }}
+                data={filteredAndSortedPosts}
+                endReached={loadMore}
+                itemContent={(index, post) => {
+                  return (
+                    <div style={{ paddingBottom: '1rem' }}>
+                      <PostCard post={post} isDashboardView={true} />
                     </div>
-                  </Card>
-                </motion.div>
-              )}
-            </div>
-
-            {/* Load More (placeholder for future pagination) */}
-            {filteredAndSortedPosts.length > 0 && (
+                  );
+                }}
+                visibleItemsChanged={handleVisibleItemsChange}
+                components={{
+                  Footer: () => {
+                    return (
+                      <div className="text-center py-8">
+                        {isFetchingPosts ? (
+                          <p>Cargando...</p>
+                        ) : hasMorePosts ? (
+                          <Button
+                            variant="outline"
+                            className="w-full max-w-sm"
+                            onClick={loadMore}
+                          >
+                            Cargar más publicaciones
+                          </Button>
+                        ) : (
+                          <p>No hay más publicaciones.</p>
+                        )}
+                      </div>
+                    );
+                  },
+                }}
+              />
+            ) : (
               <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.5 }}
-                className="text-center py-8"
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="text-center py-16"
               >
-                <Button variant="outline" className="w-full max-w-sm">
-                  Cargar más publicaciones
-                </Button>
+                <Card className="glass-card p-8 border-dashed shadow-modern-lg">
+                  <div className="max-w-md mx-auto">
+                    <MessageCircle className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+                    <h3 className="text-lg font-semibold mb-2">
+                      {searchQuery ? 'No se encontraron resultados' : 'No hay publicaciones'}
+                    </h3>
+                    <p className="text-muted-foreground mb-6">
+                      {searchQuery 
+                        ? `No se encontraron publicaciones que coincidan con "${searchQuery}"`
+                        : selectedCourse === 'all'
+                        ? 'Sé el primero en crear una publicación'
+                        : `No hay publicaciones en el curso seleccionado`
+                      }
+                    </p>
+                    {!searchQuery && (
+                      <Button onClick={memoizedOnCreatePost}>
+                        Crear primera publicación
+                      </Button>
+                    )}
+                  </div>
+                </Card>
               </motion.div>
             )}
           </motion.div>

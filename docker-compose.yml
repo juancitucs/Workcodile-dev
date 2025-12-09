@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   database:
     image: mongo:latest
@@ -14,6 +12,7 @@ services:
   backend:
     build:
       context: ./backend
+      target: development
     container_name: workcodile-backend
     ports:
       - "3001:3001"
@@ -22,9 +21,19 @@ services:
       - /app/node_modules # No montar node_modules locales
     depends_on:
       - database
+      - minio
     environment:
-      - MONGO_URI=${MONGO_URI}
-      - PORT=${PORT}
+      - MONGO_URI=${MONGO_URI:-mongodb://database:27017/workcodiledb}
+      - PORT=${PORT:-3001}
+      - JWT_SECRET=${JWT_SECRET:-WorkcoWord}
+      - MINIO_ENDPOINT=minio
+      - MINIO_PORT=9000
+      - MINIO_ACCESS_KEY=${MINIO_ACCESS_KEY:-minioadmin}
+      - MINIO_SECRET_KEY=${MINIO_SECRET_KEY:-minioadmin123}
+      - MINIO_BUCKET_NAME=${MINIO_BUCKET_NAME:-workcodile-files}
+      - MINIO_PUBLIC_ENDPOINT=localhost
+      - GMAIL_USER=${GMAIL_USER} # Added for email functionality
+      - GMAIL_APP_PASSWORD=${GMAIL_APP_PASSWORD} # Added for email functionality
     networks:
       - workcodile-net
 
@@ -50,8 +59,8 @@ services:
     volumes:
       - ./minio_data:/data
     environment:
-      - MINIO_ROOT_USER=${MINIO_ROOT_USER}
-      - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD}
+      - MINIO_ROOT_USER=${MINIO_ACCESS_KEY:-minioadmin}
+      - MINIO_ROOT_PASSWORD=${MINIO_SECRET_KEY:-minioadmin123}
     command: server /data --console-address ":9001"
     networks:
       - workcodile-net

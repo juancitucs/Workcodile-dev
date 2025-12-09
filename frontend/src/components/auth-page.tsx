@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
@@ -8,11 +8,17 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { useApp } from './app-context';
 import { WorkCodileLogo } from './crocodile-icon';
 import { Loader2, GraduationCap, Users, BrainCircuit } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from './ui/dialog'; // Added for code verification dialog
 
 export function AuthPage() {
-  const { login, register } = useApp();
+  const { login, sendVerificationCode, verifyAndRegister } = useApp(); // Updated to new functions
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+
+  const [currentStep, setCurrentStep] = useState<'form' | 'verifyCode'>('form');
+  const [tempRegisterData, setTempRegisterData] = useState({ name: '', email: '', password: '' });
+  const [verificationCode, setVerificationCode] = useState('');
+  const [resendCodeTimer, setResendCodeTimer] = useState(0);
 
   const [loginForm, setLoginForm] = useState({
     email: '',
@@ -33,8 +39,8 @@ export function AuthPage() {
 
     try {
       await login(loginForm.email, loginForm.password);
-    } catch (err) {
-      setError('Credenciales incorrectas');
+    } catch (err: any) {
+      setError(err.message || err.msg || 'Error al iniciar sesión. Credenciales incorrectas o correo no verificado.');
     } finally {
       setIsLoading(false);
     }
@@ -51,20 +57,68 @@ export function AuthPage() {
       return;
     }
 
-    if (!registerForm.email.includes('@unam.edu.pe')) {
-      setError('Debes usar tu correo institucional de UNAM (@unam.edu.pe)');
-      setIsLoading(false);
-      return;
-    }
+    // Temporarily removed @unam.edu.pe restriction as per user request
+    // if (!registerForm.email.includes('@unam.edu.pe')) {
+    //   setError('Debes usar tu correo institucional de UNAM (@unam.edu.pe)');
+    //   setIsLoading(false);
+    //   return;
+    // }
 
     try {
-      await register(registerForm.name, registerForm.email, registerForm.password);
-    } catch (err) {
-      setError('Error al crear la cuenta');
+      // Call the new sendVerificationCode function
+      const response = await sendVerificationCode(registerForm.name, registerForm.email, registerForm.password);
+      setTempRegisterData({ name: registerForm.name, email: registerForm.email, password: registerForm.password });
+      setCurrentStep('verifyCode');
+      setError(response.msg || 'Código de verificación enviado a tu correo electrónico. Por favor, revísalo para completar tu registro.');
+      setResendCodeTimer(60); // Start 60-second timer for resend
+    } catch (err: any) {
+      setError(err.msg || err.message || 'Error al procesar el registro. Inténtalo de nuevo.');
     } finally {
       setIsLoading(false);
     }
   };
+
+  const handleVerifyCode = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    setError('');
+
+    try {
+      await verifyAndRegister(tempRegisterData.email, tempRegisterData.password, verificationCode);
+      // If successful, app-context's verifyAndRegister logs in the user
+      setCurrentStep('form'); // Close dialog
+      setRegisterForm({ name: '', email: '', password: '', confirmPassword: '' }); // Clear form
+      setVerificationCode(''); // Clear code
+      setError('¡Registro completado exitosamente! Has iniciado sesión automáticamente.');
+    } catch (err: any) {
+      setError(err.msg || err.message || 'Error al verificar el código. Código inválido o expirado.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleResendCode = async () => {
+    setIsLoading(true);
+    setError('');
+    try {
+      const response = await sendVerificationCode(tempRegisterData.name, tempRegisterData.email, tempRegisterData.password);
+      setError(response.msg || 'Nuevo código de verificación enviado. Revisa tu correo.');
+      setResendCodeTimer(60); // Reset timer
+    } catch (err: any) {
+      setError(err.msg || err.message || 'Error al reenviar el código. Inténtalo de nuevo más tarde.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (resendCodeTimer > 0) {
+      const timer = setTimeout(() => {
+        setResendCodeTimer(prev => prev - 1);
+      }, 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [resendCodeTimer]);
 
   return (
     <div className="min-h-screen workcodile-bg flex items-center justify-center p-4 relative overflow-hidden">
@@ -260,10 +314,10 @@ export function AuthPage() {
                       {isLoading ? (
                         <>
                           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          Creando cuenta...
+                          Enviando código...
                         </>
                       ) : (
-                        'Crear Cuenta'
+                        'Enviar Código'
                       )}
                     </Button>
                   </form>
@@ -277,6 +331,59 @@ export function AuthPage() {
           </Card>
         </motion.div>
       </div>
+
+      {/* Code Verification Dialog */}
+      <Dialog open={currentStep === 'verifyCode'} onOpenChange={(open) => { if (!open && !isLoading) setCurrentStep('form'); }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Verificación de Código</DialogTitle>
+            <DialogDescription>
+              Hemos enviado un código de 6 dígitos a su correo electrónico ({tempRegisterData.email}). Por favor, introdúzcalo a continuación para completar su registro.
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleVerifyCode} className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="verification-code">Código de Verificación</Label>
+              <Input
+                id="verification-code"
+                type="text"
+                placeholder="XXXXXX"
+                maxLength={6}
+                value={verificationCode}
+                onChange={(e) => setVerificationCode(e.target.value)}
+                required
+              />
+            </div>
+            {error && (
+              <p className="text-destructive text-sm text-center">{error}</p>
+            )}
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setCurrentStep('form')} disabled={isLoading}>
+                Cancelar
+              </Button>
+              <Button type="submit" disabled={isLoading || verificationCode.length !== 6}>
+                {isLoading ? (
+                  <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Verificando...
+                  </>
+                ) : (
+                  'Verificar'
+                )}
+              </Button>
+            </DialogFooter>
+          </form>
+          <div className="text-center text-sm text-muted-foreground">
+            {resendCodeTimer > 0 ? (
+              <p>Reenviar código en {resendCodeTimer} segundos.</p>
+            ) : (
+              <Button variant="link" onClick={handleResendCode} disabled={isLoading}>
+                Reenviar Código
+              </Button>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

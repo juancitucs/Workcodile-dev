@@ -1,4 +1,5 @@
-import { useState, useMemo, forwardRef } from 'react';
+import { useState, useMemo, forwardRef, memo } from 'react';
+import { Link } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
@@ -17,11 +18,7 @@ import {
   ChevronRight
 } from 'lucide-react';
 
-interface TrendingSectionProps {
-  onPostClick?: (postId: string) => void;
-}
-
-export function TrendingSection({ onPostClick }: TrendingSectionProps) {
+export const TrendingSection = memo(function TrendingSection() {
   const { posts, getCourseById } = useApp();
   const [timeFilter, setTimeFilter] = useState<'24h' | '7d' | '30d'>('24h');
 
@@ -31,7 +28,7 @@ export function TrendingSection({ onPostClick }: TrendingSectionProps) {
     const hours = timeFilter === '24h' ? 24 : timeFilter === '7d' ? 168 : 720;
     const cutoff = new Date(now.getTime() - hours * 60 * 60 * 1000);
     
-    return posts.filter(post => post.createdAt >= cutoff);
+    return posts.filter(post => new Date(post.createdAt) >= cutoff);
   };
 
   const filteredPosts = getPostsByTimeFilter(timeFilter);
@@ -47,14 +44,6 @@ export function TrendingSection({ onPostClick }: TrendingSectionProps) {
   const trendingByComments = useMemo(() => {
     return [...filteredPosts]
       .sort((a, b) => b.comments.length - a.comments.length)
-      .slice(0, 5);
-  }, [filteredPosts]);
-
-  // Trending by rating (average rating)
-  const trendingByRating = useMemo(() => {
-    return [...filteredPosts]
-      .filter(post => post.averageRating && post.averageRating > 0)
-      .sort((a, b) => (b.averageRating || 0) - (a.averageRating || 0))
       .slice(0, 5);
   }, [filteredPosts]);
 
@@ -76,83 +65,75 @@ export function TrendingSection({ onPostClick }: TrendingSectionProps) {
 
   const formatTimeAgo = (date: Date) => {
     const now = new Date();
-    const diffMs = now.getTime() - date.getTime();
+    const diffMs = now.getTime() - new Date(date).getTime();
     const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
     const diffDays = Math.floor(diffHours / 24);
 
     if (diffHours < 1) return 'Ahora';
     if (diffHours < 24) return `${diffHours}h`;
     if (diffDays < 7) return `${diffDays}d`;
-    return date.toLocaleDateString('es-ES', { month: 'short', day: 'numeric' });
+    return new Date(date).toLocaleDateString('es-ES', { month: 'short', day: 'numeric' });
   };
 
-  const PostItem = forwardRef<HTMLDivElement, { post: any; index: number; showRating?: boolean }>(
-    ({ post, index, showRating = false }, ref) => {
+  const PostItem = forwardRef<HTMLDivElement, { post: any; index: number }>(
+    ({ post, index }, ref) => {
       const course = getCourseById(post.course);
       
       return (
-        <motion.div
-          ref={ref}
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 * index }}
-          className="group p-3 rounded-lg bg-muted/20 hover:bg-muted/40 transition-all duration-200 cursor-pointer border border-transparent hover:border-primary/20"
-          onClick={() => onPostClick?.(post.id)}
-        >
-          <div className="flex items-start justify-between mb-2">
-            <h4 className="font-medium text-sm leading-tight line-clamp-2 group-hover:text-primary transition-colors">
-              {post.title}
-            </h4>
-            <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors ml-2 flex-shrink-0" />
-          </div>
-          
-          <div className="flex items-center justify-between text-xs text-muted-foreground mb-2">
-            <div className="flex items-center space-x-2">
-              <span>por {post.author.name.split(' ')[0]}</span>
-              <span>•</span>
-              <span>{formatTimeAgo(post.createdAt)}</span>
+        <Link to={`/post/${post.id}`}>
+          <motion.div
+            ref={ref}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 * index }}
+            className="group p-3 rounded-lg bg-muted/20 hover:bg-muted/40 transition-all duration-200 cursor-pointer border border-transparent hover:border-primary/20"
+          >
+            <div className="flex items-start justify-between mb-2">
+              <h4 className="font-medium text-sm leading-tight line-clamp-2 group-hover:text-primary transition-colors">
+                {post.title}
+              </h4>
+              <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors ml-2 flex-shrink-0" />
             </div>
             
-            <div className="flex items-center space-x-2">
-              {showRating && post.averageRating && (
-                <>
-                  <div className="flex items-center space-x-1">
-                    <WorkCodileLogo className="w-3 h-3" />
-                    <span className="font-medium text-primary">{post.averageRating.toFixed(1)}</span>
-                  </div>
-                  <span>•</span>
-                </>
+            <div className="flex items-center justify-between text-xs text-muted-foreground mb-2">
+              <div className="flex items-center space-x-2">
+                <span>por {post.author.name.split(' ')[0]}</span>
+                <span>•</span>
+                <span>{formatTimeAgo(post.createdAt)}</span>
+              </div>
+              
+              <div className="flex items-center space-x-2">
+                <div className="flex items-center space-x-1">
+                  <TrendingUp className="h-3 w-3" />
+                  <span className="text-primary font-medium">+{post.upvotes - post.downvotes}</span>
+                </div>
+                <span>•</span>
+                <div className="flex items-center space-x-1">
+                  <MessageSquare className="h-3 w-3" />
+                  <span>{post.comments.length}</span>
+                </div>
+              </div>
+            </div>
+            
+            <div className="flex items-center justify-between">
+              {course && (
+                <Badge variant="secondary" className="text-xs">
+                  {course.id}
+                </Badge>
               )}
-              <div className="flex items-center space-x-1">
-                <TrendingUp className="h-3 w-3" />
-                <span className="text-primary font-medium">+{post.upvotes - post.downvotes}</span>
-              </div>
-              <span>•</span>
-              <div className="flex items-center space-x-1">
-                <MessageSquare className="h-3 w-3" />
-                <span>{post.comments.length}</span>
-              </div>
+              
+              {post.hashtags && post.hashtags.length > 0 && (
+                <div className="flex items-center space-x-1">
+                  <Hash className="h-3 w-3 text-muted-foreground" />
+                  <span className="text-xs text-muted-foreground">
+                    {post.hashtags.slice(0, 2).join(', ')}
+                    {post.hashtags.length > 2 && '...'}
+                  </span>
+                </div>
+              )}
             </div>
-          </div>
-          
-          <div className="flex items-center justify-between">
-            {course && (
-              <Badge variant="secondary" className="text-xs">
-                {course.id}
-              </Badge>
-            )}
-            
-            {post.hashtags && post.hashtags.length > 0 && (
-              <div className="flex items-center space-x-1">
-                <Hash className="h-3 w-3 text-muted-foreground" />
-                <span className="text-xs text-muted-foreground">
-                  {post.hashtags.slice(0, 2).join(', ')}
-                  {post.hashtags.length > 2 && '...'}
-                </span>
-              </div>
-            )}
-          </div>
-        </motion.div>
+          </motion.div>
+        </Link>
       );
     }
   );
@@ -160,11 +141,7 @@ export function TrendingSection({ onPostClick }: TrendingSectionProps) {
   PostItem.displayName = 'PostItem';
 
   return (
-    <motion.div
-      initial={{ opacity: 0, x: -20 }}
-      animate={{ opacity: 1, x: 0 }}
-      transition={{ delay: 0.3 }}
-    >
+    <motion.div>
       <Card className="overflow-hidden">
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
@@ -194,31 +171,24 @@ export function TrendingSection({ onPostClick }: TrendingSectionProps) {
         
         <CardContent className="p-0">
           <Tabs defaultValue="score" className="w-full">
-            <TabsList className="grid w-full grid-cols-2 gap-1 mx-4 mb-4 h-auto p-1">
-              <TabsTrigger value="score" className="text-xs py-2 px-3">
-                <TrendingUp className="h-3 w-3 mr-1" />
-                <span className="hidden sm:inline">Score</span>
-                <span className="sm:hidden">Votos</span>
-              </TabsTrigger>
-              <TabsTrigger value="comments" className="text-xs py-2 px-3">
-                <MessageSquare className="h-3 w-3 mr-1" />
-                <span className="hidden sm:inline">Comentarios</span>
-                <span className="sm:hidden">Com.</span>
-              </TabsTrigger>
-            </TabsList>
-            
-            <TabsList className="grid w-full grid-cols-2 gap-1 mx-4 mb-4 h-auto p-1">
-              <TabsTrigger value="rating" className="text-xs py-2 px-3">
-                <Star className="h-3 w-3 mr-1" />
-                Rating
-              </TabsTrigger>
-              <TabsTrigger value="hashtags" className="text-xs py-2 px-3">
-                <Hash className="h-3 w-3 mr-1" />
-                Tags
-              </TabsTrigger>
-            </TabsList>
+            <div className="px-4">
+              <TabsList className="flex items-center -mb-px border-b border-border">
+                <TabsTrigger value="score" className="flex items-center text-xs sm:text-sm whitespace-nowrap border-b-2 border-transparent px-3 py-2 text-muted-foreground hover:text-foreground data-[state=active]:border-primary data-[state=active]:text-primary">
+                  <TrendingUp className="h-4 w-4 mr-1.5" />
+                  Score
+                </TabsTrigger>
+                <TabsTrigger value="comments" className="flex items-center text-xs sm:text-sm whitespace-nowrap border-b-2 border-transparent px-3 py-2 text-muted-foreground hover:text-foreground data-[state=active]:border-primary data-[state=active]:text-primary">
+                  <MessageSquare className="h-4 w-4 mr-1.5" />
+                  Comentarios
+                </TabsTrigger>
+                <TabsTrigger value="hashtags" className="flex items-center text-xs sm:text-sm whitespace-nowrap border-b-2 border-transparent px-3 py-2 text-muted-foreground hover:text-foreground data-[state=active]:border-primary data-[state=active]:text-primary">
+                  <Hash className="h-4 w-4 mr-1.5" />
+                  Tags
+                </TabsTrigger>
+              </TabsList>
+            </div>
 
-            <div className="px-4 pb-4">
+            <div className="px-4 pb-4 pt-4">
               <TabsContent value="score" className="space-y-2 mt-0">
                 {trendingByScore.length > 0 ? (
                   trendingByScore.map((post, index) => (
@@ -242,20 +212,6 @@ export function TrendingSection({ onPostClick }: TrendingSectionProps) {
                   <div className="text-center py-8 text-muted-foreground">
                     <MessageSquare className="h-12 w-12 mx-auto mb-2 opacity-50" />
                     <p className="text-sm">No hay posts con comentarios</p>
-                    <p className="text-xs mt-1">en las últimas {timeFilter}</p>
-                  </div>
-                )}
-              </TabsContent>
-
-              <TabsContent value="rating" className="space-y-2 mt-0">
-                {trendingByRating.length > 0 ? (
-                  trendingByRating.map((post, index) => (
-                    <PostItem key={post.id} post={post} index={index} showRating />
-                  ))
-                ) : (
-                  <div className="text-center py-8 text-muted-foreground">
-                    <Star className="h-12 w-12 mx-auto mb-2 opacity-50" />
-                    <p className="text-sm">No hay posts calificados</p>
                     <p className="text-xs mt-1">en las últimas {timeFilter}</p>
                   </div>
                 )}
@@ -306,4 +262,4 @@ export function TrendingSection({ onPostClick }: TrendingSectionProps) {
       </Card>
     </motion.div>
   );
-}
+});

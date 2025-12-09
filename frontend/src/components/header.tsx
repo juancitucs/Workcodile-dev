@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, memo } from 'react';
 import { motion } from 'motion/react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
@@ -32,8 +32,8 @@ interface HeaderProps {
   onSearch: (query: string) => void;
 }
 
-export function Header({ onCreatePost, onSearch }: HeaderProps) {
-  const { user, logout, isDarkMode, toggleDarkMode, resetMainFeed } = useApp();
+export const Header = memo(function Header({ onCreatePost, onSearch }: HeaderProps) {
+  const { user, logout, theme, toggleTheme, resetMainFeed } = useApp();
   const [searchQuery, setSearchQuery] = useState('');
   const [showProfile, setShowProfile] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
@@ -117,9 +117,9 @@ export function Header({ onCreatePost, onSearch }: HeaderProps) {
             <Button
               variant="ghost"
               size="sm"
-              onClick={toggleDarkMode}
+              onClick={toggleTheme}
             >
-              {isDarkMode ? (
+              {theme === 'dark' ? (
                 <Sun className="h-5 w-5" />
               ) : (
                 <Moon className="h-5 w-5" />
@@ -174,10 +174,10 @@ export function Header({ onCreatePost, onSearch }: HeaderProps) {
       />
 
       {/* Settings Modal */}
-      <Settings 
+      {showSettings && <Settings 
         isOpen={showSettings} 
         onClose={() => setShowSettings(false)} 
-      />
+      />}
     </motion.header>
   );
-}
+});

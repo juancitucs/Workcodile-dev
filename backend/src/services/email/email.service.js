@@ -1,18 +1,16 @@
-
 // backend/src/services/email/email.service.js
-import { sendEmail } from './email.provider.js';
-import { getConfirmationEmailHTML, getPasswordResetEmailHTML } from './email.templates.js';
+const { sendEmail } = require('./email.provider');
+const { getVerificationCodeHTML, getPasswordResetEmailHTML } = require('./email.templates');
 
 /**
- * Envía un correo de confirmación de registro.
+ * Envía un correo de verificación de registro con un código.
  * @param {string} to - Email del destinatario.
  * @param {string} name - Nombre del usuario.
- * @param {string} confirmationToken - Token para generar el enlace de confirmación.
+ * @param {string} verificationCode - Código de verificación.
  */
-export async function sendConfirmationEmail(to, name, confirmationToken) {
-  const confirmationLink = `${process.env.FRONTEND_URL}/confirm-email?token=${confirmationToken}`;
-  const subject = 'Confirma tu cuenta en WorkCodile';
-  const html = getConfirmationEmailHTML(name, confirmationLink);
+async function sendVerificationCodeEmail(to, name, verificationCode) {
+  const subject = 'Tu código de verificación de WorkCodile';
+  const html = getVerificationCodeHTML(name, verificationCode); // Use new template function
   
   await sendEmail(to, subject, html);
 }
@@ -23,10 +21,12 @@ export async function sendConfirmationEmail(to, name, confirmationToken) {
  * @param {string} name - Nombre del usuario.
  * @param {string} resetToken - Token para generar el enlace de restablecimiento.
  */
-export async function sendPasswordResetEmail(to, name, resetToken) {
+async function sendPasswordResetEmail(to, name, resetToken) {
   const resetLink = `${process.env.FRONTEND_URL}/reset-password?token=${resetToken}`;
   const subject = 'Restablece tu contraseña de WorkCodile';
   const html = getPasswordResetEmailHTML(name, resetLink);
 
   await sendEmail(to, subject, html);
 }
+
+module.exports = { sendVerificationCodeEmail, sendPasswordResetEmail };

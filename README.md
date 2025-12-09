@@ -1,6 +1,6 @@
 # WorkCodile Foro
 
-## Resumen del Proyecto
+## Resumen del Proyecto:
 
 WorkCodile Foro es una aplicación web full-stack diseñada como una plataforma social para estudiantes de la Universidad Nacional de Moquegua (UNAM). El sistema permite a los usuarios compartir publicaciones, trabajos y servicios en un entorno que fomenta la colaboración y el intercambio de conocimientos dentro de la comunidad universitaria.
 
@@ -94,7 +94,7 @@ Las credenciales y configuraciones se gestionan a través de un archivo `.env`.
     copy .env.example .env
     ```
 
-2.  Abra el nuevo archivo `.env` y rellene los valores. 
+2.  Abra el nuevo archivo `.env` y rellene los valores.
     **Nota de seguridad:** Para `GMAIL_APP_PASSWORD`, debe generar una **Contraseña de Aplicación** desde la configuración de seguridad de su cuenta de Google. No utilice su contraseña principal.
 
 ### 3. Flujo de Trabajo de Desarrollo (Recomendado)

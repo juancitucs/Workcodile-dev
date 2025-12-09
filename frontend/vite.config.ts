@@ -5,6 +5,7 @@ import path from 'path'
 
 export default defineConfig({
   plugins: [react()],
+  // base: '/grupo2/',
   resolve: {
     extensions: ['.js', '.jsx', '.ts', '.tsx', '.json'],
     alias: {
@@ -70,7 +71,7 @@ export default defineConfig({
   },
   server: {
     port: 3000,
-    open: true,
-    allowedHosts: ['dependence-barrier-truly-setup.trycloudflare.com'],
+    open: false,
+    allowedHosts: ['stem-edmonton-dose-discipline.trycloudflare.com'],
   },
 })
