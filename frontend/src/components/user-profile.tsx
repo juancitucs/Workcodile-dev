@@ -78,9 +78,10 @@ export function UserProfile({ isOpen, onClose, userId }: UserProfileProps) {
           const response = await fetch(`http://localhost:3001/api/auth/user/${userId}`);
           if (response.ok) {
             const data = await response.json();
-            if (data.avatar_key) {
-              data.avatar = `http://localhost:9000/workcodile-files/${data.avatar_key}`;
-            }
+            // The backend now returns the full avatar URL directly in `data.avatar`
+            // if (data.avatar_key) {
+            //   data.avatar = `http://localhost:9000/workcodile-files/${data.avatar_key}`;
+            // }
             setProfileUser(data);
           }
         } catch (error) {

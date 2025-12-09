@@ -66,6 +66,13 @@ const postAggregationPipeline = [
             size: '$$att.size',
             type: '$$att.type',
             object_key: '$$att.object_key',
+            url: { // Add full URL for attachment
+              $cond: {
+                if: '$$att.object_key',
+                then: { $concat: [process.env.B2_PUBLIC_URL_PREFIX, '/', '$$att.object_key'] },
+                else: null
+              }
+            }
           }
         }
       },
@@ -78,6 +85,13 @@ const postAggregationPipeline = [
         _id: '$author._id',
         name: '$author.name',
         avatar_key: '$author.avatar_key',
+        avatar: { // Add full avatar URL
+          $cond: {
+            if: '$author.avatar_key',
+            then: { $concat: [process.env.B2_PUBLIC_URL_PREFIX, '/', '$author.avatar_key'] },
+            else: null
+          }
+        }
       },
       comments: {
         $filter: { // Remove empty comment objects from posts with no comments
@@ -143,6 +157,7 @@ const getAllPosts = async (req, res) => {
               _id: author._id,
               name: author.name,
               avatar_key: author.avatar_key,
+              avatar: author.avatar_key ? `${process.env.B2_PUBLIC_URL_PREFIX}/${author.avatar_key}` : undefined,
           };
         }
         if (comment.replies && comment.replies.length > 0) {

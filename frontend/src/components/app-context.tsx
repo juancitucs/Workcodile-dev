@@ -172,7 +172,7 @@ const transformBackendComment = (comment: any): Comment => {
     author: {
       id: comment.author?._id?.toString() || '',
       name: comment.author?.name || 'Usuario Anónimo',
-      avatar: comment.author?.avatar_key ? `http://localhost:9000/workcodile-files/${comment.author.avatar_key}` : undefined,
+      avatar: comment.author?.avatar_key ? comment.author.avatar : undefined, // Backend now provides full URL
       university: 'UNAM',
       email: comment.author?.email || '',
     },
@@ -189,7 +189,7 @@ const transformBackendPost = (post: any): Post => ({
   author: {
     id: post.author?._id?.toString() || '',
     name: post.author?.name || 'Usuario Anónimo',
-    avatar: post.author?.avatar_key ? `http://localhost:9000/workcodile-files/${post.author.avatar_key}` : undefined,
+    avatar: post.author?.avatar_key ? post.author.avatar : undefined, // Backend now provides full URL
     university: 'UNAM',
     email: post.author?.email || '',
   },
@@ -366,9 +366,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
           }
 
           const userData = await response.json()
-          if (userData.avatar_key) {
-            userData.avatar = `http://localhost:9000/workcodile-files/${userData.avatar_key}`;
-          }
+          // Backend now returns the full avatar URL directly
+          // if (userData.avatar_key) {
+          //   userData.avatar = `http://localhost:9000/workcodile-files/${userData.avatar_key}`;
+          // }
           setUser(userData)
           if (userData.theme) {
             setTheme(userData.theme)
@@ -457,9 +458,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
     const { token, user: userData } = await response.json()
     localStorage.setItem('token', token)
-    if (userData.avatar_key) {
-      userData.avatar = `http://localhost:9000/workcodile-files/${userData.avatar_key}`;
-    }
+    // Backend now returns the full avatar URL directly
+    // if (userData.avatar_key) {
+    //   userData.avatar = `http://localhost:9000/workcodile-files/${userData.avatar_key}`;
+    // }
     setUser(userData)
     if (userData.theme) {
       setTheme(userData.theme)
@@ -503,9 +505,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
     // On successful verification and registration, log in the user directly
     const { token, user: userData } = responseData;
     localStorage.setItem('token', token);
-    if (userData.avatar_key) {
-      userData.avatar = `http://localhost:9000/workcodile-files/${userData.avatar_key}`;
-    }
+    // Backend now returns the full avatar URL directly
+    // if (userData.avatar_key) {
+    //   userData.avatar = `http://localhost:9000/workcodile-files/${userData.avatar_key}`;
+    // }
     setUser(userData);
     if (userData.theme) {
       setTheme(userData.theme);
@@ -524,9 +527,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const updateProfile = (profileData: Partial<User>) => {
     if (user) {
       const newProfile = { ...user, ...profileData };
-      if (newProfile.avatar_key) {
-        newProfile.avatar = `http://localhost:9000/workcodile-files/${newProfile.avatar_key}`;
-      }
+      // Backend now returns the full avatar URL directly
+      // if (newProfile.avatar_key) {
+      //   newProfile.avatar = `http://localhost:9000/workcodile-files/${newProfile.avatar_key}`;
+      // }
       setUser(newProfile);
     }
   }

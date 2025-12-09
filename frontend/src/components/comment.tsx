@@ -136,7 +136,7 @@ export function Comment({ comment, postId, onCommentVote, highlightCommentId }: 
                 e.stopPropagation()
                 onCommentVote(comment.id, 'up')
               }}
-              className={`h-6 px-2 text-xs ${comment.userVote === 'up' ? 'bg-green-500 text-white' : 'bg-transparent hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50'}`}
+              className={`h-6 px-2 text-xs ${comment.userVote === 'up' ? 'bg-green-500 text-white' : 'bg-transparent hover:bg-accent hover:text-foreground dark:hover:bg-accent/50 text-foreground'}`}
             >
               <ChevronUp className="h-3 w-3" />
             </Button>
@@ -152,7 +152,7 @@ export function Comment({ comment, postId, onCommentVote, highlightCommentId }: 
                 e.stopPropagation()
                 onCommentVote(comment.id, 'down')
               }}
-              className={`h-6 px-2 text-xs ${comment.userVote === 'down' ? 'bg-red-500 text-white' : 'bg-transparent hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50'}`}
+              className={`h-6 px-2 text-xs ${comment.userVote === 'down' ? 'bg-red-500 text-white' : 'bg-transparent hover:bg-accent hover:text-foreground dark:hover:bg-accent/50 text-foreground'}`}
             >
               <ChevronDown className="h-3 w-3" />
             </Button>
