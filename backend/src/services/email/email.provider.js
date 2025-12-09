@@ -12,18 +12,25 @@ const resend = new Resend(process.env.RESEND_API_KEY);
  */
 async function sendEmail(to, subject, html) {
   const mailOptions = {
-    from: '"WorkCodile" <noreply@workcodile.com>', // DEBES configurar y verificar este dominio en Resend
+    from: '"WorkCodile" <noreply@verification.workcodile.com>', // Dominio verificado en Resend
     to,
     subject,
     html,
   };
 
   try {
-    await resend.emails.send(mailOptions);
-    console.log(`Correo enviado a: ${to}`);
+    const { data, error } = await resend.emails.send(mailOptions);
+
+    if (error) {
+      console.error('Error al enviar el correo con Resend:', error);
+      throw new Error(`No se pudo enviar el correo: ${error.message}`);
+    }
+
+    console.log(`Correo enviado a: ${to}. ID del mensaje: ${data.id}`);
   } catch (error) {
-    console.error('Error al enviar el correo con Resend:', error);
-    throw new Error('No se pudo enviar el correo.');
+    // Captura errores de red u otros problemas con la solicitud
+    console.error('Error en la llamada a la API de Resend:', error);
+    throw new Error('No se pudo conectar con el servicio de correo.');
   }
 }
 
