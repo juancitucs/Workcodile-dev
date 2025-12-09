@@ -12,7 +12,7 @@ const resend = new Resend(process.env.RESEND_API_KEY);
  */
 async function sendEmail(to, subject, html) {
   const mailOptions = {
-    from: '"WorkCodile" <noreply@verification.workcodile.com>', // Dominio verificado en Resend
+    from: '"WorkCodile" <noreply@codetechilo.com>', // ESTE dominio también DEBE ser verificado en Resend
     to,
     subject,
     html,
