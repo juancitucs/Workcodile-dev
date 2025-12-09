@@ -16,24 +16,32 @@ interface CommentProps {
   postId: string
   onCommentVote: (commentId: string, vote: 'up' | 'down') => void
   highlightCommentId?: string;
+  depth?: number;
 }
 
-export function Comment({ comment, postId, onCommentVote, highlightCommentId }: CommentProps) {
-  console.log(`Comment ${comment.id} re-rendered. userVote: ${comment.userVote}, score: ${comment.score}`); // Add this line for debugging
+const lineColors = [
+  'border-blue-500/50 dark:border-blue-400/50',
+  'border-green-500/50 dark:border-green-400/50',
+  'border-purple-500/50 dark:border-purple-400/50',
+  'border-yellow-500/50 dark:border-yellow-400/50',
+  'border-red-500/50 dark:border-red-400/50',
+];
+
+export function Comment({ comment, postId, onCommentVote, highlightCommentId, depth = 0 }: CommentProps) {
   const { user, addComment, fetchCommentReplies } = useApp()
   const [showReplyForm, setShowReplyForm] = useState(false)
   const [replyContent, setReplyContent] = useState('')
-  const [replies, setReplies] = useState<CommentType[]>(comment.replies || []); // Initialize with prop or empty array
+  const [replies, setReplies] = useState<CommentType[]>(comment.replies || []);
   const [areRepliesVisible, setAreRepliesVisible] = useState(false)
   const [isLoadingReplies, setIsLoadingReplies] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const commentRef = useRef<HTMLDivElement>(null);
 
-  // Add this useEffect to synchronize local replies state with comment.replies prop
   useEffect(() => {
     if (comment.replies) {
       setReplies(comment.replies);
     }
-  }, [comment.replies]); // Dependency on comment.replies prop
+  }, [comment.replies]);
 
   const isCommentInSubtree = (comments: any[], targetId: string): boolean => {
     for (const c of comments) {
@@ -57,9 +65,9 @@ export function Comment({ comment, postId, onCommentVote, highlightCommentId }: 
           commentRef.current.classList.add('comment-highlight');
           setTimeout(() => {
             commentRef.current?.classList.remove('comment-highlight');
-          }, 2000); // Duration of the animation
+          }, 2000);
         }
-      }, 300); // Small delay to allow DOM to render and refs to be set
+      }, 300);
       return () => clearTimeout(timer);
     }
   }, [comment.id, highlightCommentId, areRepliesVisible, replies]);
@@ -74,15 +82,21 @@ export function Comment({ comment, postId, onCommentVote, highlightCommentId }: 
     }
   }, [highlightCommentId, comment.replies, areRepliesVisible]);
 
-
   const handleReplySubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!replyContent.trim()) return
-    await addComment(postId, replyContent, comment.id)
-    setReplyContent('')
-    setShowReplyForm(false)
-    // After submitting a reply, always refetch to show the new one and expand the view
-    handleLoadReplies();
+    if (!replyContent.trim() || isSubmitting) return
+    
+    setIsSubmitting(true);
+    try {
+      await addComment(postId, replyContent, comment.id)
+      setReplyContent('')
+      setShowReplyForm(false)
+      handleLoadReplies();
+    } catch (error) {
+      console.error("Failed to submit reply:", error);
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   const handleLoadReplies = async () => {
@@ -93,6 +107,8 @@ export function Comment({ comment, postId, onCommentVote, highlightCommentId }: 
     setAreRepliesVisible(true);
     setIsLoadingReplies(false);
   }
+  
+  const lineColor = lineColors[depth % lineColors.length];
 
   return (
     <motion.div
@@ -100,7 +116,7 @@ export function Comment({ comment, postId, onCommentVote, highlightCommentId }: 
       id={`comment-${comment.id}`}
       initial={{ opacity: 0, x: -20 }}
       animate={{ opacity: 1, x: -10 }}
-      className="glass-card p-4 shadow-modern hover:shadow-modern-lg transition-all duration-300"
+      className="p-4 transition-all duration-300 bg-transparent"
     >
       <div className="flex items-start space-x-2">
         <Avatar className="h-8 w-8">
@@ -128,9 +144,7 @@ export function Comment({ comment, postId, onCommentVote, highlightCommentId }: 
 
           <div className="flex items-center space-x-1">
             <Button
-              key={`upvote-${comment.id}-${comment.userVote}`} // Add dynamic key
-              // Temporarily remove variant prop to test direct className
-              // variant={comment.userVote === 'up' ? 'default' : 'ghost'}
+              key={`upvote-${comment.id}-${comment.userVote}`}
               size="sm"
               onClick={(e: any) => {
                 e.stopPropagation()
@@ -144,9 +158,7 @@ export function Comment({ comment, postId, onCommentVote, highlightCommentId }: 
               {comment.score}
             </span>
             <Button
-              key={`downvote-${comment.id}-${comment.userVote}`} // Add dynamic key
-              // Temporarily remove variant prop to test direct className
-              // variant={comment.userVote === 'down' ? 'destructive' : 'ghost'}
+              key={`downvote-${comment.id}-${comment.userVote}`}
               size="sm"
               onClick={(e) => {
                 e.stopPropagation()
@@ -199,26 +211,29 @@ export function Comment({ comment, postId, onCommentVote, highlightCommentId }: 
                 onChange={(e) => setReplyContent(e.target.value)}
                 className="min-h-[80px] resize-none"
                 onClick={(e) => e.stopPropagation()}
-              />{' '}
+                disabled={isSubmitting}
+              />
               <div className="flex justify-end">
                 <Button
                   type="submit"
                   size="sm"
                   onClick={(e) => e.stopPropagation()}
+                  disabled={!replyContent.trim() || isSubmitting}
                 >
-                  Enviar respuesta
+                  {isSubmitting ? 'Enviando...' : 'Enviar respuesta'}
                 </Button>
               </div>
             </form>
           )}
 
           {areRepliesVisible && replies.length > 0 && (
-            <div className="ml-4 pl-2 border-l-2 border-blue-500/50 dark:border-blue-400/50 mt-4">
+            <div className={`ml-0 pl-1 border-l-2 ${lineColor} mt-4`}>
               <CommentTree 
                 comments={replies} 
                 postId={postId} 
                 onCommentVote={onCommentVote} 
                 highlightCommentId={highlightCommentId} 
+                depth={depth + 1}
               />
             </div>
           )}

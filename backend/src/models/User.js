@@ -15,7 +15,6 @@ const userSchema = new mongoose.Schema(
       enum: ['student', 'moderator', 'admin'],
       default: 'student',
     },
-    cycle: { type: Number },
     interests: [{ type: String }],
     socialLinks: [
       {

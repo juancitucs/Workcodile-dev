@@ -66,7 +66,6 @@ export function UserProfile({ isOpen, onClose, userId }: UserProfileProps) {
     email: '',
     bio: '',
     location: 'Moquegua, Perú',
-    cycle: '5',
     interests: [],
     avatar: '',
     avatar_key: '',
@@ -106,7 +105,6 @@ export function UserProfile({ isOpen, onClose, userId }: UserProfileProps) {
         email: profileUser.email || '',
         bio: profileUser.bio || '',
         location: 'Moquegua, Perú',
-        cycle: '5',
         interests: profileUser.interests || ['Programación', 'Bases de datos', 'Desarrollo web'],
         avatar: profileUser.avatar || '',
         avatar_key: profileUser.avatar_key || '',
@@ -237,7 +235,6 @@ export function UserProfile({ isOpen, onClose, userId }: UserProfileProps) {
       email: profileUser.email || '',
       bio: profileUser.bio || '',
       location: 'Moquegua, Perú',
-      cycle: '5',
       interests: profileUser.interests || ['Programación', 'Bases de datos', 'Desarrollo web'],
       avatar: profileUser.avatar || '',
       avatar_key: profileUser.avatar_key || '',
@@ -414,10 +411,6 @@ export function UserProfile({ isOpen, onClose, userId }: UserProfileProps) {
                     <div className="flex items-center space-x-1">
                       <Mail className="h-4 w-4" />
                       <span>{profileUser.email}</span>
-                    </div>
-                    <div className="flex items-center space-x-1">
-                      <GraduationCap className="h-4 w-4" />
-                      <span>Ciclo {editedProfile.cycle}</span>
                     </div>
                     <div className="flex items-center space-x-1">
                       <MapPin className="h-4 w-4" />

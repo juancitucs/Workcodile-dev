@@ -2,9 +2,9 @@ import { useParams, Link, useLocation } from 'react-router-dom';
 import { useApp } from './app-context';
 import { PostCard } from './post-card';
 import { Button } from './ui/button';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Loader2 } from 'lucide-react';
 import { useState, useEffect } from 'react';
-import { Post } from './types'; // Assuming types are defined in a separate file
+import { Post } from './types'; 
 
 export function SinglePostView() {
   const { posts, fetchPostById } = useApp();
@@ -35,43 +35,37 @@ export function SinglePostView() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen workcodile-bg flex items-center justify-center">
-        <div className="text-center">
-          <h2 className="text-2xl font-bold mb-4">Cargando post...</h2>
-        </div>
+      <div className="flex items-center justify-center p-8">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
   }
 
   if (!post) {
     return (
-      <div className="min-h-screen workcodile-bg flex items-center justify-center">
-        <div className="text-center">
-          <h2 className="text-2xl font-bold mb-4">Post no encontrado</h2>
-          <Link to="/">
-            <Button>
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Volver al feed
-            </Button>
-          </Link>
-        </div>
+      <div className="text-center p-8">
+        <h2 className="text-2xl font-bold mb-4">Post no encontrado</h2>
+        <Link to="/">
+          <Button>
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Volver al feed
+          </Button>
+        </Link>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen workcodile-bg py-12">
-      <div className="container max-w-4xl mx-auto">
-        <div className="mb-8">
-          <Link to="/">
-            <Button variant="outline">
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Volver al feed
-            </Button>
-          </Link>
-        </div>
-        <PostCard post={post} startWithCommentsOpen={true} highlightCommentId={highlightCommentId} />
+    <div>
+      <div className="mb-4">
+        <Link to="/">
+          <Button variant="outline">
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Volver al feed
+          </Button>
+        </Link>
       </div>
+      <PostCard post={post} startWithCommentsOpen={true} highlightCommentId={highlightCommentId} />
     </div>
   );
 }
