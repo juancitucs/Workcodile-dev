@@ -3,18 +3,21 @@ const AWS = require('aws-sdk');
 
 const BUCKET_NAME_PROVIDER = process.env.B2_BUCKET_NAME || 'WorkcodileBucket';
 
-// Calculate B2_PUBLIC_URL_PREFIX
+// Calculate B2_PUBLIC_URL_PREFIX (S3 Compatible)
 let B2_PUBLIC_URL_PREFIX;
 if (process.env.B2_ENDPOINT_URL && process.env.B2_BUCKET_NAME) {
   const endpoint = process.env.B2_ENDPOINT_URL;
-  // This constructs the base public URL for the bucket
-  const bucketDomain = endpoint.replace('s3.', '').replace('.backblazeb2.com', '.backblazeb2.com/file');
-  B2_PUBLIC_URL_PREFIX = `${bucketDomain}/${BUCKET_NAME_PROVIDER}`;
+  B2_PUBLIC_URL_PREFIX = `https://${endpoint}/${BUCKET_NAME_PROVIDER}`;
 } else {
   // Fallback to a generic local development URL if B2 environment variables are not set
-  // This will likely only work with MinIO running locally in dev.
   B2_PUBLIC_URL_PREFIX = `http://${process.env.MINIO_PUBLIC_ENDPOINT || 'localhost'}:9000/${BUCKET_NAME_PROVIDER}`;
 }
+
+// Calculate B2_NATIVE_PUBLIC_URL_PREFIX (Backblaze B2 Friendly URL)
+// This should be set by the user, e.g., https://f00X.backblazeb2.com/file/YourBucketName
+// If not set, we'll fall back to the S3-compatible URL.
+const B2_NATIVE_PUBLIC_URL_PREFIX = process.env.B2_NATIVE_PUBLIC_URL_PREFIX || B2_PUBLIC_URL_PREFIX;
+
 
 // Configuración de AWS SDK para Backblaze B2 compatible con S3
 const s3 = new AWS.S3({
@@ -68,4 +71,6 @@ module.exports = {
     s3,
     ensureBucketExists,
     B2_PUBLIC_URL_PREFIX,
+    BUCKET_NAME_PROVIDER,
+    B2_NATIVE_PUBLIC_URL_PREFIX,
 };

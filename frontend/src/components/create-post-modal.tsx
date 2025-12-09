@@ -20,14 +20,36 @@ interface CreatePostModalProps {
   onClose: () => void;
 }
 
+const sanitizeFilename = (filename: string): string => {
+  const lastDot = filename.lastIndexOf('.');
+  const filenameBody = lastDot === -1 ? filename : filename.substring(0, lastDot);
+  const extension = lastDot === -1 ? '' : filename.substring(lastDot);
+
+  // Replace all invalid characters with a single underscore
+  let sanitized = filenameBody.replace(/[^a-zA-Z0-9_-]+/g, '_');
+  
+  // Remove leading and trailing underscores
+  sanitized = sanitized.replace(/^_+|_+$/g, '');
+
+  // If the name is empty after sanitization (e.g., "!!.txt"), use a default name
+  if (!sanitized) {
+    sanitized = 'file';
+  }
+
+  return sanitized + extension;
+};
+
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+
 const uploadFiles = async (files: File[]): Promise<(Omit<FileAttachment, 'id'> & { object_key: string })[]> => {
   const uploadPromises = files.map(async (file) => {
     const formData = new FormData();
-    console.log('Uploading file:', file);
-    formData.append('file', file);
+    const sanitizedFilename = sanitizeFilename(file.name);
+    console.log(`Uploading file: ${file.name} as ${sanitizedFilename}`);
+    formData.append('file', file, sanitizedFilename);
 
     try {
-      const response = await fetch('http://localhost:3001/api/storage', {
+      const response = await fetch(`${API_BASE_URL}/api/storage`, {
         method: 'POST',
         headers: {
           'x-auth-token': localStorage.getItem('token') || '',
@@ -483,7 +505,7 @@ export function CreatePostModal({ isOpen, onClose }: CreatePostModalProps) {
                           ref={fileInputRef}
                           type="file"
                           multiple
-                          accept=".pdf,.zip,.rar,.jpg,.jpeg,.png,.gif,.txt,.doc,.docx"
+                          accept=".pdf,.zip,.rar,.jpg,.jpeg,.png,.gif,.txt,.doc,.docx,.mp3,.wav,.ogg"
                           onChange={handleFileSelect}
                           className="hidden"
                         />

@@ -7,6 +7,8 @@ import {
 } from 'react'
 import { User, Course, FileAttachment, Post, Comment, Notification } from './types'
 
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+
 interface AppContextType {
   authStatus: 'loading' | 'authenticated' | 'unauthenticated'
   user: User | null
@@ -245,7 +247,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     if (!token) return
 
     try {
-      await fetch('http://localhost:3001/api/auth/user/theme', {
+      await fetch(`${API_BASE_URL}/api/auth/user/theme`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -267,7 +269,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         headers['x-auth-token'] = token;
       }
 
-      const response = await fetch('http://localhost:3001/api/posts?page=1', { headers });
+      const response = await fetch(`${API_BASE_URL}/api/posts?page=1`, { headers });
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`)
       }
@@ -296,7 +298,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         headers['x-auth-token'] = token;
       }
 
-      const response = await fetch(`http://localhost:3001/api/posts?page=${nextPage}`, { headers });
+      const response = await fetch(`${API_BASE_URL}/api/posts?page=${nextPage}`, { headers });
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`)
       }
@@ -325,7 +327,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         headers['x-auth-token'] = token;
       }
 
-      const response = await fetch(`http://localhost:3001/api/posts/${postId}`, { headers });
+      const response = await fetch(`${API_BASE_URL}/api/posts/${postId}`, { headers });
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
@@ -353,7 +355,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       const token = localStorage.getItem('token')
       if (token) {
         try {
-          const response = await fetch('http://localhost:3001/api/auth/me', {
+          const response = await fetch(`${API_BASE_URL}/api/auth/me`, {
             headers: {
               'x-auth-token': token,
             },
@@ -368,7 +370,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
           const userData = await response.json()
           // Backend now returns the full avatar URL directly
           // if (userData.avatar_key) {
-          //   userData.avatar = `http://localhost:9000/workcodile-files/${userData.avatar_key}`;
+          //   userData.avatar = `${API_BASE_URL}/workcodile-files/${userData.avatar_key}`;
           // }
           setUser(userData)
           if (userData.theme) {
@@ -393,7 +395,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       const token = localStorage.getItem('token')
       if (authStatus === 'authenticated' && token) {
         try {
-          const response = await fetch('http://localhost:3001/api/notifications', {
+          const response = await fetch(`${API_BASE_URL}/api/notifications`, {
             headers: {
               'x-auth-token': token,
             },
@@ -418,7 +420,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     if (!token) return
 
     try {
-      const response = await fetch(`http://localhost:3001/api/notifications/${notificationId}/read`, {
+      const response = await fetch(`${API_BASE_URL}/api/notifications/${notificationId}/read`, {
         method: 'PUT',
         headers: {
           'x-auth-token': token,
@@ -443,7 +445,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }
 
   const login = async (email: string, password: string) => {
-    const response = await fetch('http://localhost:3001/api/auth/login', {
+    const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -460,7 +462,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     localStorage.setItem('token', token)
     // Backend now returns the full avatar URL directly
     // if (userData.avatar_key) {
-    //   userData.avatar = `http://localhost:9000/workcodile-files/${userData.avatar_key}`;
+    //   userData.avatar = `${API_BASE_URL}/workcodile-files/${userData.avatar_key}`;
     // }
     setUser(userData)
     if (userData.theme) {
@@ -470,7 +472,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }
 
   const sendVerificationCode = async (name: string, email: string, password: string) => {
-    const response = await fetch('http://localhost:3001/api/auth/send-verification-code', {
+    const response = await fetch(`${API_BASE_URL}/api/auth/send-verification-code`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -488,7 +490,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }
 
   const verifyAndRegister = async (email: string, password: string, verificationCode: string) => {
-    const response = await fetch('http://localhost:3001/api/auth/verify-and-register', {
+    const response = await fetch(`${API_BASE_URL}/api/auth/verify-and-register`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -507,7 +509,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     localStorage.setItem('token', token);
     // Backend now returns the full avatar URL directly
     // if (userData.avatar_key) {
-    //   userData.avatar = `http://localhost:9000/workcodile-files/${userData.avatar_key}`;
+    //   userData.avatar = `${API_BASE_URL}/workcodile-files/${userData.avatar_key}`;
     // }
     setUser(userData);
     if (userData.theme) {
@@ -529,7 +531,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       const newProfile = { ...user, ...profileData };
       // Backend now returns the full avatar URL directly
       // if (newProfile.avatar_key) {
-      //   newProfile.avatar = `http://localhost:9000/workcodile-files/${newProfile.avatar_key}`;
+      //   newProfile.avatar = `${API_BASE_URL}/workcodile-files/${newProfile.avatar_key}`;
       // }
       setUser(newProfile);
     }
@@ -547,7 +549,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     if (!token) return
 
     try {
-      const response = await fetch('http://localhost:3001/api/posts', {
+      const response = await fetch(`${API_BASE_URL}/api/posts`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -624,7 +626,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       });
 
       const response = await fetch(
-        `http://localhost:3001/api/posts/${postId}/vote`,
+        `${API_BASE_URL}/api/posts/${postId}/vote`,
         {
           method: 'POST',
           headers: {
@@ -666,7 +668,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
     try {
       const response = await fetch(
-        `http://localhost:3001/api/posts/${postId}/comments`,
+        `${API_BASE_URL}/api/posts/${postId}/comments`,
         {
           method: 'POST',
           headers: {
@@ -781,7 +783,7 @@ const findAndUpdateCommentRecursive = (
       });
 
       const response = await fetch(
-        `http://localhost:3001/api/posts/${postId}/comments/${commentId}/vote`,
+        `${API_BASE_URL}/api/posts/${postId}/comments/${commentId}/vote`,
         {
           method: 'POST',
           headers: {
@@ -842,7 +844,7 @@ const findAndUpdateCommentRecursive = (
         headers['x-auth-token'] = token;
       }
 
-      const response = await fetch(`http://localhost:3001/api/posts/${postId}/comments/${commentId}/replies`, { headers });
+      const response = await fetch(`${API_BASE_URL}/api/posts/${postId}/comments/${commentId}/replies`, { headers });
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`)
       }
@@ -860,7 +862,7 @@ const findAndUpdateCommentRecursive = (
     if (!token) return
 
     try {
-      const response = await fetch(`http://localhost:3001/api/posts/${postId}/bookmark`, {
+      const response = await fetch(`${API_BASE_URL}/api/posts/${postId}/bookmark`, {
         method: 'POST',
         headers: {
           'x-auth-token': token,
@@ -895,7 +897,7 @@ const findAndUpdateCommentRecursive = (
     if (!token) return
 
     try {
-      const response = await fetch(`http://localhost:3001/api/posts/${postId}/report`, {
+      const response = await fetch(`${API_BASE_URL}/api/posts/${postId}/report`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -934,7 +936,7 @@ const findAndUpdateCommentRecursive = (
     if (postIds.length === 0) return;
     try {
       // This endpoint needs to be created in the backend
-      await fetch(`http://localhost:3001/api/posts/views`, {
+      await fetch(`${API_BASE_URL}/api/posts/views`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -41,6 +41,8 @@ interface SettingsProps {
   onClose: () => void;
 }
 
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+
 export function Settings({ isOpen, onClose }: SettingsProps) {
   const { user, logout, theme, toggleTheme, posts } = useApp();
   const [settings, setSettings] = useState(null);
@@ -51,7 +53,7 @@ export function Settings({ isOpen, onClose }: SettingsProps) {
       if (!token) return;
 
       try {
-        const response = await fetch('http://localhost:3001/api/settings', {
+        const response = await fetch(`${API_BASE_URL}/api/settings`, {
           headers: {
             'x-auth-token': token,
           },
@@ -92,7 +94,7 @@ export function Settings({ isOpen, onClose }: SettingsProps) {
     if (!token) return;
 
     try {
-      const response = await fetch('http://localhost:3001/api/settings', {
+      const response = await fetch(`${API_BASE_URL}/api/settings`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

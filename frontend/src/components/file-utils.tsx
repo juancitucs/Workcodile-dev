@@ -19,12 +19,14 @@ export const createFileAttachment = (file: File): FileAttachment => {
   };
 };
 
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+
 export const getAttachmentUrl = (attachment: Partial<FileAttachment>): string | undefined => {
   if (attachment.url) {
     return attachment.url; // Local preview URL
   }
   if (attachment.object_key) {
-    return `http://localhost:3001/api/posts/attachment/${attachment.object_key}`; // Final backend URL
+    return `${API_BASE_URL}/api/posts/attachment/${attachment.object_key}`; // Final backend URL
   }
   return undefined;
 };
@@ -59,6 +61,7 @@ export const validateFileType = (file: File): boolean => {
     'video/mp4',
     'video/webm',
     'audio/mpeg',
+    'audio/mp3',
     'audio/wav',
     'audio/ogg',
     'text/plain',

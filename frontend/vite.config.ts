@@ -70,8 +70,9 @@ export default defineConfig({
     outDir: 'build',
   },
   server: {
-    port: 3000,
+    host: '0.0.0.0',
+    port: 5173,
     open: false,
-    allowedHosts: ['stem-edmonton-dose-discipline.trycloudflare.com'],
+    allowedHosts: ['*'],
   },
 })
