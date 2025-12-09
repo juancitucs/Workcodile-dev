@@ -17,6 +17,7 @@ interface AppContextType {
   notifications: Notification[]
   fetchPostById: (postId: string) => Promise<Post | undefined>
   markNotificationAsRead: (notificationId: string) => void
+  markAllNotificationsAsRead: () => void
   login: (email: string, password: string) => Promise<void>
   sendVerificationCode: (name: string, email: string, password: string) => Promise<any>
   verifyAndRegister: (email: string, password: string, verificationCode: string) => Promise<any>
@@ -419,6 +420,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const token = localStorage.getItem('token')
     if (!token) return
 
+    const originalNotifications = notifications;
+    setNotifications(prev =>
+      prev.map(n => n.id === notificationId ? { ...n, read: true } : n)
+    );
+
     try {
       const response = await fetch(`${API_BASE_URL}/api/notifications/${notificationId}/read`, {
         method: 'PUT',
@@ -428,14 +434,40 @@ export function AppProvider({ children }: { children: ReactNode }) {
       })
 
       if (!response.ok) {
+        setNotifications(originalNotifications);
         throw new Error('Failed to mark notification as read')
       }
-
-      setNotifications(prev =>
-        prev.map(n => n.id === notificationId ? { ...n, read: true } : n)
-      )
     } catch (error) {
       console.error('Error marking notification as read:', error)
+      setNotifications(originalNotifications);
+    }
+  }
+
+  const markAllNotificationsAsRead = async () => {
+    const token = localStorage.getItem('token')
+    if (!token) return
+
+    // Optimistically update the UI
+    const originalNotifications = notifications;
+    setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/notifications/read/all`, {
+        method: 'PUT',
+        headers: {
+          'x-auth-token': token,
+        },
+      })
+
+      if (!response.ok) {
+        // Rollback on error
+        setNotifications(originalNotifications);
+        throw new Error('Failed to mark all notifications as read')
+      }
+    } catch (error) {
+      console.error('Error marking all notifications as read:', error)
+      // Rollback on error
+      setNotifications(originalNotifications);
     }
   }
 
@@ -974,6 +1006,7 @@ const findAndUpdateCommentRecursive = (
         notifications,
         fetchPostById,
         markNotificationAsRead,
+        markAllNotificationsAsRead,
         login,
         sendVerificationCode, // new function
         verifyAndRegister,    // new function

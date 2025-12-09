@@ -137,7 +137,7 @@ export function PostCard({ post, startWithCommentsOpen = false, highlightComment
     <>
       <div
         id={`post-${post.id}`}
-        className="cursor-pointer"
+        className="cursor-pointer max-w-3xl mx-auto"
         onClick={handleNavigate}
       >
         <Card className="glass-card gradient-border shadow-modern hover:shadow-modern-lg transition-all duration-300 ease-out">

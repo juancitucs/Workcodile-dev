@@ -14,7 +14,7 @@ import { useApp } from './app-context';
 import { UserProfile } from './user-profile';
 import { Settings } from './settings';
 import { WorkCodileLogo } from './crocodile-icon';
-import { NotificationsPanel } from './notifications-panel';
+import { EnhancedNotifications } from './enhanced-notifications';
 import { 
   Menu,
   Search, 
@@ -123,7 +123,7 @@ export const Header = memo(function Header({ onCreatePost, onSearch, onToggleMob
             </Button>
 
             {/* Notifications */}
-            <NotificationsPanel />
+            <EnhancedNotifications />
 
             {/* Dark Mode Toggle */}
             <Button
