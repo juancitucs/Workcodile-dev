@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { register, login, getMe, updateUserTheme, updateProfile, getUserById } = require('../controllers/authController');
+const { sendVerificationCode, verifyAndRegister, login, getMe, updateUserTheme, updateProfile, getUserById } = require('../controllers/authController.js');
 const authMiddleware = require('../middleware/authMiddleware');
 
 // @route   GET api/auth/me
@@ -18,10 +18,15 @@ router.put('/me', authMiddleware, updateProfile);
 // @access  Public
 router.get('/user/:id', getUserById);
 
-// @route   POST api/auth/register
-// @desc    Register user
+// @route   POST api/auth/send-verification-code
+// @desc    Send verification code for registration
 // @access  Public
-router.post('/register', register);
+router.post('/send-verification-code', sendVerificationCode);
+
+// @route   POST api/auth/verify-and-register
+// @desc    Verify code and register user
+// @access  Public
+router.post('/verify-and-register', verifyAndRegister);
 
 // @route   POST api/auth/login
 // @desc    Authenticate user & get token

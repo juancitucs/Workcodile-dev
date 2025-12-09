@@ -32,6 +32,8 @@ services:
       - MINIO_SECRET_KEY=${MINIO_SECRET_KEY:-minioadmin123}
       - MINIO_BUCKET_NAME=${MINIO_BUCKET_NAME:-workcodile-files}
       - MINIO_PUBLIC_ENDPOINT=localhost
+      - GMAIL_USER=${GMAIL_USER} # Added for email functionality
+      - GMAIL_APP_PASSWORD=${GMAIL_APP_PASSWORD} # Added for email functionality
     networks:
       - workcodile-net
 

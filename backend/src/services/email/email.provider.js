@@ -1,5 +1,5 @@
 // backend/src/services/email/email.provider.js
-import nodemailer from 'nodemailer';
+const nodemailer = require('nodemailer');
 
 // ------------------- ADVERTENCIA DE SEGURIDAD -------------------
 // NO USES TU CONTRASEÑA PRINCIPAL DE GOOGLE.
@@ -27,7 +27,7 @@ const transporter = nodemailer.createTransport({
  * @param {string} html - El contenido HTML del correo.
  * @returns {Promise<void>}
  */
-export async function sendEmail(to, subject, html) {
+async function sendEmail(to, subject, html) {
   const mailOptions = {
     from: `"WorkCodile" <${process.env.GMAIL_USER}>`,
     to,
@@ -44,3 +44,5 @@ export async function sendEmail(to, subject, html) {
     throw new Error('No se pudo enviar el correo.');
   }
 }
+
+module.exports = { sendEmail };

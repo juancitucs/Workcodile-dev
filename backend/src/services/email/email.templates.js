@@ -1,20 +1,18 @@
-
 // backend/src/services/email/email.templates.js
 
 /**
- * Genera el HTML para un correo de confirmación de cuenta.
+ * Genera el HTML para un correo de verificación de cuenta con un código.
  * @param {string} name - Nombre del usuario.
- * @param {string} confirmationLink - El enlace de confirmación.
+ * @param {string} verificationCode - El código de verificación.
  * @returns {string} - El HTML del correo.
  */
-export function getConfirmationEmailHTML(name, confirmationLink) {
+function getVerificationCodeHTML(name, verificationCode) {
   return `
     <div style="font-family: sans-serif; padding: 20px; color: #333;">
       <h2>¡Bienvenido a WorkCodile, ${name}!</h2>
-      <p>Gracias por registrarte. Por favor, confirma tu dirección de correo electrónico haciendo clic en el siguiente enlace:</p>
-      <a href="${confirmationLink}" style="background-color: #22c55e; color: white; padding: 10px 15px; text-decoration: none; border-radius: 5px; display: inline-block;">
-        Confirmar mi Correo
-      </a>
+      <p>Gracias por registrarte. Usa el siguiente código para verificar tu cuenta:</p>
+      <p style="font-size: 24px; font-weight: bold; color: #22c55e; letter-spacing: 5px;">${verificationCode}</p>
+      <p>Este código es válido por 10 minutos.</p>
       <p>Si no te registraste en WorkCodile, por favor ignora este mensaje.</p>
       <p>— El equipo de WorkCodile</p>
     </div>
@@ -27,7 +25,7 @@ export function getConfirmationEmailHTML(name, confirmationLink) {
  * @param {string} resetLink - El enlace para restablecer la contraseña.
  * @returns {string} - El HTML del correo.
  */
-export function getPasswordResetEmailHTML(name, resetLink) {
+function getPasswordResetEmailHTML(name, resetLink) {
   return `
     <div style="font-family: sans-serif; padding: 20px; color: #333;">
       <h2>Recuperación de Contraseña de WorkCodile</h2>
@@ -42,3 +40,5 @@ export function getPasswordResetEmailHTML(name, resetLink) {
     </div>
   `;
 }
+
+module.exports = { getVerificationCodeHTML, getPasswordResetEmailHTML };

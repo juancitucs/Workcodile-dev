@@ -16,7 +16,8 @@ interface AppContextType {
   fetchPostById: (postId: string) => Promise<Post | undefined>
   markNotificationAsRead: (notificationId: string) => void
   login: (email: string, password: string) => Promise<void>
-  register: (name: string, email: string, password: string) => Promise<void>
+  sendVerificationCode: (name: string, email: string, password: string) => Promise<any>
+  verifyAndRegister: (email: string, password: string, verificationCode: string) => Promise<any>
   logout: () => void
   updateProfile: (profileData: Partial<User>) => void
   createPost: (
@@ -466,8 +467,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setAuthStatus('authenticated')
   }
 
-  const register = async (name: string, email: string, password: string) => {
-    const response = await fetch('http://localhost:3001/api/auth/register', {
+  const sendVerificationCode = async (name: string, email: string, password: string) => {
+    const response = await fetch('http://localhost:3001/api/auth/send-verification-code', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -475,21 +476,42 @@ export function AppProvider({ children }: { children: ReactNode }) {
       body: JSON.stringify({ name, email, password }),
     })
 
+    const responseData = await response.json();
+
     if (!response.ok) {
-      const errorData = await response.json()
-      throw new Error(errorData.msg || 'Error al registrarse')
+      throw new Error(responseData.msg || 'Error al enviar el código de verificación')
     }
 
-    const { token, user: userData } = await response.json()
-    localStorage.setItem('token', token)
+    return responseData; // Returns { msg: 'Verification code sent...' }
+  }
+
+  const verifyAndRegister = async (email: string, password: string, verificationCode: string) => {
+    const response = await fetch('http://localhost:3001/api/auth/verify-and-register', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ email, password, verificationCode }),
+    })
+
+    const responseData = await response.json();
+
+    if (!response.ok) {
+      throw new Error(responseData.msg || 'Error al verificar el código o registrar el usuario')
+    }
+
+    // On successful verification and registration, log in the user directly
+    const { token, user: userData } = responseData;
+    localStorage.setItem('token', token);
     if (userData.avatar_key) {
       userData.avatar = `http://localhost:9000/workcodile-files/${userData.avatar_key}`;
     }
-    setUser(userData)
+    setUser(userData);
     if (userData.theme) {
-      setTheme(userData.theme)
+      setTheme(userData.theme);
     }
-    setAuthStatus('authenticated')
+    setAuthStatus('authenticated');
+    return responseData; // Returns { token, user }
   }
 
   const logout = () => {
@@ -947,7 +969,8 @@ const findAndUpdateCommentRecursive = (
         fetchPostById,
         markNotificationAsRead,
         login,
-        register,
+        sendVerificationCode, // new function
+        verifyAndRegister,    // new function
         logout,
         updateProfile,
         createPost,
