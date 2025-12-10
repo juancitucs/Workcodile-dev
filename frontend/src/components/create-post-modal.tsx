@@ -238,14 +238,6 @@ export function CreatePostModal({ isOpen, onClose }: CreatePostModalProps) {
                     <PlusCircle className="h-5 w-5 text-primary" />
                     <span>Crear Nueva Publicación</span>
                   </DialogTitle>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={handleClose}
-                    disabled={isSubmitting}
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
                 </div>
                 <DialogDescription>
                   Comparte tu publicación con la comunidad estudiantil de UNAM

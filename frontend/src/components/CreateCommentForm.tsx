@@ -160,9 +160,11 @@ export function CreateCommentForm({ postId, parentId, onCommentSubmitted }: Crea
               className="min-h-[120px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
               onClick={() => setShowPreview(false)}
             >
-              <MarkdownRenderer attachments={attachments}>
-                {content || <p className="text-muted-foreground">Escribe algo para ver la vista previa...</p>}
-              </MarkdownRenderer>
+              {content ? (
+                <MarkdownRenderer attachments={attachments}>{content}</MarkdownRenderer>
+              ) : (
+                <p className="text-muted-foreground">Escribe algo para ver la vista previa...</p>
+              )}
             </div>
           ) : (
             <MentionsInput

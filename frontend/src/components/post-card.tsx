@@ -243,6 +243,9 @@ export function PostCard({ post, startWithCommentsOpen = false, highlightComment
                 </Button>
               </div>
 
+              {/* Horizontal separator for mobile */}
+              <div className="border-b border-border w-full my-4 sm:hidden"></div>
+
               {/* Post content */}
               <div className="flex-1 min-w-[200px] sm:min-w-0">
                 {course && (
