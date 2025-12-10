@@ -1,6 +1,6 @@
 import MarkdownRenderer from './markdown-renderer';
 import { Link, useNavigate } from 'react-router-dom'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { motion } from 'motion/react'
 import { Card, CardContent, CardHeader } from './ui/card'
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar'
@@ -27,7 +27,7 @@ import {
 import { formatDistanceToNow } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { CommentTree } from './comment-tree'
-import { Post } from './types';
+import { formatFileSize, getFileIcon, getAttachmentUrl } from './file-utils'
 
 interface PostCardProps {
   post: Post
@@ -52,24 +52,12 @@ const getCycleColor = (cycle: number) => {
   return colors[(cycle - 1) % colors.length]
 }
 
-const formatFileSize = (bytes: number) => {
-  if (bytes === 0) return '0 Bytes'
-  const k = 1024
-  const sizes = ['Bytes', 'KB', 'MB', 'GB']
-  const i = Math.floor(Math.log(bytes) / Math.log(k))
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
-}
 
-const getFileIcon = (type: string) => {
-  if (type.includes('image/')) return '🖼️'
-  if (type.includes('pdf')) return '📄'
-  if (type.includes('zip') || type.includes('rar')) return '📦'
-  if (type.includes('word')) return '📝'
-  return '📄'
-}
 
 export function PostCard({ post, startWithCommentsOpen = false, highlightCommentId, isDashboardView }: PostCardProps) {
   const navigate = useNavigate()
+  const contentRef = useRef<HTMLDivElement>(null); // Ref for content measurement
+  const [isContentTruncated, setIsContentTruncated] = useState(false); // State to control "Ver más" visibility
   const {
     votePost,
     addComment,
@@ -85,6 +73,29 @@ export function PostCard({ post, startWithCommentsOpen = false, highlightComment
   const [isSubmittingComment, setIsSubmittingComment] = useState(false)
   const [showProfile, setShowProfile] = useState(false)
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (isDashboardView && contentRef.current) {
+      // Use requestAnimationFrame to ensure DOM is fully rendered after potential updates
+      const checkTruncation = () => {
+        if (contentRef.current) {
+          const { scrollHeight, clientHeight } = contentRef.current;
+          setIsContentTruncated(scrollHeight > clientHeight);
+        }
+      };
+
+      // Run immediately and also on window resize (debounced)
+      const resizeObserver = new ResizeObserver(checkTruncation);
+      resizeObserver.observe(contentRef.current);
+
+      // Also run on mount/update for initial check
+      checkTruncation();
+
+      return () => {
+        resizeObserver.disconnect();
+      };
+    }
+  }, [post.content, isDashboardView]); // Re-run if content or dashboard view changes
 
   const handleShowProfile = (userId: string) => {
     setSelectedUserId(userId)
@@ -122,12 +133,15 @@ export function PostCard({ post, startWithCommentsOpen = false, highlightComment
     reportPost(post.id)
   }
 
-  const handleDownload = (e: React.MouseEvent, objectKey: string) => {
+  const handleDownload = (e: React.MouseEvent, attachment: FileAttachment) => {
     e.stopPropagation()
-    window.open(
-      `http://localhost:3001/api/posts/attachment/${objectKey}`,
-      '_blank'
-    )
+    const downloadUrl = getAttachmentUrl(attachment);
+    if (downloadUrl) {
+      window.open(downloadUrl, '_blank')
+    } else {
+      console.error('Could not get download URL for attachment:', attachment);
+      // Optionally, show a user-friendly error message
+    }
   }
 
   const netScore = post.upvotes - post.downvotes
@@ -137,7 +151,7 @@ export function PostCard({ post, startWithCommentsOpen = false, highlightComment
     <>
       <div
         id={`post-${post.id}`}
-        className="cursor-pointer max-w-3xl mx-auto"
+        className={`cursor-pointer ${isDashboardView ? '' : 'max-w-3xl mx-auto'}`}
         onClick={handleNavigate}
       >
         <Card className="glass-card gradient-border shadow-modern hover:shadow-modern-lg transition-all duration-300 ease-out">
@@ -197,9 +211,9 @@ export function PostCard({ post, startWithCommentsOpen = false, highlightComment
           </CardHeader>
 
           <CardContent className="pt-0">
-            <div className="flex space-x-4">
+            <div className="flex flex-col sm:flex-row sm:space-x-4">
               {/* Vote buttons */}
-              <div className="flex flex-col items-center space-y-1 min-w-0">
+              <div className="flex flex-col items-center space-y-1 w-12">
                 <Button
                   variant={post.userVote === 'up' ? 'default' : 'ghost'}
                   size="sm"
@@ -239,7 +253,7 @@ export function PostCard({ post, startWithCommentsOpen = false, highlightComment
               </div>
 
               {/* Post content */}
-              <div className="flex-1 min-w-0">
+              <div className="flex-1 min-w-[200px] sm:min-w-0">
                 {course && (
                   <div className="flex items-center space-x-2 text-xs text-primary mb-2">
                     <GraduationCap className="h-3 w-3" />
@@ -256,14 +270,14 @@ export function PostCard({ post, startWithCommentsOpen = false, highlightComment
                     {post.title}
                   </h3>
                 </Link>
-                <div className={`prose prose-sm dark:prose-invert max-w-none mb-3 ${isDashboardView ? 'max-h-64 overflow-hidden relative' : ''}`}>
+                <div ref={contentRef} className={`prose prose-sm dark:prose-invert max-w-none mb-3 ${isDashboardView ? 'max-h-64 overflow-hidden relative' : ''}`}>
                   <MarkdownRenderer attachments={post.attachments}>{post.content}</MarkdownRenderer>
                   {isDashboardView && (
                     <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-card to-transparent pointer-events-none"></div>
                   )}
                 </div>
 
-                {isDashboardView && (
+                {isDashboardView && isContentTruncated && (
                   <Link to={`/post/${post.id}`} onClick={(e) => e.stopPropagation()}>
                     <Button variant="link" size="sm" className="-ml-3 mt-1">
                       Ver más
@@ -308,7 +322,7 @@ export function PostCard({ post, startWithCommentsOpen = false, highlightComment
                             <div
                               key={`${index}-${attachment.name}`}
                               onClick={(e) =>
-                                handleDownload(e, attachment.object_key!)
+                                handleDownload(e, attachment)
                               }
                             >
                               <motion.div
