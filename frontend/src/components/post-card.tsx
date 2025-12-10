@@ -202,7 +202,7 @@ export function PostCard({ post, startWithCommentsOpen = false, highlightComment
           </CardHeader>
 
           <CardContent className="pt-0">
-            <div className="flex flex-col sm:flex-row sm:space-x-4">
+            <div className="flex flex-row space-x-4">
               {/* Vote buttons */}
               <div className="flex flex-col items-center space-y-1"> {/* Changed items-center to items-start */}
                 <Button
@@ -242,9 +242,6 @@ export function PostCard({ post, startWithCommentsOpen = false, highlightComment
                   <ChevronDown className="h-4 w-4" />
                 </Button>
               </div>
-
-              {/* Horizontal separator for mobile */}
-              <div className="border-b border-border w-full my-4 sm:hidden"></div>
 
               {/* Post content */}
               <div className="flex-1 min-w-[200px] sm:min-w-0">
