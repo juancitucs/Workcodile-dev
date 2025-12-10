@@ -213,7 +213,7 @@ export function PostCard({ post, startWithCommentsOpen = false, highlightComment
           <CardContent className="pt-0">
             <div className="flex flex-col sm:flex-row sm:space-x-4">
               {/* Vote buttons */}
-              <div className="flex flex-col items-start space-y-1 w-12"> {/* Changed items-center to items-start */}
+              <div className="flex flex-col items-center space-y-1"> {/* Changed items-center to items-start */}
                 <Button
                   variant={post.userVote === 'up' ? 'default' : 'ghost'}
                   size="sm"
@@ -227,7 +227,7 @@ export function PostCard({ post, startWithCommentsOpen = false, highlightComment
                 </Button>
 
                 <span
-                  className={`text-sm font-medium text-left ${ /* Added text-left */
+                  className={`text-sm w-8 font-medium text-center ${
                     netScore > 0
                       ? 'text-primary'
                       : netScore < 0

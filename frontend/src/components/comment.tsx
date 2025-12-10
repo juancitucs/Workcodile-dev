@@ -119,128 +119,132 @@ export function Comment({ comment, postId, onCommentVote, highlightCommentId, de
       animate={{ opacity: 1, x: -10 }}
       className="p-4 transition-all duration-300 bg-transparent"
     >
-      <div className="flex items-start space-x-2">
-        <Avatar className="h-8 w-8">
-          <AvatarImage src={comment.author.avatar} alt={comment.author.name} />
-          <AvatarFallback className="bg-primary/10">
-            {comment.author.avatar ? (
-              comment.author.name.charAt(0).toUpperCase()
-            ) : (
-              <WorkCodileLogo className="h-4 w-4" />
-            )}
-          </AvatarFallback>
-        </Avatar>
+      <div className="flex items-start space-x-3">
+        {/* Vote buttons */}
+        <div className="flex flex-col items-center space-y-1 pt-1">
+          <Button
+            key={`upvote-${comment.id}-${comment.userVote}`}
+            size="sm"
+            onClick={(e: any) => {
+              e.stopPropagation()
+              onCommentVote(comment.id, 'up')
+            }}
+            className={`h-6 w-6 p-0 ${comment.userVote === 'up' ? 'bg-green-500 text-white' : 'bg-transparent hover:bg-accent hover:text-foreground dark:hover:bg-accent/50 text-foreground'}`}
+          >
+            <ChevronUp className="h-4 w-4" />
+          </Button>
+          <span className="text-sm font-medium min-w-[1.5rem] text-center">
+            {comment.score}
+          </span>
+          <Button
+            key={`downvote-${comment.id}-${comment.userVote}`}
+            size="sm"
+            onClick={(e) => {
+              e.stopPropagation()
+              onCommentVote(comment.id, 'down')
+            }}
+            className={`h-6 w-6 p-0 ${comment.userVote === 'down' ? 'bg-red-500 text-white' : 'bg-transparent hover:bg-accent hover:text-foreground dark:hover:bg-accent/50 text-foreground'}`}
+          >
+            <ChevronDown className="h-4 w-4" />
+          </Button>
+        </div>
 
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center space-x-2 mb-1">
-            <p className="font-medium text-sm">{comment.author.name}</p>
-            <span className="text-xs text-muted-foreground">
-              {formatDistanceToNow(new Date(comment.createdAt), {
-                addSuffix: true,
-                locale: es,
-              })}
-            </span>
-          </div>
-          <MarkdownRenderer attachments={[]}>{comment.content}</MarkdownRenderer>
+        {/* Main Comment Body */}
+        <div className="flex-1 flex items-start space-x-2">
+          <Avatar className="h-8 w-8">
+            <AvatarImage src={comment.author.avatar} alt={comment.author.name} />
+            <AvatarFallback className="bg-primary/10">
+              {comment.author.avatar ? (
+                comment.author.name.charAt(0).toUpperCase()
+              ) : (
+                <WorkCodileLogo className="h-4 w-4" />
+              )}
+            </AvatarFallback>
+          </Avatar>
 
-          <div className="flex items-center space-x-2"> {/* This div retains flex for Responder/Replies */}
-            <div className="flex flex-col items-start space-y-1"> {/* New div for vote buttons + score */}
-              <Button
-                key={`upvote-${comment.id}-${comment.userVote}`}
-                size="sm"
-                onClick={(e: any) => {
-                  e.stopPropagation()
-                  onCommentVote(comment.id, 'up')
-                }}
-                className={`h-6 px-2 text-xs ${comment.userVote === 'up' ? 'bg-green-500 text-white' : 'bg-transparent hover:bg-accent hover:text-foreground dark:hover:bg-accent/50 text-foreground'}`}
-              >
-                <ChevronUp className="h-3 w-3" />
-              </Button>
-              <span className="text-sm font-medium min-w-[1.5rem] text-left"> {/* Changed text-center to text-left */}
-                {comment.score}
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center space-x-2 mb-1">
+              <p className="font-medium text-sm">{comment.author.name}</p>
+              <span className="text-xs text-muted-foreground">
+                {formatDistanceToNow(new Date(comment.createdAt), {
+                  addSuffix: true,
+                  locale: es,
+                })}
               </span>
-              <Button
-                key={`downvote-${comment.id}-${comment.userVote}`}
-                size="sm"
-                onClick={(e) => {
-                  e.stopPropagation()
-                  onCommentVote(comment.id, 'down')
-                }}
-                className={`h-6 px-2 text-xs ${comment.userVote === 'down' ? 'bg-red-500 text-white' : 'bg-transparent hover:bg-accent hover:text-foreground dark:hover:bg-accent/50 text-foreground'}`}
-              >
-                <ChevronDown className="h-3 w-3" />
-              </Button>
             </div>
-            {/* Original Responder and Ver respuestas buttons are now sibling to the new vote group */}
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={(e) => {
-                e.stopPropagation()
-                setShowReplyForm(!showReplyForm)
-              }}
-              className="h-6 px-2 text-xs"
-            >
-              Responder
-            </Button>
-            {comment.replies && comment.replies.length > 0 && (
+            <MarkdownRenderer attachments={[]}>{comment.content}</MarkdownRenderer>
+
+            <div className="flex items-center space-x-1">
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => {
-                  if (areRepliesVisible) {
-                    setAreRepliesVisible(false);
-                  } else {
-                    handleLoadReplies();
-                  }
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setShowReplyForm(!showReplyForm)
                 }}
-                disabled={isLoadingReplies}
                 className="h-6 px-2 text-xs"
               >
-                <MessageSquare className="h-3 w-3 mr-1" />
-                {isLoadingReplies
-                  ? 'Cargando...'
-                  : areRepliesVisible
-                    ? 'Ocultar respuestas'
-                    : `Ver ${comment.replies.length} respuestas`}
+                Responder
               </Button>
+              {comment.replies && comment.replies.length > 0 && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    if (areRepliesVisible) {
+                      setAreRepliesVisible(false);
+                    } else {
+                      handleLoadReplies();
+                    }
+                  }}
+                  disabled={isLoadingReplies}
+                  className="h-6 px-2 text-xs"
+                >
+                  <MessageSquare className="h-3 w-3 mr-1" />
+                  {isLoadingReplies
+                    ? 'Cargando...'
+                    : areRepliesVisible
+                      ? 'Ocultar respuestas'
+                      : `Ver ${comment.replies.length} respuestas`}
+                </Button>
+              )}
+            </div>
+
+            {showReplyForm && (
+              <form onSubmit={handleReplySubmit} className="mt-4 space-y-2">
+                <Textarea
+                  placeholder={`Responder a ${comment.author.name}...`}
+                  value={replyContent}
+                  onChange={(e) => setReplyContent(e.target.value)}
+                  className="min-h-[80px] resize-none"
+                  onClick={(e) => e.stopPropagation()}
+                  disabled={isSubmitting}
+                />
+                <div className="flex justify-end">
+                  <Button
+                    type="submit"
+                    size="sm"
+                    onClick={(e) => e.stopPropagation()}
+                    disabled={!replyContent.trim() || isSubmitting}
+                  >
+                    {isSubmitting ? 'Enviando...' : 'Enviar respuesta'}
+                  </Button>
+                </div>
+              </form>
+            )}
+
+            {areRepliesVisible && replies.length > 0 && (
+              <div className={`ml-0 pl-1 border-l-2 ${lineColor} mt-4`}>
+                <CommentTree 
+                  comments={replies} 
+                  postId={postId} 
+                  onCommentVote={onCommentVote} 
+                  highlightCommentId={highlightCommentId} 
+                  depth={depth + 1}
+                />
+              </div>
             )}
           </div>
-
-          {showReplyForm && (
-            <form onSubmit={handleReplySubmit} className="mt-4 space-y-2">
-              <Textarea
-                placeholder={`Responder a ${comment.author.name}...`}
-                value={replyContent}
-                onChange={(e) => setReplyContent(e.target.value)}
-                className="min-h-[80px] resize-none"
-                onClick={(e) => e.stopPropagation()}
-                disabled={isSubmitting}
-              />
-              <div className="flex justify-end">
-                <Button
-                  type="submit"
-                  size="sm"
-                  onClick={(e) => e.stopPropagation()}
-                  disabled={!replyContent.trim() || isSubmitting}
-                >
-                  {isSubmitting ? 'Enviando...' : 'Enviar respuesta'}
-                </Button>
-              </div>
-            </form>
-          )}
-
-          {areRepliesVisible && replies.length > 0 && (
-            <div className={`ml-0 pl-1 border-l-2 ${lineColor} mt-4`}>
-              <CommentTree 
-                comments={replies} 
-                postId={postId} 
-                onCommentVote={onCommentVote} 
-                highlightCommentId={highlightCommentId} 
-                depth={depth + 1}
-              />
-            </div>
-          )}
         </div>
       </div>
     </motion.div>
