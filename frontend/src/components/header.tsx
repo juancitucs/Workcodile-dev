@@ -78,7 +78,7 @@ export const Header = memo(function Header({ onCreatePost, onSearch, onToggleMob
               <div className="bg-gradient-to-br from-workcodile-green/10 to-workcodile-green-light/10 p-2 rounded-lg border border-workcodile-green/20 shadow-sm">
                 <WorkCodileLogo className="h-8 w-8" />
               </div>
-              <div className='hidden sm:block'>
+              <div className='hidden md:block'>
                 <h1 className="text-xl font-bold text-primary">
                   Work<span className="text-foreground">Codile</span>
                 </h1>
@@ -88,7 +88,7 @@ export const Header = memo(function Header({ onCreatePost, onSearch, onToggleMob
           </div>
           
           {/* Search Bar */}
-          <div className="flex-1 max-w-md mx-6 hidden sm:block">
+          <div className="flex-1 max-w-md mx-6 sm:block">
             <form onSubmit={handleSearch} className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
@@ -130,7 +130,7 @@ export const Header = memo(function Header({ onCreatePost, onSearch, onToggleMob
               variant="ghost"
               size="icon"
               onClick={toggleTheme}
-              className='hidden sm:inline-flex'
+              className='sm:inline-flex'
             >
               {theme === 'dark' ? (
                 <Sun className="h-5 w-5" />

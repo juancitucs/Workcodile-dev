@@ -120,15 +120,19 @@ export function Sidebar({ selectedCourse, onCourseSelect }: SidebarProps) {
                 
                 if (cycleCourses.length === 0) return null;
 
+                const isCycleSelected = selectedCourse === `cycle-${cycle}`;
                 return (
                   <AccordionItem key={cycle} value={`cycle-${cycle}`}>
-                    <AccordionTrigger className="hover:no-underline">
+                    <AccordionTrigger 
+                      className={`hover:no-underline ${isCycleSelected ? 'bg-primary/10 text-primary' : ''}`}
+                      onClick={() => onCourseSelect(`cycle-${cycle}`)}
+                    >
                       <div className="flex items-center justify-between w-full mr-2">
                         <div className="flex items-center space-x-3">
-                          <BookOpen className="h-4 w-4 text-primary" />
-                          <span className="font-medium">Ciclo {cycle}</span>
+                          <BookOpen className={`h-4 w-4 ${isCycleSelected ? 'text-primary' : 'text-muted-foreground'}`} />
+                          <span className={`font-medium ${isCycleSelected ? 'text-primary' : ''}`}>Ciclo {cycle}</span>
                         </div>
-                        <Badge variant="outline" className="ml-2">
+                        <Badge variant={isCycleSelected ? 'default' : 'outline'} className="ml-2">
                           {cycleCount}
                         </Badge>
                       </div>

@@ -13,7 +13,7 @@ import { useApp } from './app-context';
 import { PostCard } from './post-card';
 import { Virtuoso } from 'react-virtuoso';
 import { MobileCourseFilter } from './mobile-course-filter';
-import { useMainLayoutContext } from './MainLayout';
+import { useMainLayoutContext } from './useMainLayoutContext';
 import {
   TrendingUp,
   Clock,
@@ -26,7 +26,7 @@ import { Post } from './types';
 type SortOption = 'recent' | 'popular' | 'commented';
 
 export function MainFeed() {
-  const { posts, searchPosts, getCourseById, fetchMorePosts, hasMorePosts, isFetchingPosts, resetMainFeed, incrementViewsBatch } = useApp();
+  const { posts, searchPosts, getCourseById, getCoursesByCycle, fetchMorePosts, hasMorePosts, isFetchingPosts, resetMainFeed, incrementViewsBatch } = useApp();
   const { selectedCourse, setSelectedCourse, searchQuery } = useMainLayoutContext();
   const [sortBy, setSortBy] = useState<SortOption>('recent');
 
@@ -72,10 +72,16 @@ export function MainFeed() {
   const filteredPosts = useMemo(() => {
     let filtered = searchQuery ? searchPosts(searchQuery) : posts;
     if (selectedCourse !== 'all') {
-      filtered = filtered.filter(post => post.course === selectedCourse);
+      if (selectedCourse.startsWith('cycle-')) {
+        const cycle = parseInt(selectedCourse.split('-')[1], 10);
+        const cycleCourses = getCoursesByCycle(cycle).map(c => c.id);
+        filtered = filtered.filter(post => cycleCourses.includes(post.course));
+      } else {
+        filtered = filtered.filter(post => post.course === selectedCourse);
+      }
     }
     return filtered;
-  }, [posts, selectedCourse, searchQuery, searchPosts]);
+  }, [posts, selectedCourse, searchQuery, searchPosts, getCoursesByCycle]);
 
   const filteredAndSortedPosts = useMemo(() => {
     return [...filteredPosts].sort((a, b) => {
@@ -119,11 +125,14 @@ export function MainFeed() {
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between space-y-4 sm:space-y-0">
           <div>
             <h2 className="text-xl font-bold">
-              {selectedCourse === 'all' ? 'Todas las publicaciones' : 
-                (() => {
-                  const course = getCourseById(selectedCourse);
-                  return course ? `${course.id}` : 'Curso seleccionado';
-                })()}
+              {selectedCourse === 'all'
+                ? 'Todas las publicaciones'
+                : selectedCourse.startsWith('cycle-')
+                ? `Publicaciones del Ciclo ${selectedCourse.split('-')[1]}`
+                : (() => {
+                    const course = getCourseById(selectedCourse);
+                    return course ? `${course.id}` : 'Curso seleccionado';
+                  })()}
             </h2>
             <p className="text-sm text-muted-foreground">
               {filteredAndSortedPosts.length} publicaciones

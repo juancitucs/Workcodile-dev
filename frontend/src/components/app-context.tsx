@@ -168,6 +168,9 @@ const courses: Course[] = [
 ]
 
 const transformBackendComment = (comment: any): Comment => {
+  const transformedReplies = comment.replies
+    ? comment.replies.map(transformBackendComment).sort((a: Comment, b: Comment) => b.score - a.score)
+    : [];
   return {
     ...comment,
     id: comment._id,
@@ -175,13 +178,13 @@ const transformBackendComment = (comment: any): Comment => {
     author: {
       id: comment.author?._id?.toString() || '',
       name: comment.author?.name || 'Usuario Anónimo',
-      avatar: comment.author?.avatar_key ? comment.author.avatar : undefined, // Backend now provides full URL
+      avatar: comment.author?.avatar_key ? comment.author.avatar : undefined,
       university: 'UNAM',
       email: comment.author?.email || '',
     },
     score: comment.score,
     userVote: comment.user_vote,
-    replies: comment.replies ? comment.replies.map(transformBackendComment) : [],
+    replies: transformedReplies,
   }
 }
 
@@ -192,7 +195,7 @@ const transformBackendPost = (post: any): Post => ({
   author: {
     id: post.author?._id?.toString() || '',
     name: post.author?.name || 'Usuario Anónimo',
-    avatar: post.author?.avatar_key ? post.author.avatar : undefined, // Backend now provides full URL
+    avatar: post.author?.avatar_key ? post.author.avatar : undefined,
     university: 'UNAM',
     email: post.author?.email || '',
   },
@@ -200,7 +203,9 @@ const transformBackendPost = (post: any): Post => ({
   course: post.course_id || '',
   upvotes: post.upvote_count || 0,
   downvotes: post.downvote_count || 0,
-  comments: post.comments ? post.comments.map(transformBackendComment) : [],
+  comments: post.comments
+    ? post.comments.map(transformBackendComment).sort((a: Comment, b: Comment) => b.score - a.score)
+    : [],
   hashtags: post.hashtags || [],
   attachments: post.attachments ? post.attachments.map((att: any) => ({
     ...att,

@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { Outlet, useOutletContext } from 'react-router-dom';
+import { Outlet } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { Header } from './header';
 import { Sidebar } from './sidebar';
@@ -7,17 +7,6 @@ import { RightSidebar } from './right-sidebar';
 import { CreatePostModal } from './create-post-modal';
 import { useApp } from './app-context';
 import { Sheet, SheetContent, SheetTrigger } from './ui/sheet';
-
-type ContextType = { 
-  setSelectedCourse: (course: string) => void; 
-  setSearchQuery: (query: string) => void;
-  selectedCourse: string;
-  searchQuery: string;
-};
-
-export function useMainLayoutContext() {
-  return useOutletContext<ContextType>();
-}
 
 export function MainLayout() {
   const [isCreatePostOpen, setIsCreatePostOpen] = useState(false);
