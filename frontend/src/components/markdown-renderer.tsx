@@ -61,6 +61,12 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = React.memo(({ children
       }
       return <em {...props} />;
     },
+    img: ({ node, ...props }) => {
+      // Ensure images are constrained within the container and fit well.
+      // Use max-h-60 (240px) and object-contain to ensure the image is visible
+      // and contained within the truncated area, while preserving aspect ratio.
+      return <img {...props} className="max-h-60 w-auto object-contain mx-auto" />;
+    },
   };
 
   return (

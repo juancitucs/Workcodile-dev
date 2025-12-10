@@ -1,0 +1,16 @@
+node_modules
+.env
+.env.*
+dist
+build
+src/vite.config.ts
+src/package.json
+src/tsconfig.json
+src/index.html
+src/README.md
+src/clean-project.js
+src/package-clean.json
+src/tsconfig-clean.json
+npmignore
+.npmignore
+src/npmignore

@@ -11,6 +11,7 @@ app.use(express.json())
 
 // Conexión a la base de datos
 const MONGO_URI = process.env.MONGO_URI
+console.log('Connecting to MongoDB with URI:', MONGO_URI);
 
 mongoose
   .connect(MONGO_URI)

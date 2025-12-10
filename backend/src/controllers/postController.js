@@ -3,6 +3,11 @@ const { ObjectId } = require('mongodb')
 const Notification = require('../models/Notification');
 const Report = require('../models/Report');
 const { getFileUrl } = require('../services/storage/storage.service');
+const { B2_PUBLIC_URL_PREFIX, B2_NATIVE_PUBLIC_URL_PREFIX } = require('../services/storage/storage.provider');
+
+// Determine the base URL for attachments and avatars, preferring native B2 URLs
+const ATTACHMENT_BASE_URL = B2_NATIVE_PUBLIC_URL_PREFIX || B2_PUBLIC_URL_PREFIX;
+const AVATAR_BASE_URL = B2_NATIVE_PUBLIC_URL_PREFIX || B2_PUBLIC_URL_PREFIX;
 
 const postAggregationPipeline = [
   // 1. Unwind the comments array
@@ -66,6 +71,13 @@ const postAggregationPipeline = [
             size: '$$att.size',
             type: '$$att.type',
             object_key: '$$att.object_key',
+            url: { // Add full URL for attachment
+              $cond: {
+                if: '$$att.object_key',
+                then: { $concat: [ATTACHMENT_BASE_URL, '/', '$$att.object_key'] },
+                else: null
+              }
+            }
           }
         }
       },
@@ -78,6 +90,13 @@ const postAggregationPipeline = [
         _id: '$author._id',
         name: '$author.name',
         avatar_key: '$author.avatar_key',
+        avatar: { // Add full avatar URL
+          $cond: {
+            if: '$author.avatar_key',
+            then: { $concat: [AVATAR_BASE_URL, '/', '$author.avatar_key'] },
+            else: null
+          }
+        }
       },
       comments: {
         $filter: { // Remove empty comment objects from posts with no comments
@@ -89,6 +108,24 @@ const postAggregationPipeline = [
     },
   },
 ]
+
+// Shared helper function for populating comment authors
+const populateCommentAuthors = async (comments) => {
+  for (const comment of comments) {
+    if(comment.author_id) {
+      const author = await mongoose.connection.db.collection('users').findOne({ _id: comment.author_id });
+      comment.author = {
+          _id: author._id,
+          name: author.name,
+          avatar_key: author.avatar_key,
+          avatar: author.avatar_key ? `${AVATAR_BASE_URL}/${author.avatar_key}` : undefined,
+      };
+    }
+    if (comment.replies && comment.replies.length > 0) {
+        await populateCommentAuthors(comment.replies);
+    }
+  }
+};
 
 // Helper function to add user_vote status
 const addUserVoteStatus = (item, currentUserId) => {
@@ -134,22 +171,6 @@ const getAllPosts = async (req, res) => {
         ...postAggregationPipeline,
       ])
       .toArray()
-
-    const populateCommentAuthors = async (comments) => {
-      for (const comment of comments) {
-        if(comment.author_id) {
-          const author = await mongoose.connection.db.collection('users').findOne({ _id: comment.author_id });
-          comment.author = {
-              _id: author._id,
-              name: author.name,
-              avatar_key: author.avatar_key,
-          };
-        }
-        if (comment.replies && comment.replies.length > 0) {
-            await populateCommentAuthors(comment.replies);
-        }
-      }
-    };
 
     for (const post of posts) {
         if (post.comments && post.comments.length > 0) {
@@ -270,7 +291,7 @@ const votePost = async (req, res) => {
 const addCommentToPost = async (req, res) => {
   try {
     const { id } = req.params;
-    const { content, parentId } = req.body;
+    const { content, parentId, attachments } = req.body; // ADD attachments
     const userId = new ObjectId(req.user.id);
     const user = await mongoose.connection.db.collection('users').findOne({ _id: userId });
 
@@ -278,6 +299,7 @@ const addCommentToPost = async (req, res) => {
       _id: new ObjectId(),
       author_id: userId,
       content,
+      attachments: attachments || [], // ADD attachments
       createdAt: new Date(),
       score: 0,
       replies: [],
@@ -336,20 +358,6 @@ const addCommentToPost = async (req, res) => {
       .toArray();
 
     const updatedPost = updatedPostForAgg[0];
-
-    const populateCommentAuthors = async (comments) => {
-      for (const comment of comments) {
-        const author = await mongoose.connection.db.collection('users').findOne({ _id: comment.author_id });
-        comment.author = {
-            _id: author._id,
-            name: author.name,
-            avatar_key: author.avatar_key,
-        };
-        if (comment.replies && comment.replies.length > 0) {
-            await populateCommentAuthors(comment.replies);
-        }
-      }
-    };
 
         if (updatedPost.comments && updatedPost.comments.length > 0) {
 
@@ -608,30 +616,7 @@ const incrementView = async (req, res) => {
   }
 };
 
-const downloadAttachment = async (req, res) => {
-  try {
-    const { object_key } = req.params;
-    const url = await getFileUrl(object_key);
-    res.redirect(url);
-  } catch (error) {
-    console.error('Error getting attachment URL:', error);
-    res.status(500).json({ message: 'Error getting attachment URL' });
-  }
-};
 
-const populateCommentAuthors = async (comments) => {
-      for (const comment of comments) {
-        const author = await mongoose.connection.db.collection('users').findOne({ _id: comment.author_id });
-        comment.author = {
-            _id: author._id,
-            name: author.name,
-            avatar_key: author.avatar_key,
-        };
-        if (comment.replies && comment.replies.length > 0) {
-            await populateCommentAuthors(comment.replies);
-        }
-      }
-    };
 
 const getPostById = async (req, res) => {
   try {
@@ -762,5 +747,5 @@ module.exports = {
   bookmarkPost,
   reportPost,
   incrementView,
-  downloadAttachment,
+
 }

@@ -13,10 +13,14 @@ export default {
     },
     highlighter: {
       padding: 12,
+      overflowX: 'auto',
+      wordBreak: 'break-word',
     },
     input: {
       padding: 12,
       outline: 'none',
+      overflowX: 'auto',
+      wordBreak: 'break-word',
     },
   },
 

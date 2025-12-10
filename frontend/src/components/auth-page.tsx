@@ -57,6 +57,29 @@ export function AuthPage() {
       return;
     }
 
+    // Validation for name
+    const nameRegex = /^[a-zA-Z\s\u00C0-\u017F]+$/;
+    if (!nameRegex.test(registerForm.name)) {
+      setError('El nombre solo puede contener letras, espacios y tildes.');
+      setIsLoading(false);
+      return;
+    }
+
+    // Validation for password
+    const password = registerForm.password;
+    if (password.length < 8) {
+      setError('La contraseña debe tener al menos 8 caracteres.');
+      setIsLoading(false);
+      return;
+    }
+    const hasNumber = /\d/.test(password);
+    const hasSymbol = /[!@#$%^&*(),.?":{}|<>]/.test(password);
+    if (!hasNumber || !hasSymbol) {
+      setError('La contraseña debe contener al menos un número y un símbolo.');
+      setIsLoading(false);
+      return;
+    }
+
     // Temporarily removed @unam.edu.pe restriction as per user request
     // if (!registerForm.email.includes('@unam.edu.pe')) {
     //   setError('Debes usar tu correo institucional de UNAM (@unam.edu.pe)');

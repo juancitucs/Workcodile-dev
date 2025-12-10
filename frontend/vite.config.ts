@@ -3,9 +3,9 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react-swc'
 import path from 'path'
 
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
   plugins: [react()],
-  // base: '/grupo2/',
+  base: mode === 'production' ? '/workcodile/' : '/',
   resolve: {
     extensions: ['.js', '.jsx', '.ts', '.tsx', '.json'],
     alias: {
@@ -70,8 +70,9 @@ export default defineConfig({
     outDir: 'build',
   },
   server: {
-    port: 3000,
+    host: '0.0.0.0',
+    port: 5173,
     open: false,
-    allowedHosts: ['stem-edmonton-dose-discipline.trycloudflare.com'],
+    allowedHosts: ['*'],
   },
-})
+}))

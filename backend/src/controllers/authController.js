@@ -3,6 +3,7 @@ const bcrypt = require('bcrypt')
 const jwt = require('jsonwebtoken')
 const crypto = require('crypto'); // Added for token generation
 const { sendVerificationCodeEmail } = require('../services/email/email.service'); // Added for sending verification code email
+const { getFileUrl } = require('../services/storage/storage.service'); // Added for getting file public URL
 
 const sendVerificationCode = async (req, res) => { // Renamed from register
   const { name, email, password } = req.body
@@ -91,9 +92,12 @@ const login = async (req, res) => {
 const getMe = async (req, res) => {
   try {
     // req.user is set by the auth middleware
-    const user = await User.findById(req.user.id).select('-password')
+    const user = await User.findById(req.user.id).select('-password').lean(); // Use .lean() for plain JS object
     if (!user) {
       return res.status(404).json({ msg: 'User not found' })
+    }
+    if (user.avatar_key) {
+      user.avatar = getFileUrl(user.avatar_key); // Add full avatar URL
     }
     res.json(user)
   } catch (err) {
@@ -153,9 +157,12 @@ const updateProfile = async (req, res) => {
 
 const getUserById = async (req, res) => {
   try {
-    const user = await User.findById(req.params.id).select('-password');
+    const user = await User.findById(req.params.id).select('-password').lean(); // Use .lean() for plain JS object
     if (!user) {
       return res.status(404).json({ msg: 'User not found' });
+    }
+    if (user.avatar_key) {
+      user.avatar = getFileUrl(user.avatar_key); // Add full avatar URL
     }
     res.json(user);
   } catch (err) {

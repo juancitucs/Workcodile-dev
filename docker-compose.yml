@@ -1,14 +1,4 @@
 services:
-  database:
-    image: mongo:latest
-    container_name: workcodile-mongo
-    ports:
-      - "27018:27017"
-    volumes:
-      - ./data:/data/db
-    networks:
-      - workcodile-net
-
   backend:
     build:
       context: ./backend
@@ -19,19 +9,15 @@ services:
     volumes:
       - ./backend:/app # Monta el código para desarrollo en tiempo real
       - /app/node_modules # No montar node_modules locales
-    depends_on:
-      - database
-      - minio
     environment:
-      - MONGO_URI=${MONGO_URI:-mongodb://database:27017/workcodiledb}
+      - MONGO_URI=${MONGO_URI}
       - PORT=${PORT:-3001}
       - JWT_SECRET=${JWT_SECRET:-WorkcoWord}
-      - MINIO_ENDPOINT=minio
-      - MINIO_PORT=9000
-      - MINIO_ACCESS_KEY=${MINIO_ACCESS_KEY:-minioadmin}
-      - MINIO_SECRET_KEY=${MINIO_SECRET_KEY:-minioadmin123}
-      - MINIO_BUCKET_NAME=${MINIO_BUCKET_NAME:-workcodile-files}
-      - MINIO_PUBLIC_ENDPOINT=localhost
+      - B2_ENDPOINT_URL=${B2_ENDPOINT_URL} # Added for Backblaze B2
+      - B2_APPLICATION_KEY_ID=${B2_APPLICATION_KEY_ID} # Added for Backblaze B2
+      - B2_APPLICATION_KEY=${B2_APPLICATION_KEY} # Added for Backblaze B2
+      - B2_BUCKET_NAME=${B2_BUCKET_NAME:-WorkcodileBucket} # Added for Backblaze B2
+      - B2_NATIVE_PUBLIC_URL_PREFIX=${B2_NATIVE_PUBLIC_URL_PREFIX} # Added for Backblaze B2 Friendly URL
       - GMAIL_USER=${GMAIL_USER} # Added for email functionality
       - GMAIL_APP_PASSWORD=${GMAIL_APP_PASSWORD} # Added for email functionality
     networks:
@@ -50,20 +36,7 @@ services:
     networks:
       - workcodile-net
 
-  minio:
-    image: minio/minio:latest
-    container_name: workcodile-minio
-    ports:
-      - "9000:9000" # API
-      - "9001:9001" # Consola Web
-    volumes:
-      - ./minio_data:/data
-    environment:
-      - MINIO_ROOT_USER=${MINIO_ACCESS_KEY:-minioadmin}
-      - MINIO_ROOT_PASSWORD=${MINIO_SECRET_KEY:-minioadmin123}
-    command: server /data --console-address ":9001"
-    networks:
-      - workcodile-net
+
 
 networks:
   workcodile-net:

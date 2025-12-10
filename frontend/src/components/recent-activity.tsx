@@ -55,57 +55,38 @@ export const RecentActivity = memo(function RecentActivity({ onUserClick }: Rece
   const rawActivityItems = useMemo(() => {
     const items: ActivityItem[] = [];
 
-    // Add post creation activities
-    posts.forEach(post => {
-      items.push({
-        id: `post-${post.id}`,
-        type: 'post',
-        timestamp: new Date(post.createdAt),
-        user: post.author,
-        post: {
-          id: post.id,
-          title: post.title,
-          course: post.course
-        }
-      });
-
-      // Add comment activities
-      post.comments.forEach(comment => {
-        items.push({
-          id: `comment-${comment.id}`,
-          type: 'comment',
-          timestamp: new Date(comment.createdAt),
-          user: comment.author,
-          post: {
-            id: post.id,
-            title: post.title,
-            course: post.course
-          },
-          details: {
-            commentText: comment.content
-          }
-        });
-      });
-
-      // Simulate vote activities
-      if (post.upvotes > 0) {
-        items.push({
-          id: `upvote-${post.id}`,
-          type: 'vote',
-          timestamp: new Date(new Date(post.createdAt).getTime() + Math.random() * 12 * 60 * 60 * 1000),
-          user: post.author, // In reality, this would be different users voting
-          post: {
-            id: post.id,
-            title: post.title,
-            course: post.course
-          },
-          details: {
-            voteType: 'up'
-          }
-        });
-      }
-    });
-
+          // Add post creation activities
+          posts.forEach(post => {
+            items.push({
+              id: `post-${post.id}`,
+              type: 'post',
+              timestamp: new Date(post.createdAt),
+              user: post.author,
+              post: {
+                id: post.id,
+                title: post.title,
+                course: post.course
+              }
+            });
+    
+            // Simulate vote activities
+            if (post.upvotes > 0) {
+              items.push({
+                id: `upvote-${post.id}`,
+                type: 'vote',
+                timestamp: new Date(new Date(post.createdAt).getTime() + Math.random() * 12 * 60 * 60 * 1000),
+                user: post.author, // In reality, this would be different users voting
+                post: {
+                  id: post.id,
+                  title: post.title,
+                  course: post.course
+                },
+                details: {
+                  voteType: 'up'
+                }
+              });
+            }
+          });
     return items.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
   }, [posts]);
 
@@ -139,7 +120,6 @@ export const RecentActivity = memo(function RecentActivity({ onUserClick }: Rece
   const getActivityIcon = (type: string) => {
     switch (type) {
       case 'post': return <Plus className="h-3 w-3" />;
-      case 'comment': return <MessageSquare className="h-3 w-3" />;
       case 'vote': return <TrendingUp className="h-3 w-3" />;
       default: return <Activity className="h-3 w-3" />;
     }
@@ -148,7 +128,6 @@ export const RecentActivity = memo(function RecentActivity({ onUserClick }: Rece
   const getActivityColor = (type: string) => {
     switch (type) {
       case 'post': return 'text-blue-500';
-      case 'comment': return 'text-green-500';
       case 'vote': return 'text-purple-500';
       default: return 'text-muted-foreground';
     }
@@ -164,14 +143,6 @@ export const RecentActivity = memo(function RecentActivity({ onUserClick }: Rece
           <div>
             <span className="text-primary font-medium">{item.user.name.split(' ')[0]}</span>
             <span className="text-muted-foreground"> creó una nueva publicación en </span>
-            <Badge variant="secondary" className="text-xs mx-1">{courseName}</Badge>
-          </div>
-        );
-      case 'comment':
-        return (
-          <div>
-            <span className="text-primary font-medium">{item.user.name.split(' ')[0]}</span>
-            <span className="text-muted-foreground"> comentó en </span>
             <Badge variant="secondary" className="text-xs mx-1">{courseName}</Badge>
           </div>
         );
@@ -223,12 +194,6 @@ export const RecentActivity = memo(function RecentActivity({ onUserClick }: Rece
                 {item.post.title}
               </p>
               
-              {item.details?.commentText && (
-                <p className="text-xs text-muted-foreground mt-1 line-clamp-1 italic">
-                  "{item.details.commentText}"
-                </p>
-              )}
-              
               <div className="flex items-center justify-between mt-2">
                 <span className="text-xs text-muted-foreground">
                   {formatTimeAgo(item.timestamp)}
@@ -271,9 +236,6 @@ export const RecentActivity = memo(function RecentActivity({ onUserClick }: Rece
                 </TabsTrigger>
                 <TabsTrigger value="post" className="text-xs sm:text-sm whitespace-nowrap border-b-2 border-transparent px-3 py-2 text-muted-foreground hover:text-foreground data-[state=active]:border-primary data-[state=active]:text-primary">
                   Posts
-                </TabsTrigger>
-                <TabsTrigger value="comment" className="text-xs sm:text-sm whitespace-nowrap border-b-2 border-transparent px-3 py-2 text-muted-foreground hover:text-foreground data-[state=active]:border-primary data-[state=active]:text-primary">
-                  Comentarios
                 </TabsTrigger>
                 <TabsTrigger value="vote" className="text-xs sm:text-sm whitespace-nowrap border-b-2 border-transparent px-3 py-2 text-muted-foreground hover:text-foreground data-[state=active]:border-primary data-[state=active]:text-primary">
                   Votos

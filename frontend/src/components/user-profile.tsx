@@ -52,6 +52,8 @@ const socialIcons = {
   default: { icon: <LinkIcon className="h-6 w-6 text-black" />, bgColor: "bg-muted/30", textColor: "text-black" },
 };
 
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+
 export function UserProfile({ isOpen, onClose, userId }: UserProfileProps) {
   const { user, posts, updateProfile } = useApp();
   const [profileUser, setProfileUser] = useState(null);
@@ -64,7 +66,6 @@ export function UserProfile({ isOpen, onClose, userId }: UserProfileProps) {
     email: '',
     bio: '',
     location: 'Moquegua, Perú',
-    cycle: '5',
     interests: [],
     avatar: '',
     avatar_key: '',
@@ -75,12 +76,13 @@ export function UserProfile({ isOpen, onClose, userId }: UserProfileProps) {
     const fetchUser = async () => {
       if (userId) {
         try {
-          const response = await fetch(`http://localhost:3001/api/auth/user/${userId}`);
+          const response = await fetch(`${API_BASE_URL}/api/auth/user/${userId}`);
           if (response.ok) {
             const data = await response.json();
-            if (data.avatar_key) {
-              data.avatar = `http://localhost:9000/workcodile-files/${data.avatar_key}`;
-            }
+            // The backend now returns the full avatar URL directly in `data.avatar`
+            // if (data.avatar_key) {
+            //   data.avatar = `${API_BASE_URL}/workcodile-files/${data.avatar_key}`;
+            // }
             setProfileUser(data);
           }
         } catch (error) {
@@ -103,7 +105,6 @@ export function UserProfile({ isOpen, onClose, userId }: UserProfileProps) {
         email: profileUser.email || '',
         bio: profileUser.bio || '',
         location: 'Moquegua, Perú',
-        cycle: '5',
         interests: profileUser.interests || ['Programación', 'Bases de datos', 'Desarrollo web'],
         avatar: profileUser.avatar || '',
         avatar_key: profileUser.avatar_key || '',
@@ -161,7 +162,7 @@ export function UserProfile({ isOpen, onClose, userId }: UserProfileProps) {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:3001/api/storage', {
+      const response = await fetch(`${API_BASE_URL}/api/storage`, {
         method: 'POST',
         headers: {
           'x-auth-token': token,
@@ -199,7 +200,7 @@ export function UserProfile({ isOpen, onClose, userId }: UserProfileProps) {
   const handleSave = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:3001/api/auth/me', {
+      const response = await fetch(`${API_BASE_URL}/api/auth/me`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -234,7 +235,6 @@ export function UserProfile({ isOpen, onClose, userId }: UserProfileProps) {
       email: profileUser.email || '',
       bio: profileUser.bio || '',
       location: 'Moquegua, Perú',
-      cycle: '5',
       interests: profileUser.interests || ['Programación', 'Bases de datos', 'Desarrollo web'],
       avatar: profileUser.avatar || '',
       avatar_key: profileUser.avatar_key || '',
@@ -411,10 +411,6 @@ export function UserProfile({ isOpen, onClose, userId }: UserProfileProps) {
                     <div className="flex items-center space-x-1">
                       <Mail className="h-4 w-4" />
                       <span>{profileUser.email}</span>
-                    </div>
-                    <div className="flex items-center space-x-1">
-                      <GraduationCap className="h-4 w-4" />
-                      <span>Ciclo {editedProfile.cycle}</span>
                     </div>
                     <div className="flex items-center space-x-1">
                       <MapPin className="h-4 w-4" />

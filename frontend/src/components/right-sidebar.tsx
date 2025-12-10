@@ -9,7 +9,7 @@ export const RightSidebar = memo(function RightSidebar() {
   return (
     <div className="space-y-6">
       {/* Trending Section */}
-      <TrendingSection />
+      {/* <TrendingSection /> */}
 
       {/* Recent Activity */}
       <RecentActivity />

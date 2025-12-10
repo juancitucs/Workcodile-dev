@@ -7,6 +7,8 @@ import {
 } from 'react'
 import { User, Course, FileAttachment, Post, Comment, Notification } from './types'
 
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+
 interface AppContextType {
   authStatus: 'loading' | 'authenticated' | 'unauthenticated'
   user: User | null
@@ -15,6 +17,7 @@ interface AppContextType {
   notifications: Notification[]
   fetchPostById: (postId: string) => Promise<Post | undefined>
   markNotificationAsRead: (notificationId: string) => void
+  markAllNotificationsAsRead: () => void
   login: (email: string, password: string) => Promise<void>
   sendVerificationCode: (name: string, email: string, password: string) => Promise<any>
   verifyAndRegister: (email: string, password: string, verificationCode: string) => Promise<any>
@@ -31,7 +34,8 @@ interface AppContextType {
   addComment: (
     postId: string,
     content: string,
-    parentId?: string
+    parentId?: string,
+    attachments?: Omit<FileAttachment, 'id'>[]
   ) => Promise<void>
   voteComment: (
     postId: string,
@@ -165,6 +169,9 @@ const courses: Course[] = [
 ]
 
 const transformBackendComment = (comment: any): Comment => {
+  const transformedReplies = comment.replies
+    ? comment.replies.map(transformBackendComment).sort((a: Comment, b: Comment) => b.score - a.score)
+    : [];
   return {
     ...comment,
     id: comment._id,
@@ -172,13 +179,16 @@ const transformBackendComment = (comment: any): Comment => {
     author: {
       id: comment.author?._id?.toString() || '',
       name: comment.author?.name || 'Usuario Anónimo',
-      avatar: comment.author?.avatar_key ? `http://localhost:9000/workcodile-files/${comment.author.avatar_key}` : undefined,
+      avatar: comment.author?.avatar_key ? comment.author.avatar : undefined,
       university: 'UNAM',
       email: comment.author?.email || '',
     },
+    attachments: comment.attachments ? comment.attachments.map((att: any) => ({
+      ...att,
+    })) : [],
     score: comment.score,
     userVote: comment.user_vote,
-    replies: comment.replies ? comment.replies.map(transformBackendComment) : [],
+    replies: transformedReplies,
   }
 }
 
@@ -189,7 +199,7 @@ const transformBackendPost = (post: any): Post => ({
   author: {
     id: post.author?._id?.toString() || '',
     name: post.author?.name || 'Usuario Anónimo',
-    avatar: post.author?.avatar_key ? `http://localhost:9000/workcodile-files/${post.author.avatar_key}` : undefined,
+    avatar: post.author?.avatar_key ? post.author.avatar : undefined,
     university: 'UNAM',
     email: post.author?.email || '',
   },
@@ -197,7 +207,9 @@ const transformBackendPost = (post: any): Post => ({
   course: post.course_id || '',
   upvotes: post.upvote_count || 0,
   downvotes: post.downvote_count || 0,
-  comments: post.comments ? post.comments.map(transformBackendComment) : [],
+  comments: post.comments
+    ? post.comments.map(transformBackendComment).sort((a: Comment, b: Comment) => b.score - a.score)
+    : [],
   hashtags: post.hashtags || [],
   attachments: post.attachments ? post.attachments.map((att: any) => ({
     ...att,
@@ -245,7 +257,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     if (!token) return
 
     try {
-      await fetch('http://localhost:3001/api/auth/user/theme', {
+      await fetch(`${API_BASE_URL}/api/auth/user/theme`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -267,7 +279,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         headers['x-auth-token'] = token;
       }
 
-      const response = await fetch('http://localhost:3001/api/posts?page=1', { headers });
+      const response = await fetch(`${API_BASE_URL}/api/posts?page=1`, { headers });
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`)
       }
@@ -296,7 +308,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         headers['x-auth-token'] = token;
       }
 
-      const response = await fetch(`http://localhost:3001/api/posts?page=${nextPage}`, { headers });
+      const response = await fetch(`${API_BASE_URL}/api/posts?page=${nextPage}`, { headers });
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`)
       }
@@ -325,7 +337,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         headers['x-auth-token'] = token;
       }
 
-      const response = await fetch(`http://localhost:3001/api/posts/${postId}`, { headers });
+      const response = await fetch(`${API_BASE_URL}/api/posts/${postId}`, { headers });
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
@@ -353,7 +365,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       const token = localStorage.getItem('token')
       if (token) {
         try {
-          const response = await fetch('http://localhost:3001/api/auth/me', {
+          const response = await fetch(`${API_BASE_URL}/api/auth/me`, {
             headers: {
               'x-auth-token': token,
             },
@@ -366,9 +378,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
           }
 
           const userData = await response.json()
-          if (userData.avatar_key) {
-            userData.avatar = `http://localhost:9000/workcodile-files/${userData.avatar_key}`;
-          }
+          // Backend now returns the full avatar URL directly
+          // if (userData.avatar_key) {
+          //   userData.avatar = `${API_BASE_URL}/workcodile-files/${userData.avatar_key}`;
+          // }
           setUser(userData)
           if (userData.theme) {
             setTheme(userData.theme)
@@ -392,7 +405,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       const token = localStorage.getItem('token')
       if (authStatus === 'authenticated' && token) {
         try {
-          const response = await fetch('http://localhost:3001/api/notifications', {
+          const response = await fetch(`${API_BASE_URL}/api/notifications`, {
             headers: {
               'x-auth-token': token,
             },
@@ -416,8 +429,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const token = localStorage.getItem('token')
     if (!token) return
 
+    const originalNotifications = notifications;
+    setNotifications(prev =>
+      prev.map(n => n.id === notificationId ? { ...n, read: true } : n)
+    );
+
     try {
-      const response = await fetch(`http://localhost:3001/api/notifications/${notificationId}/read`, {
+      const response = await fetch(`${API_BASE_URL}/api/notifications/${notificationId}/read`, {
         method: 'PUT',
         headers: {
           'x-auth-token': token,
@@ -425,14 +443,40 @@ export function AppProvider({ children }: { children: ReactNode }) {
       })
 
       if (!response.ok) {
+        setNotifications(originalNotifications);
         throw new Error('Failed to mark notification as read')
       }
-
-      setNotifications(prev =>
-        prev.map(n => n.id === notificationId ? { ...n, read: true } : n)
-      )
     } catch (error) {
       console.error('Error marking notification as read:', error)
+      setNotifications(originalNotifications);
+    }
+  }
+
+  const markAllNotificationsAsRead = async () => {
+    const token = localStorage.getItem('token')
+    if (!token) return
+
+    // Optimistically update the UI
+    const originalNotifications = notifications;
+    setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/notifications/read/all`, {
+        method: 'PUT',
+        headers: {
+          'x-auth-token': token,
+        },
+      })
+
+      if (!response.ok) {
+        // Rollback on error
+        setNotifications(originalNotifications);
+        throw new Error('Failed to mark all notifications as read')
+      }
+    } catch (error) {
+      console.error('Error marking all notifications as read:', error)
+      // Rollback on error
+      setNotifications(originalNotifications);
     }
   }
 
@@ -442,7 +486,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }
 
   const login = async (email: string, password: string) => {
-    const response = await fetch('http://localhost:3001/api/auth/login', {
+    const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -457,9 +501,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
     const { token, user: userData } = await response.json()
     localStorage.setItem('token', token)
-    if (userData.avatar_key) {
-      userData.avatar = `http://localhost:9000/workcodile-files/${userData.avatar_key}`;
-    }
+    // Backend now returns the full avatar URL directly
+    // if (userData.avatar_key) {
+    //   userData.avatar = `${API_BASE_URL}/workcodile-files/${userData.avatar_key}`;
+    // }
     setUser(userData)
     if (userData.theme) {
       setTheme(userData.theme)
@@ -468,7 +513,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }
 
   const sendVerificationCode = async (name: string, email: string, password: string) => {
-    const response = await fetch('http://localhost:3001/api/auth/send-verification-code', {
+    const response = await fetch(`${API_BASE_URL}/api/auth/send-verification-code`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -486,7 +531,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }
 
   const verifyAndRegister = async (email: string, password: string, verificationCode: string) => {
-    const response = await fetch('http://localhost:3001/api/auth/verify-and-register', {
+    const response = await fetch(`${API_BASE_URL}/api/auth/verify-and-register`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -503,9 +548,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
     // On successful verification and registration, log in the user directly
     const { token, user: userData } = responseData;
     localStorage.setItem('token', token);
-    if (userData.avatar_key) {
-      userData.avatar = `http://localhost:9000/workcodile-files/${userData.avatar_key}`;
-    }
+    // Backend now returns the full avatar URL directly
+    // if (userData.avatar_key) {
+    //   userData.avatar = `${API_BASE_URL}/workcodile-files/${userData.avatar_key}`;
+    // }
     setUser(userData);
     if (userData.theme) {
       setTheme(userData.theme);
@@ -524,9 +570,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const updateProfile = (profileData: Partial<User>) => {
     if (user) {
       const newProfile = { ...user, ...profileData };
-      if (newProfile.avatar_key) {
-        newProfile.avatar = `http://localhost:9000/workcodile-files/${newProfile.avatar_key}`;
-      }
+      // Backend now returns the full avatar URL directly
+      // if (newProfile.avatar_key) {
+      //   newProfile.avatar = `${API_BASE_URL}/workcodile-files/${newProfile.avatar_key}`;
+      // }
       setUser(newProfile);
     }
   }
@@ -543,7 +590,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     if (!token) return
 
     try {
-      const response = await fetch('http://localhost:3001/api/posts', {
+      const response = await fetch(`${API_BASE_URL}/api/posts`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -620,7 +667,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       });
 
       const response = await fetch(
-        `http://localhost:3001/api/posts/${postId}/vote`,
+        `${API_BASE_URL}/api/posts/${postId}/vote`,
         {
           method: 'POST',
           headers: {
@@ -654,7 +701,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const addComment = async (
     postId: string,
     content: string,
-    parentId?: string
+    parentId?: string,
+    attachments: Omit<FileAttachment, 'id'>[] = []
   ) => {
     if (!user) return
     const token = localStorage.getItem('token')
@@ -662,14 +710,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
     try {
       const response = await fetch(
-        `http://localhost:3001/api/posts/${postId}/comments`,
+        `${API_BASE_URL}/api/posts/${postId}/comments`,
         {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             'x-auth-token': token,
           },
-          body: JSON.stringify({ content, parentId }),
+          body: JSON.stringify({ content, parentId, attachments }),
         }
       )
 
@@ -777,7 +825,7 @@ const findAndUpdateCommentRecursive = (
       });
 
       const response = await fetch(
-        `http://localhost:3001/api/posts/${postId}/comments/${commentId}/vote`,
+        `${API_BASE_URL}/api/posts/${postId}/comments/${commentId}/vote`,
         {
           method: 'POST',
           headers: {
@@ -838,7 +886,7 @@ const findAndUpdateCommentRecursive = (
         headers['x-auth-token'] = token;
       }
 
-      const response = await fetch(`http://localhost:3001/api/posts/${postId}/comments/${commentId}/replies`, { headers });
+      const response = await fetch(`${API_BASE_URL}/api/posts/${postId}/comments/${commentId}/replies`, { headers });
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`)
       }
@@ -856,7 +904,7 @@ const findAndUpdateCommentRecursive = (
     if (!token) return
 
     try {
-      const response = await fetch(`http://localhost:3001/api/posts/${postId}/bookmark`, {
+      const response = await fetch(`${API_BASE_URL}/api/posts/${postId}/bookmark`, {
         method: 'POST',
         headers: {
           'x-auth-token': token,
@@ -891,7 +939,7 @@ const findAndUpdateCommentRecursive = (
     if (!token) return
 
     try {
-      const response = await fetch(`http://localhost:3001/api/posts/${postId}/report`, {
+      const response = await fetch(`${API_BASE_URL}/api/posts/${postId}/report`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -930,7 +978,7 @@ const findAndUpdateCommentRecursive = (
     if (postIds.length === 0) return;
     try {
       // This endpoint needs to be created in the backend
-      await fetch(`http://localhost:3001/api/posts/views`, {
+      await fetch(`${API_BASE_URL}/api/posts/views`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -968,6 +1016,7 @@ const findAndUpdateCommentRecursive = (
         notifications,
         fetchPostById,
         markNotificationAsRead,
+        markAllNotificationsAsRead,
         login,
         sendVerificationCode, // new function
         verifyAndRegister,    // new function

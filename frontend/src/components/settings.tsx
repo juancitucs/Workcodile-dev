@@ -41,6 +41,8 @@ interface SettingsProps {
   onClose: () => void;
 }
 
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+
 export function Settings({ isOpen, onClose }: SettingsProps) {
   const { user, logout, theme, toggleTheme, posts } = useApp();
   const [settings, setSettings] = useState(null);
@@ -51,7 +53,7 @@ export function Settings({ isOpen, onClose }: SettingsProps) {
       if (!token) return;
 
       try {
-        const response = await fetch('http://localhost:3001/api/settings', {
+        const response = await fetch(`${API_BASE_URL}/api/settings`, {
           headers: {
             'x-auth-token': token,
           },
@@ -92,7 +94,7 @@ export function Settings({ isOpen, onClose }: SettingsProps) {
     if (!token) return;
 
     try {
-      const response = await fetch('http://localhost:3001/api/settings', {
+      const response = await fetch(`${API_BASE_URL}/api/settings`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -290,6 +292,8 @@ export function Settings({ isOpen, onClose }: SettingsProps) {
                   <span>Notificaciones</span>
                 </h3>
                 <div className="space-y-4">
+                  {/* Notificaciones por email */}
+                  {/*
                   <div className="flex items-center justify-between">
                     <div className="space-y-0.5">
                       <Label className="text-base">Notificaciones por email</Label>
@@ -302,7 +306,10 @@ export function Settings({ isOpen, onClose }: SettingsProps) {
                       onCheckedChange={(checked) => handleSettingChange('notifications', 'email', checked)}
                     />
                   </div>
+                  */}
   
+                  {/* Notificaciones push */}
+                  {/*
                   <div className="flex items-center justify-between">
                     <div className="space-y-0.5">
                       <Label className="text-base">Notificaciones push</Label>
@@ -315,7 +322,10 @@ export function Settings({ isOpen, onClose }: SettingsProps) {
                       onCheckedChange={(checked) => handleSettingChange('notifications', 'push', checked)}
                     />
                   </div>
+                  */}
   
+                  {/* Comentarios en mis posts */}
+                  {/*
                   <div className="flex items-center justify-between">
                     <div className="space-y-0.5">
                       <Label className="text-base flex items-center space-x-2">
@@ -331,7 +341,10 @@ export function Settings({ isOpen, onClose }: SettingsProps) {
                       onCheckedChange={(checked) => handleSettingChange('notifications', 'comments', checked)}
                     />
                   </div>
+                  */}
   
+                  {/* Menciones */}
+                  {/*
                   <div className="flex items-center justify-between">
                     <div className="space-y-0.5">
                       <Label className="text-base flex items-center space-x-2">
@@ -347,7 +360,10 @@ export function Settings({ isOpen, onClose }: SettingsProps) {
                       onCheckedChange={(checked) => handleSettingChange('notifications', 'mentions', checked)}
                     />
                   </div>
+                  */}
   
+                  {/* Votos en mis publicaciones */}
+                  {/*
                   <div className="flex items-center justify-between">
                     <div className="space-y-0.5">
                       <Label className="text-base flex items-center space-x-2">
@@ -363,12 +379,14 @@ export function Settings({ isOpen, onClose }: SettingsProps) {
                       onCheckedChange={(checked) => handleSettingChange('notifications', 'votes', checked)}
                     />
                   </div>
+                  */}
                 </div>
               </div>
   
               <Separator />
   
               {/* Privacy */}
+              {/*
               <div>
                 <h3 className="text-lg font-semibold mb-4 flex items-center space-x-2">
                   <Shield className="h-5 w-5 text-primary" />
@@ -437,6 +455,7 @@ export function Settings({ isOpen, onClose }: SettingsProps) {
                   </div>
                 </div>
               </div>
+              */}
   
               <Separator />
   
@@ -478,6 +497,8 @@ export function Settings({ isOpen, onClose }: SettingsProps) {
                     </Select>
                   </div>
   
+                  {/* Posts per page */}
+                  {/*
                   <div className="flex items-center justify-between">
                     <div className="space-y-0.5">
                       <Label className="text-base">Posts por página</Label>
@@ -500,12 +521,14 @@ export function Settings({ isOpen, onClose }: SettingsProps) {
                       </SelectContent>
                     </Select>
                   </div>
+                  */}
                 </div>
               </div>
   
               <Separator />
   
               {/* Sound */}
+              {/*
               <div>
                 <h3 className="text-lg font-semibold mb-4 flex items-center space-x-2">
                   <Volume2 className="h-5 w-5 text-primary" />
@@ -540,6 +563,7 @@ export function Settings({ isOpen, onClose }: SettingsProps) {
                   )}
                 </div>
               </div>
+              */}
   
               <Separator />
   
@@ -550,6 +574,8 @@ export function Settings({ isOpen, onClose }: SettingsProps) {
                   <span>Gestión de datos</span>
                 </h3>
                 <div className="space-y-4">
+                  {/* Exportar mis datos */}
+                  {/*
                   <div className="p-4 bg-muted/30 rounded-lg">
                     <div className="flex items-center justify-between">
                       <div className="space-y-1">
@@ -584,7 +610,10 @@ export function Settings({ isOpen, onClose }: SettingsProps) {
                       </Button>
                     </div>
                   </div>
+                  */}
   
+                  {/* Delete Account */}
+                  {/*
                   <div className="p-4 bg-destructive/10 border border-destructive/20 rounded-lg">
                     <div className="flex items-center justify-between">
                       <div className="space-y-1">
@@ -682,13 +711,18 @@ export function Settings({ isOpen, onClose }: SettingsProps) {
                       </AlertDialog>
                     </div>
                   </div>
+                  */}
                 </div>
               </div>
-  
+
+              <div className="flex items-center justify-center p-8 text-muted-foreground text-lg font-semibold">
+                <SettingsIcon className="h-6 w-6 mr-2" />
+                <span>Más configuraciones muy pronto...</span>
               </div>
-            </div>
+            </div> {/* Closing tag for <div className="space-y-8"> */}
+          </div> {/* Closing tag for <div className="flex-1 overflow-y-auto p-6"> */}
   
-            {/* Action Buttons - Fixed at bottom */}
+
             <div className="p-6 border-t border-border bg-background flex-shrink-0">
               <div className="flex justify-end space-x-3">
                 <Button variant="outline" onClick={onClose}>

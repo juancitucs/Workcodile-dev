@@ -12,7 +12,6 @@ const {
   bookmarkPost,
   reportPost,
   incrementView,
-  downloadAttachment,
 } = require('../controllers/postController');
 const auth = require('../middleware/authMiddleware');
 const optionalAuth = require('../middleware/optionalAuthMiddleware');
@@ -20,7 +19,6 @@ const optionalAuth = require('../middleware/optionalAuthMiddleware');
 router.get('/', optionalAuth, getAllPosts);
 router.get('/:id', optionalAuth, getPostById);
 router.get('/by-comment/:commentId', optionalAuth, getPostByCommentId);
-router.get('/attachment/:object_key', downloadAttachment);
 router.get('/:postId/comments/:commentId/replies', optionalAuth, getCommentReplies);
 router.post('/', auth, createPost);
 router.post('/:id/vote', auth, votePost);
