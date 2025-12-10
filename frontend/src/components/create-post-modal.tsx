@@ -8,12 +8,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Badge } from './ui/badge';
 import { useApp } from './app-context';
 import { FileAttachment, createFileAttachment, formatFileSize, getFileIcon, validateFileType, validateFileSize } from './file-utils';
-import { PlusCircle, X, GraduationCap, Upload, FileText, Hash, Trash2, Bold, Italic, Strikethrough, Image, Paperclip, Link } from 'lucide-react';
+import { PlusCircle, X, GraduationCap, Upload, FileText, Hash, Trash2, Bold, Italic, Strikethrough, Image, Paperclip, Link, Eye } from 'lucide-react';
 import MarkdownRenderer from './markdown-renderer';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from './ui/accordion';
 import { MentionsInput, Mention } from 'react-mentions';
 import mentionsInputStyle from './mentions-input-style';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
+import { useMediaQuery } from '../hooks/useMediaQuery';
 
 
 interface CreatePostModalProps {
@@ -346,7 +347,11 @@ export function CreatePostModal({ isOpen, onClose }: CreatePostModalProps) {
                   
                   {isMobile && showPreview ? (
                     <div className="min-h-[200px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm" onClick={() => setShowPreview(false)}>
-                      <MarkdownRenderer attachments={attachments}>{formData.content || <p className="text-muted-foreground">Escribe algo para ver la vista previa...</p>}</MarkdownRenderer>
+                      {formData.content ? (
+                        <MarkdownRenderer attachments={attachments}>{formData.content}</MarkdownRenderer>
+                      ) : (
+                        <p className="text-muted-foreground">Escribe algo para ver la vista previa...</p>
+                      )}
                     </div>
                   ) : (
                     <MentionsInput

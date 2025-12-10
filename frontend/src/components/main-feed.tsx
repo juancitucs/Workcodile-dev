@@ -23,11 +23,34 @@ import {
 } from 'lucide-react';
 import { Post } from './types';
 
+const ItemContainer = ({
+  children,
+  ...props
+}: {
+  children: React.ReactNode;
+  [key: string]: any;
+}) => {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { visibleItemsChanged, ...rest } = props;
+  return <div {...rest}>{children}</div>;
+};
+
 type SortOption = 'recent' | 'popular' | 'commented';
 
 export function MainFeed() {
-  const { posts, searchPosts, getCourseById, getCoursesByCycle, fetchMorePosts, hasMorePosts, isFetchingPosts, resetMainFeed, incrementViewsBatch } = useApp();
-  const { selectedCourse, setSelectedCourse, searchQuery } = useMainLayoutContext();
+  const {
+    posts,
+    searchPosts,
+    getCourseById,
+    getCoursesByCycle,
+    fetchMorePosts,
+    hasMorePosts,
+    isFetchingPosts,
+    resetMainFeed,
+    incrementViewsBatch
+  } = useApp();
+  const { selectedCourse, setSelectedCourse, searchQuery } =
+    useMainLayoutContext();
   const [sortBy, setSortBy] = useState<SortOption>('recent');
 
   const viewedPostIdsRef = useRef(new Set<string>());
@@ -87,7 +110,7 @@ export function MainFeed() {
     return [...filteredPosts].sort((a, b) => {
       switch (sortBy) {
         case 'popular':
-          return (b.upvotes - b.downvotes) - (a.upvotes - a.downvotes);
+          return b.upvotes - b.downvotes - (a.upvotes - a.downvotes);
         case 'commented':
           return b.comments.length - a.comments.length;
         case 'recent':
@@ -139,15 +162,18 @@ export function MainFeed() {
               {searchQuery && ` • Buscando: "${searchQuery}"`}
             </p>
           </div>
-          
+
           <div className="flex items-center space-x-3">
-            <Select value={sortBy} onValueChange={(value: SortOption) => setSortBy(value)}>
+            <Select
+              value={sortBy}
+              onValueChange={(value: SortOption) => setSortBy(value)}
+            >
               <SelectTrigger className="w-[160px]">
                 <Filter className="h-4 w-4 mr-2" />
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {sortOptions.map((option) => {
+                {sortOptions.map(option => {
                   const Icon = option.icon;
                   return (
                     <SelectItem key={option.value} value={option.value}>
@@ -160,9 +186,9 @@ export function MainFeed() {
                 })}
               </SelectContent>
             </Select>
-            
-            <Button 
-              variant="outline" 
+
+            <Button
+              variant="outline"
               size="sm"
               onClick={handleRefresh}
               className="hidden sm:flex"
@@ -186,6 +212,7 @@ export function MainFeed() {
           )}
           visibleItemsChanged={handleVisibleItemsChange}
           components={{
+            Item: ItemContainer,
             Footer: () => (
               <div className="text-center py-8">
                 {isFetchingPosts ? (
@@ -202,7 +229,7 @@ export function MainFeed() {
                   <p>No hay más publicaciones.</p>
                 )}
               </div>
-            ),
+            )
           }}
         />
       ) : (
