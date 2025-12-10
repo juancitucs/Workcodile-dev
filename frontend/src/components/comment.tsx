@@ -10,6 +10,7 @@ import { formatDistanceToNow } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { CommentTree } from './comment-tree'
 import { Comment as CommentType } from './types'
+import MarkdownRenderer from './markdown-renderer';
 
 interface CommentProps {
   comment: CommentType
@@ -140,7 +141,7 @@ export function Comment({ comment, postId, onCommentVote, highlightCommentId, de
               })}
             </span>
           </div>
-          <p className="text-sm mb-2 whitespace-pre-wrap">{comment.content}</p>
+          <MarkdownRenderer attachments={[]}>{comment.content}</MarkdownRenderer>
 
           <div className="flex items-center space-x-1">
             <Button

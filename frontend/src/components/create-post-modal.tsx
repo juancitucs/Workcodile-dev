@@ -8,11 +8,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Badge } from './ui/badge';
 import { useApp } from './app-context';
 import { FileAttachment, createFileAttachment, formatFileSize, getFileIcon, validateFileType, validateFileSize } from './file-utils';
-import { PlusCircle, X, GraduationCap, Upload, FileText, Hash, Trash2, Bold, Italic, Strikethrough, Image, Paperclip } from 'lucide-react';
+import { PlusCircle, X, GraduationCap, Upload, FileText, Hash, Trash2, Bold, Italic, Strikethrough, Image, Paperclip, Link } from 'lucide-react';
 import MarkdownRenderer from './markdown-renderer';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from './ui/accordion';
 import { MentionsInput, Mention } from 'react-mentions';
 import mentionsInputStyle from './mentions-input-style';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
 
 
 interface CreatePostModalProps {
@@ -252,6 +253,62 @@ export function CreatePostModal({ isOpen, onClose }: CreatePostModalProps) {
       }
     }, 0);
   };
+
+  const applyLinkMarkdown = () => {
+    const textarea = mentionsInputRef.current?.input;
+    if (!textarea) return;
+
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const selectedText = textarea.value.substring(start, end);
+
+    const linkText = selectedText || 'texto del enlace';
+    const linkUrl = 'https://example.com'; // Default placeholder URL
+
+    const newContent = `[${linkText}](${linkUrl})`;
+    const value = textarea.value.substring(0, start) + newContent + textarea.value.substring(end);
+
+    setFormData(prev => ({
+      ...prev,
+      content: value
+    }));
+
+    // Re-focus and set cursor position to allow editing the URL
+    setTimeout(() => {
+      textarea.focus();
+      const urlStartIndex = start + newContent.indexOf(linkUrl);
+      textarea.selectionStart = urlStartIndex;
+      textarea.selectionEnd = urlStartIndex + linkUrl.length;
+    }, 0);
+  };
+
+  const applyImageMarkdown = () => {
+    const textarea = mentionsInputRef.current?.input;
+    if (!textarea) return;
+
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const selectedText = textarea.value.substring(start, end);
+
+    const altText = selectedText || 'alt text';
+    const imageUrl = 'https://example.com/image.jpg'; // Default placeholder URL
+
+    const newContent = `![${altText}](${imageUrl})`;
+    const value = textarea.value.substring(0, start) + newContent + textarea.value.substring(end);
+
+    setFormData(prev => ({
+      ...prev,
+      content: value
+    }));
+
+    // Re-focus and set cursor position to allow editing the URL
+    setTimeout(() => {
+      textarea.focus();
+      const urlStartIndex = start + newContent.indexOf(imageUrl);
+      textarea.selectionStart = urlStartIndex;
+      textarea.selectionEnd = urlStartIndex + imageUrl.length;
+    }, 0);
+  };
   
   const attachmentMentions = attachments.map(att => ({
     id: att.name,
@@ -378,38 +435,83 @@ export function CreatePostModal({ isOpen, onClose }: CreatePostModalProps) {
                 <div className="space-y-2">
                   <Label htmlFor="content">Descripción</Label>
                   <div className="flex space-x-1 mb-2">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => applyMarkdown('**', '**', 'negrita')}
-                    >
-                      <Bold className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => applyMarkdown('*', '*', 'cursiva')}
-                    >
-                      <Italic className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => applyMarkdown('~~', '~~', 'tachado')}
-                    >
-                      <Strikethrough className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => applyMarkdown('![alt text](', ')', 'https://example.com/image.jpg')}
-                    >
-                      <Image className="h-4 w-4" />
-                    </Button>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => applyMarkdown('**', '**', 'negrita')}
+                          >
+                            <Bold className="h-4 w-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Negrita</p>
+                        </TooltipContent>
+                      </Tooltip>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => applyMarkdown('*', '*', 'cursiva')}
+                          >
+                            <Italic className="h-4 w-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Cursiva</p>
+                        </TooltipContent>
+                      </Tooltip>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => applyMarkdown('~~', '~~', 'tachado')}
+                          >
+                            <Strikethrough className="h-4 w-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Tachado</p>
+                        </TooltipContent>
+                      </Tooltip>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={applyLinkMarkdown}
+                          >
+                            <Link className="h-4 w-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Insertar enlace</p>
+                        </TooltipContent>
+                      </Tooltip>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={applyImageMarkdown}
+                          >
+                            <Image className="h-4 w-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Insertar imagen por URL</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
                   </div>
                   <MentionsInput
                     inputRef={mentionsInputRef}
