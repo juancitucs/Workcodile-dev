@@ -28,6 +28,7 @@ import { formatDistanceToNow } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { CommentTree } from './comment-tree'
 import { formatFileSize, getFileIcon, getAttachmentUrl } from './file-utils'
+import { CreateCommentForm } from './CreateCommentForm'; // NEW IMPORT
 
 interface PostCardProps {
   post: Post
@@ -69,8 +70,7 @@ export function PostCard({ post, startWithCommentsOpen = false, highlightComment
     incrementViews,
   } = useApp()
   const [showComments, setShowComments] = useState(startWithCommentsOpen)
-  const [newComment, setNewComment] = useState('')
-  const [isSubmittingComment, setIsSubmittingComment] = useState(false)
+
   const [showProfile, setShowProfile] = useState(false)
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null)
 
@@ -114,16 +114,7 @@ export function PostCard({ post, startWithCommentsOpen = false, highlightComment
     voteComment(post.id, commentId, vote)
   }
 
-  const handleAddComment = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!newComment.trim()) return
 
-    setIsSubmittingComment(true)
-    await new Promise((resolve) => setTimeout(resolve, 500)) // Simulate API call
-    addComment(post.id, newComment)
-    setNewComment('')
-    setIsSubmittingComment(false)
-  }
 
   const handleBookmark = () => {
     toggleBookmark(post.id)
@@ -384,25 +375,16 @@ export function PostCard({ post, startWithCommentsOpen = false, highlightComment
                   >
                     {/* Add comment form */}
                     {user && (
-                      <form onSubmit={handleAddComment} className="space-y-2">
-                        <Textarea
-                          placeholder="Escribe un comentario..."
-                          value={newComment}
-                          onChange={(e) => setNewComment(e.target.value)}
-                          className="min-h-[80px] resize-none"
-                          onClick={(e) => e.stopPropagation()}
-                        />
-                        <div className="flex justify-end">
-                          <Button
-                            type="submit"
-                            size="sm"
-                            disabled={!newComment.trim() || isSubmittingComment}
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            {isSubmittingComment ? 'Enviando...' : 'Comentar'}
-                          </Button>
-                        </div>
-                      </form>
+                      <CreateCommentForm
+                        postId={post.id}
+                        onCommentSubmitted={() => {
+                          // This callback can be used to refresh comments or update the UI
+                          // after a top-level comment has been successfully submitted.
+                          // For now, it just logs.
+                          console.log('Top-level comment submitted');
+                          // A more advanced implementation might reset the main feed or fetch comments
+                        }}
+                      />
                     )}
 
                     {/* Comments list */}

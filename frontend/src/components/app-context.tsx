@@ -34,7 +34,8 @@ interface AppContextType {
   addComment: (
     postId: string,
     content: string,
-    parentId?: string
+    parentId?: string,
+    attachments?: Omit<FileAttachment, 'id'>[]
   ) => Promise<void>
   voteComment: (
     postId: string,
@@ -182,6 +183,9 @@ const transformBackendComment = (comment: any): Comment => {
       university: 'UNAM',
       email: comment.author?.email || '',
     },
+    attachments: comment.attachments ? comment.attachments.map((att: any) => ({
+      ...att,
+    })) : [],
     score: comment.score,
     userVote: comment.user_vote,
     replies: transformedReplies,
@@ -697,7 +701,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const addComment = async (
     postId: string,
     content: string,
-    parentId?: string
+    parentId?: string,
+    attachments: Omit<FileAttachment, 'id'>[] = []
   ) => {
     if (!user) return
     const token = localStorage.getItem('token')
@@ -712,7 +717,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
             'Content-Type': 'application/json',
             'x-auth-token': token,
           },
-          body: JSON.stringify({ content, parentId }),
+          body: JSON.stringify({ content, parentId, attachments }),
         }
       )
 

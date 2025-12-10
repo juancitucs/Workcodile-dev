@@ -8,6 +8,7 @@ const ReplySchema = new Schema({
   score: { type: Number, default: 0 },
   upvoted_by: [{ type: Schema.Types.ObjectId, ref: 'User' }],
   downvoted_by: [{ type: Schema.Types.ObjectId, ref: 'User' }],
+  attachments: [AttachmentSchema],
 });
 
 const CommentSchema = new Schema({
@@ -17,6 +18,7 @@ const CommentSchema = new Schema({
   score: { type: Number, default: 0 },
   upvoted_by: [{ type: Schema.Types.ObjectId, ref: 'User' }],
   downvoted_by: [{ type: Schema.Types.ObjectId, ref: 'User' }],
+  attachments: [AttachmentSchema],
   replies: [ReplySchema],
 });
 

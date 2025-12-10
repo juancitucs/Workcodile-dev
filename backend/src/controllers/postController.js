@@ -291,7 +291,7 @@ const votePost = async (req, res) => {
 const addCommentToPost = async (req, res) => {
   try {
     const { id } = req.params;
-    const { content, parentId } = req.body;
+    const { content, parentId, attachments } = req.body; // ADD attachments
     const userId = new ObjectId(req.user.id);
     const user = await mongoose.connection.db.collection('users').findOne({ _id: userId });
 
@@ -299,6 +299,7 @@ const addCommentToPost = async (req, res) => {
       _id: new ObjectId(),
       author_id: userId,
       content,
+      attachments: attachments || [], // ADD attachments
       createdAt: new Date(),
       score: 0,
       replies: [],

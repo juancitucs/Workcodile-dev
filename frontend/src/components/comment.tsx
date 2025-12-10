@@ -11,6 +11,7 @@ import { es } from 'date-fns/locale'
 import { CommentTree } from './comment-tree'
 import { Comment as CommentType } from './types'
 import MarkdownRenderer from './markdown-renderer';
+import { CreateCommentForm } from './CreateCommentForm'; // NEW IMPORT
 
 interface CommentProps {
   comment: CommentType
@@ -29,13 +30,11 @@ const lineColors = [
 ];
 
 export function Comment({ comment, postId, onCommentVote, highlightCommentId, depth = 0 }: CommentProps) {
-  const { user, addComment, fetchCommentReplies } = useApp()
+  const { user, fetchCommentReplies } = useApp()
   const [showReplyForm, setShowReplyForm] = useState(false)
-  const [replyContent, setReplyContent] = useState('')
   const [replies, setReplies] = useState<CommentType[]>(comment.replies || []);
   const [areRepliesVisible, setAreRepliesVisible] = useState(false)
   const [isLoadingReplies, setIsLoadingReplies] = useState(false)
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const commentRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -83,22 +82,7 @@ export function Comment({ comment, postId, onCommentVote, highlightCommentId, de
     }
   }, [highlightCommentId, comment.replies, areRepliesVisible]);
 
-  const handleReplySubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!replyContent.trim() || isSubmitting) return
-    
-    setIsSubmitting(true);
-    try {
-      await addComment(postId, replyContent, comment.id)
-      setReplyContent('')
-      setShowReplyForm(false)
-      handleLoadReplies();
-    } catch (error) {
-      console.error("Failed to submit reply:", error);
-    } finally {
-      setIsSubmitting(false);
-    }
-  }
+
 
   const handleLoadReplies = async () => {
     if (isLoadingReplies) return;
@@ -211,26 +195,16 @@ export function Comment({ comment, postId, onCommentVote, highlightCommentId, de
             </div>
 
             {showReplyForm && (
-              <form onSubmit={handleReplySubmit} className="mt-4 space-y-2">
-                <Textarea
-                  placeholder={`Responder a ${comment.author.name}...`}
-                  value={replyContent}
-                  onChange={(e) => setReplyContent(e.target.value)}
-                  className="min-h-[80px] resize-none"
-                  onClick={(e) => e.stopPropagation()}
-                  disabled={isSubmitting}
-                />
-                <div className="flex justify-end">
-                  <Button
-                    type="submit"
-                    size="sm"
-                    onClick={(e) => e.stopPropagation()}
-                    disabled={!replyContent.trim() || isSubmitting}
-                  >
-                    {isSubmitting ? 'Enviando...' : 'Enviar respuesta'}
-                  </Button>
-                </div>
-              </form>
+              <CreateCommentForm
+                postId={postId}
+                parentId={comment.id}
+                onCommentSubmitted={() => {
+                  console.log('Reply submitted');
+                  setReplyContent(''); // Clear content after submission
+                  setShowReplyForm(false); // Hide form after submission
+                  handleLoadReplies(); // Reload replies to show the new one
+                }}
+              />
             )}
 
             {areRepliesVisible && replies.length > 0 && (

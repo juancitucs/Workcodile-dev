@@ -96,6 +96,8 @@ export function CreatePostModal({ isOpen, onClose }: CreatePostModalProps) {
   const [hashtagInput, setHashtagInput] = useState('');
   const [attachments, setAttachments] = useState<FileAttachment[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showPreview, setShowPreview] = useState(false);
+  const isMobile = useMediaQuery('(max-width: 768px)');
 
   const cycles = Array.from({ length: 10 }, (_, i) => i + 1);
   const availableCourses = formData.cycle ? getCoursesByCycle(parseInt(formData.cycle)) : [];
@@ -110,10 +112,7 @@ export function CreatePostModal({ isOpen, onClose }: CreatePostModalProps) {
 
     try {
       const filesToUpload = attachments.map(a => a.file).filter(f => f) as File[];
-      console.log('Files to upload:', filesToUpload);
       const uploadedAttachmentsData = await uploadFiles(filesToUpload);
-      console.log('Uploaded attachments data:', uploadedAttachmentsData);
-
       const newAttachments: (Omit<FileAttachment, 'id'> & { object_key: string; })[] = uploadedAttachmentsData.map((uploadedFile) => ({
         name: uploadedFile.name,
         size: uploadedFile.size,
@@ -133,9 +132,9 @@ export function CreatePostModal({ isOpen, onClose }: CreatePostModalProps) {
       setHashtags([]);
       setHashtagInput('');
       setAttachments([]);
+      setShowPreview(false);
     } catch (error) {
       console.error("Failed to create post:", error);
-      // Optionally, show an error message to the user
     } finally {
       setIsSubmitting(false);
       onClose();
@@ -153,6 +152,7 @@ export function CreatePostModal({ isOpen, onClose }: CreatePostModalProps) {
       setHashtags([]);
       setHashtagInput('');
       setAttachments([]);
+      setShowPreview(false);
       onClose();
     }
   };
@@ -217,97 +217,6 @@ export function CreatePostModal({ isOpen, onClose }: CreatePostModalProps) {
         setHashtagInput('');
       }
     }
-  };
-
-  const applyMarkdown = (prefix: string, suffix: string, placeholder?: string) => {
-    const textarea = mentionsInputRef.current?.input;
-    if (!textarea) return;
-
-    const start = textarea.selectionStart;
-    const end = textarea.selectionEnd;
-    const selectedText = textarea.value.substring(start, end);
-
-    let newContent;
-    if (selectedText) {
-      newContent = `${prefix}${selectedText}${suffix}`;
-    } else {
-      newContent = `${prefix}${placeholder || ''}${suffix}`;
-    }
-
-    const value = textarea.value.substring(0, start) + newContent + textarea.value.substring(end);
-
-    setFormData(prev => ({
-      ...prev,
-      content: value
-    }));
-
-    // Re-focus and set cursor position
-    setTimeout(() => {
-      textarea.focus();
-      if (!selectedText) {
-        textarea.selectionStart = start + prefix.length;
-        textarea.selectionEnd = start + prefix.length + (placeholder?.length || 0);
-      } else {
-        textarea.selectionStart = start + newContent.length;
-        textarea.selectionEnd = start + newContent.length;
-      }
-    }, 0);
-  };
-
-  const applyLinkMarkdown = () => {
-    const textarea = mentionsInputRef.current?.input;
-    if (!textarea) return;
-
-    const start = textarea.selectionStart;
-    const end = textarea.selectionEnd;
-    const selectedText = textarea.value.substring(start, end);
-
-    const linkText = selectedText || 'texto del enlace';
-    const linkUrl = 'https://example.com'; // Default placeholder URL
-
-    const newContent = `[${linkText}](${linkUrl})`;
-    const value = textarea.value.substring(0, start) + newContent + textarea.value.substring(end);
-
-    setFormData(prev => ({
-      ...prev,
-      content: value
-    }));
-
-    // Re-focus and set cursor position to allow editing the URL
-    setTimeout(() => {
-      textarea.focus();
-      const urlStartIndex = start + newContent.indexOf(linkUrl);
-      textarea.selectionStart = urlStartIndex;
-      textarea.selectionEnd = urlStartIndex + linkUrl.length;
-    }, 0);
-  };
-
-  const applyImageMarkdown = () => {
-    const textarea = mentionsInputRef.current?.input;
-    if (!textarea) return;
-
-    const start = textarea.selectionStart;
-    const end = textarea.selectionEnd;
-    const selectedText = textarea.value.substring(start, end);
-
-    const altText = selectedText || 'alt text';
-    const imageUrl = 'https://example.com/image.jpg'; // Default placeholder URL
-
-    const newContent = `![${altText}](${imageUrl})`;
-    const value = textarea.value.substring(0, start) + newContent + textarea.value.substring(end);
-
-    setFormData(prev => ({
-      ...prev,
-      content: value
-    }));
-
-    // Re-focus and set cursor position to allow editing the URL
-    setTimeout(() => {
-      textarea.focus();
-      const urlStartIndex = start + newContent.indexOf(imageUrl);
-      textarea.selectionStart = urlStartIndex;
-      textarea.selectionEnd = urlStartIndex + imageUrl.length;
-    }, 0);
   };
   
   const attachmentMentions = attachments.map(att => ({
@@ -434,104 +343,39 @@ export function CreatePostModal({ isOpen, onClose }: CreatePostModalProps) {
                 {/* Content */}
                 <div className="space-y-2">
                   <Label htmlFor="content">Descripción</Label>
-                  <div className="flex space-x-1 mb-2">
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={() => applyMarkdown('**', '**', 'negrita')}
-                          >
-                            <Bold className="h-4 w-4" />
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>Negrita</p>
-                        </TooltipContent>
-                      </Tooltip>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={() => applyMarkdown('*', '*', 'cursiva')}
-                          >
-                            <Italic className="h-4 w-4" />
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>Cursiva</p>
-                        </TooltipContent>
-                      </Tooltip>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={() => applyMarkdown('~~', '~~', 'tachado')}
-                          >
-                            <Strikethrough className="h-4 w-4" />
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>Tachado</p>
-                        </TooltipContent>
-                      </Tooltip>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={applyLinkMarkdown}
-                          >
-                            <Link className="h-4 w-4" />
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>Insertar enlace</p>
-                        </TooltipContent>
-                      </Tooltip>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={applyImageMarkdown}
-                          >
-                            <Image className="h-4 w-4" />
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>Insertar imagen por URL</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
+                  
+                  {isMobile && showPreview ? (
+                    <div className="min-h-[200px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm" onClick={() => setShowPreview(false)}>
+                      <MarkdownRenderer attachments={attachments}>{formData.content || <p className="text-muted-foreground">Escribe algo para ver la vista previa...</p>}</MarkdownRenderer>
+                    </div>
+                  ) : (
+                    <MentionsInput
+                      inputRef={mentionsInputRef}
+                      id="content"
+                      value={formData.content}
+                      onChange={(e) => setFormData(prev => ({ ...prev, content: e.target.value }))}
+                      placeholder="Describe detalladamente tu publicación. Usa Markdown y menciona archivos con '@'."
+                      style={mentionsInputStyle}
+                      className="min-h-[200px] resize-y"
+                    >
+                      <Mention
+                        trigger="@"
+                        data={attachmentMentions}
+                        markup={`@"__display__"`}
+                        displayTransform={(id, display) => `@${display}`}
+                      />
+                    </MentionsInput>
+                  )}
+
+                  <div className="flex justify-end items-center text-xs text-muted-foreground">
+                    {isMobile && (
+                      <Button type="button" variant="ghost" size="sm" onClick={() => setShowPreview(!showPreview)} className="mr-auto">
+                        <Eye className="h-4 w-4 mr-1" />
+                        {showPreview ? 'Ocultar' : 'Mostrar'} Vista Previa
+                      </Button>
+                    )}
+                    <span>{formData.content.length}/5000</span>
                   </div>
-                  <MentionsInput
-                    inputRef={mentionsInputRef}
-                    id="content"
-                    value={formData.content}
-                    onChange={(e) => setFormData(prev => ({ ...prev, content: e.target.value }))}
-                    placeholder="Describe detalladamente tu publicación. Usa Markdown y menciona archivos con '@'."
-                    style={mentionsInputStyle}
-                    className="min-h-[200px] resize-y"
-                  >
-                    <Mention
-                      trigger="@"
-                      data={attachmentMentions}
-                      markup={`@"__display__"`}
-                      displayTransform={(id, display) => `@${display}`}
-                    />
-                  </MentionsInput>
-                  <p className="text-xs text-muted-foreground text-right">
-                    {formData.content.length}/5000
-                  </p>
                 </div>
 
                 <Accordion type="multiple" className="w-full">
@@ -689,113 +533,107 @@ export function CreatePostModal({ isOpen, onClose }: CreatePostModalProps) {
           </div>
 
           {/* Right side - Preview */}
-          <div className="w-1/2 flex flex-col bg-muted/20">
-            <div className="p-6 border-b border-border">
-              <h4 className="font-medium text-sm text-muted-foreground flex items-center space-x-2">
-                <FileText className="h-4 w-4" />
-                <span>Vista previa en tiempo real</span>
-              </h4>
-            </div>
-            
-            <div className="flex-1 overflow-y-auto p-6">
-              <div className="space-y-4">
-                {/* Render full preview only if there's content to show */}
-                { (formData.title || formData.content || hashtags.length > 0 || attachments.length > 0 || selectedCourse) ? (
-                  <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    className="border border-border rounded-lg p-4 bg-card shadow-sm"
-                  >
-                    {selectedCourse && (
-                      <div className="flex items-center space-x-2 text-xs text-primary mb-3 p-2 bg-primary/10 rounded-md">
-                        <GraduationCap className="h-3 w-3" />
-                        <span className="font-medium text-primary">{selectedCourse.id}</span>
-                        <span className="text-muted-foreground">•</span>
-                        <span>Ciclo {selectedCourse.cycle}</span>
-                      </div>
-                    )}
-                    
-                    {formData.title ? (
-                      <h3 className="font-semibold text-lg mb-3 leading-tight">{formData.title}</h3>
-                    ) : (
-                      <div className="h-6 bg-muted/50 rounded mb-3 animate-pulse"></div>
-                    )}
-                    
-                    <div className="prose prose-sm dark:prose-invert max-w-none mb-4 text-sm">
-                      <MarkdownRenderer attachments={attachments}>{formData.content || ""}</MarkdownRenderer>
-                    </div>
-                    
-                    {hashtags.length > 0 && (
-                      <div className="flex flex-wrap gap-1 mb-4">
-                        {hashtags.map((tag) => (
-                          <Badge
-                            key={tag}
-                            variant="secondary"
-                            className="text-xs bg-primary/10 text-primary border-primary/20"
-                          >
-                            #{tag}
-                          </Badge>
-                        ))}
-                      </div>
-                    )}
-                    
-                    {attachments.length > 0 && (
-                      <Accordion type="single" collapsible className="w-full">
-                        <AccordionItem value="attachments-preview">
-                          <AccordionTrigger>
-                            <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-                              <Paperclip className="h-4 w-4" />
-                              <span>{attachments.length} archivo{attachments.length > 1 ? 's' : ''} adjunto{attachments.length > 1 ? 's' : ''}</span>
-                            </div>
-                          </AccordionTrigger>
-                          <AccordionContent>
-                            <div className="space-y-2 pt-2">
-                              {attachments.map((attachment) => (
-                                <motion.div
-                                  key={attachment.id}
-                                  initial={{ opacity: 0, scale: 0.95 }}
-                                  animate={{ opacity: 1, scale: 1 }}
-                                  className="flex items-center space-x-2 text-xs bg-muted/50 rounded p-2 border border-border"
-                                >
-                                  <span className="text-sm">{getFileIcon(attachment.type)}</span>
-                                  <div className="flex-1 min-w-0">
-                                    <span className="truncate block font-medium">{attachment.name}</span>
-                                    <span className="text-muted-foreground">({formatFileSize(attachment.size)})</span>
-                                  </div>
-                                </motion.div>
-                              ))}
-                            </div>
-                          </AccordionContent>
-                        </AccordionItem>
-                      </Accordion>
-                    )}
-                    
-                    {/* Post actions preview */}
-                    <div className="flex items-center justify-between pt-3 mt-3 border-t border-border">
-                      <div className="flex items-center space-x-4 text-xs text-muted-foreground">
-                        <div className="flex items-center space-x-1">
-                          <span>⬆️</span>
-                          <span>0</span>
+          {!isMobile && (
+            <div className="w-1/2 flex flex-col bg-muted/20">
+              <div className="p-6 border-b border-border">
+                <h4 className="font-medium text-sm text-muted-foreground flex items-center space-x-2">
+                  <FileText className="h-4 w-4" />
+                  <span>Vista previa en tiempo real</span>
+                </h4>
+              </div>
+              
+              <div className="flex-1 overflow-y-auto p-6">
+                <div className="space-y-4">
+                  { (formData.title || formData.content || hashtags.length > 0 || attachments.length > 0 || selectedCourse) ? (
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      className="border border-border rounded-lg p-4 bg-card shadow-sm"
+                    >
+                      {selectedCourse && (
+                        <div className="flex items-center space-x-2 text-xs text-primary mb-3 p-2 bg-primary/10 rounded-md">
+                          <GraduationCap className="h-3 w-3" />
+                          <span className="font-medium text-primary">{selectedCourse.id}</span>
+                          <span className="text-muted-foreground">•</span>
+                          <span>Ciclo {selectedCourse.cycle}</span>
                         </div>
-                        <div className="flex items-center space-x-1">
-                          <span>💬</span>
-                          <span>0</span>
-                        </div>
+                      )}
+                      
+                      {formData.title ? (
+                        <h3 className="font-semibold text-lg mb-3 leading-tight">{formData.title}</h3>
+                      ) : (
+                        <div className="h-6 bg-muted/50 rounded mb-3 animate-pulse"></div>
+                      )}
+                      
+                      <div className="prose prose-sm dark:prose-invert max-w-none mb-4 text-sm">
+                        <MarkdownRenderer attachments={attachments}>{formData.content || ""}</MarkdownRenderer>
                       </div>
-                      <span className="text-xs text-muted-foreground">Justo ahora</span>
+                      
+                      {hashtags.length > 0 && (
+                        <div className="flex flex-wrap gap-1 mb-4">
+                          {hashtags.map((tag) => (
+                            <Badge
+                              key={tag}
+                              variant="secondary"
+                              className="text-xs bg-primary/10 text-primary border-primary/20"
+                            >
+                              #{tag}
+                            </Badge>
+                          ))}
+                        </div>
+                      )}
+                      
+                      {attachments.length > 0 && (
+                        <Accordion type="single" collapsible className="w-full">
+                          <AccordionItem value="attachments-preview">
+                            <AccordionTrigger>
+                              <div className="flex items-center space-x-2 text-sm text-muted-foreground">
+                                <Paperclip className="h-4 w-4" />
+                                <span>{attachments.length} archivo{attachments.length > 1 ? 's' : ''} adjunto{attachments.length > 1 ? 's' : ''}</span>
+                              </div>
+                            </AccordionTrigger>
+                            <AccordionContent>
+                              <div className="space-y-2 pt-2">
+                                {attachments.map((attachment) => (
+                                  <motion.div
+                                    key={attachment.id}
+                                    initial={{ opacity: 0, scale: 0.95 }}
+                                    animate={{ opacity: 1, scale: 1 }}
+                                    className="flex items-center space-x-2 text-xs bg-muted/50 rounded p-2 border border-border"
+                                  >
+                                    <span className="text-sm">{getFileIcon(attachment.type)}</span>
+                                    <div className="flex-1 min-w-0">
+                                      <span className="truncate block font-medium">{attachment.name}</span>
+                                      <span className="text-muted-foreground">({formatFileSize(attachment.size)})</span>
+                                    </div>
+                                  </motion.div>
+                                ))}
+                              </div>
+                            </AccordionContent>
+                          </AccordionItem>
+                        </Accordion>
+                      )}
+                      
+                      <div className="flex items-center justify-between pt-3 mt-3 border-t border-border">
+                        <div className="flex items-center space-x-4 text-xs text-muted-foreground">
+                          <div className="flex items-center space-x-1"><span>⬆️</span><span>0</span></div>
+                          <div className="flex items-center space-x-1"><span>💬</span><span>0</span></div>
+                        </div>
+                        <span className="text-xs text-muted-foreground">Justo ahora</span>
+                      </div>
+                    </motion.div>
+                  ) : (
+                    <div className="text-center py-8">
+                      <FileText className="h-12 w-12 text-muted-foreground/50 mx-auto mb-3" />
+                      <p className="text-sm text-muted-foreground">
+                        Completa el formulario para ver la vista previa
+                      </p>
                     </div>
-                  </motion.div>
-                ) : (
-                  <div className="text-center py-8">
-                    <FileText className="h-12 w-12 text-muted-foreground/50 mx-auto mb-3" />
-                    <p className="text-sm text-muted-foreground">
-                      Completa el formulario para ver la vista previa
-                    </p>
-                  </div>
-                )}
+                  )}
+                </div>
               </div>
             </div>
-          </div>
+          )}
         </div>
       </DialogContent>
     </Dialog>
