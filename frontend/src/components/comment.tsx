@@ -143,32 +143,35 @@ export function Comment({ comment, postId, onCommentVote, highlightCommentId, de
           </div>
           <MarkdownRenderer attachments={[]}>{comment.content}</MarkdownRenderer>
 
-          <div className="flex items-center space-x-1">
-            <Button
-              key={`upvote-${comment.id}-${comment.userVote}`}
-              size="sm"
-              onClick={(e: any) => {
-                e.stopPropagation()
-                onCommentVote(comment.id, 'up')
-              }}
-              className={`h-6 px-2 text-xs ${comment.userVote === 'up' ? 'bg-green-500 text-white' : 'bg-transparent hover:bg-accent hover:text-foreground dark:hover:bg-accent/50 text-foreground'}`}
-            >
-              <ChevronUp className="h-3 w-3" />
-            </Button>
-            <span className="text-sm font-medium min-w-[1.5rem] text-center">
-              {comment.score}
-            </span>
-            <Button
-              key={`downvote-${comment.id}-${comment.userVote}`}
-              size="sm"
-              onClick={(e) => {
-                e.stopPropagation()
-                onCommentVote(comment.id, 'down')
-              }}
-              className={`h-6 px-2 text-xs ${comment.userVote === 'down' ? 'bg-red-500 text-white' : 'bg-transparent hover:bg-accent hover:text-foreground dark:hover:bg-accent/50 text-foreground'}`}
-            >
-              <ChevronDown className="h-3 w-3" />
-            </Button>
+          <div className="flex items-center space-x-2"> {/* This div retains flex for Responder/Replies */}
+            <div className="flex flex-col items-start space-y-1"> {/* New div for vote buttons + score */}
+              <Button
+                key={`upvote-${comment.id}-${comment.userVote}`}
+                size="sm"
+                onClick={(e: any) => {
+                  e.stopPropagation()
+                  onCommentVote(comment.id, 'up')
+                }}
+                className={`h-6 px-2 text-xs ${comment.userVote === 'up' ? 'bg-green-500 text-white' : 'bg-transparent hover:bg-accent hover:text-foreground dark:hover:bg-accent/50 text-foreground'}`}
+              >
+                <ChevronUp className="h-3 w-3" />
+              </Button>
+              <span className="text-sm font-medium min-w-[1.5rem] text-left"> {/* Changed text-center to text-left */}
+                {comment.score}
+              </span>
+              <Button
+                key={`downvote-${comment.id}-${comment.userVote}`}
+                size="sm"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  onCommentVote(comment.id, 'down')
+                }}
+                className={`h-6 px-2 text-xs ${comment.userVote === 'down' ? 'bg-red-500 text-white' : 'bg-transparent hover:bg-accent hover:text-foreground dark:hover:bg-accent/50 text-foreground'}`}
+              >
+                <ChevronDown className="h-3 w-3" />
+              </Button>
+            </div>
+            {/* Original Responder and Ver respuestas buttons are now sibling to the new vote group */}
             <Button
               variant="ghost"
               size="sm"
@@ -176,7 +179,7 @@ export function Comment({ comment, postId, onCommentVote, highlightCommentId, de
                 e.stopPropagation()
                 setShowReplyForm(!showReplyForm)
               }}
-              className="h-6 px-2 text-xs ml-2"
+              className="h-6 px-2 text-xs"
             >
               Responder
             </Button>
@@ -192,7 +195,7 @@ export function Comment({ comment, postId, onCommentVote, highlightCommentId, de
                   }
                 }}
                 disabled={isLoadingReplies}
-                className="h-6 px-2 text-xs ml-2"
+                className="h-6 px-2 text-xs"
               >
                 <MessageSquare className="h-3 w-3 mr-1" />
                 {isLoadingReplies
