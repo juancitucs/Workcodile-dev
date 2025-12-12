@@ -3,25 +3,25 @@ import { motion } from 'motion/react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
-import { 
-  DropdownMenu, 
-  DropdownMenuContent, 
-  DropdownMenuItem, 
-  DropdownMenuSeparator, 
-  DropdownMenuTrigger 
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger
 } from './ui/dropdown-menu';
 import { useApp } from './app-context';
 import { UserProfile } from './user-profile';
 import { Settings } from './settings';
 import { WorkCodileLogo } from './crocodile-icon';
 import { EnhancedNotifications } from './enhanced-notifications';
-import { 
+import {
   Menu,
-  Search, 
-  Plus, 
-  Settings as SettingsIcon, 
-  LogOut, 
-  Moon, 
+  Search,
+  Plus,
+  Settings as SettingsIcon,
+  LogOut,
+  Moon,
   Sun,
   User
 } from 'lucide-react';
@@ -78,7 +78,7 @@ export const Header = memo(function Header({ onCreatePost, onSearch, onToggleMob
               <div className="bg-gradient-to-br from-workcodile-green/10 to-workcodile-green-light/10 p-2 rounded-lg border border-workcodile-green/20 shadow-sm">
                 <WorkCodileLogo className="h-8 w-8" />
               </div>
-              <div className='sm:block'>
+              <div className='sm:block hidden'>
                 <h1 className="text-xl font-bold text-primary">
                   Work<span className="text-foreground">Codile</span>
                 </h1>
@@ -86,7 +86,7 @@ export const Header = memo(function Header({ onCreatePost, onSearch, onToggleMob
               </div>
             </motion.div>
           </div>
-          
+
           {/* Search Bar */}
           <div className="flex-1 max-w-md mx-6 sm:block">
             <form onSubmit={handleSearch} className="relative">
@@ -170,8 +170,8 @@ export const Header = memo(function Header({ onCreatePost, onSearch, onToggleMob
                   Configuración
                 </DropdownMenuItem>
                 <DropdownMenuItem className="sm:hidden" onClick={toggleTheme}>
-                  {theme === 'dark' ? 
-                    <Sun className="mr-2 h-4 w-4" /> : 
+                  {theme === 'dark' ?
+                    <Sun className="mr-2 h-4 w-4" /> :
                     <Moon className="mr-2 h-4 w-4" />}
                   Cambiar Tema
                 </DropdownMenuItem>
@@ -187,15 +187,15 @@ export const Header = memo(function Header({ onCreatePost, onSearch, onToggleMob
       </div>
 
       {/* Profile Modal */}
-      <UserProfile 
-        isOpen={showProfile} 
-        onClose={() => setShowProfile(false)} 
+      <UserProfile
+        isOpen={showProfile}
+        onClose={() => setShowProfile(false)}
       />
 
       {/* Settings Modal */}
-      {showSettings && <Settings 
-        isOpen={showSettings} 
-        onClose={() => setShowSettings(false)} 
+      {showSettings && <Settings
+        isOpen={showSettings}
+        onClose={() => setShowSettings(false)}
       />}
     </motion.header>
   );
