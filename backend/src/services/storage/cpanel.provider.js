@@ -9,6 +9,13 @@ const {
   CPANEL_UPLOAD_DIR,
 } = process.env;
 
+// Startup check for required environment variables
+if (!CPANEL_SERVER || !CPANEL_USER || !CPANEL_API_TOKEN || !CPANEL_PUBLIC_URL || !CPANEL_UPLOAD_DIR) {
+  throw new Error(
+    'cPanel storage provider is missing one or more required environment variables: CPANEL_SERVER, CPANEL_USER, CPANEL_API_TOKEN, CPANEL_PUBLIC_URL, CPANEL_UPLOAD_DIR'
+  );
+}
+
 /**
  * Uploads a file to cPanel using the Fileman API.
  * @param {string} objectName - The name of the file to save.
