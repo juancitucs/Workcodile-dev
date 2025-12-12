@@ -5,8 +5,29 @@ const Report = require('../models/Report');
 const { getFileUrl } = require('../services/storage/storage.service');
 
 const postAggregationPipeline = [
-  // ... (previous stages remain the same)
-  // 5. Final projection (MODIFIED)
+  // 0. Ensure author field exists, falling back to author_id for old documents
+  {
+    $addFields: {
+      effective_author_id: { $ifNull: ["$author", "$author_id"] }
+    }
+  },
+  // 1. Lookup author
+  {
+    $lookup: {
+      from: 'users',
+      localField: 'effective_author_id',
+      foreignField: '_id',
+      as: 'author',
+    },
+  },
+  // 2. Unwind author
+  {
+    $unwind: {
+      path: '$author',
+      preserveNullAndEmptyArrays: true, // Keep posts even if author is not found
+    },
+  },
+  // 3. Final projection
   {
     $project: {
       title: 1,
@@ -15,53 +36,51 @@ const postAggregationPipeline = [
       createdAt: 1,
       updatedAt: 1,
       hashtags: 1,
-      attachments: { // Keep attachments as they are, URL will be added later
-        $map: {
-          input: '$attachments',
-          as: 'att',
-          in: {
-            name: '$$att.name',
-            size: '$$att.size',
-            type: '$$att.type',
-            object_key: '$$att.object_key',
-            // URL is now constructed in app logic, not in aggregation
-          }
-        }
-      },
+      attachments: 1,
       views: 1,
-      upvote_count: 1,
-      downvote_count: 1,
+      upvote_count: { $size: { $ifNull: ["$upvoted_by", []] } }, // Correctly count upvotes
+      downvote_count: { $size: { $ifNull: ["$downvoted_by", []] } }, // Correctly count downvotes
       upvoted_by: 1,
       downvoted_by: 1,
       author: {
         _id: '$author._id',
         name: '$author.name',
         avatar_key: '$author.avatar_key',
-        // Avatar URL is now constructed in app logic
       },
-      comments: {
-        $filter: { // Remove empty comment objects from posts with no comments
-          input: '$comments',
-          as: 'comment',
-          cond: { $ifNull: ['$$comment._id', false] }
-        }
-      }
+      comments: 1,
     },
   },
-]
+];
 
 // Shared helper function for populating comment authors and URLs
 const populateCommentAuthors = async (comments) => {
   for (const comment of comments) {
-    if (comment.author_id) {
-      const author = await mongoose.connection.db.collection('users').findOne({ _id: comment.author_id });
+    let authorIdToLookup = null;
+    if (comment.author && typeof comment.author.equals === 'function') { // Check if it's already an ObjectId
+      authorIdToLookup = comment.author;
+    } else if (comment.author) { // If it's a string, convert to ObjectId
+      authorIdToLookup = new ObjectId(comment.author);
+    } else if (comment.author_id) { // Fallback to author_id
+      authorIdToLookup = new ObjectId(comment.author_id);
+    }
+
+    if (authorIdToLookup) {
+      const author = await mongoose.connection.db.collection('users').findOne({ _id: authorIdToLookup });
       comment.author = {
         _id: author._id,
         name: author.name,
         avatar_key: author.avatar_key,
-        avatar: author.avatar_key ? getFileUrl(author.avatar_key) : undefined, // USE getFileUrl
+        avatar: author.avatar_key ? getFileUrl(author.avatar_key) : undefined,
+      };
+    } else {
+      comment.author = {
+        _id: null,
+        name: 'Usuario Anónimo',
+        avatar_key: null,
+        avatar: undefined,
       };
     }
+    
     // Add attachment URLs for comments
     if (comment.attachments) {
         comment.attachments.forEach(att => {
@@ -220,9 +239,9 @@ const votePost = async (req, res) => {
       return res.status(400).json({ message: 'Invalid vote type' });
     }
 
-    if (post.author_id.toString() !== userId.toString()) {
+    if (post.author.toString() !== userId.toString()) {
       const notification = new Notification({
-        user: post.author_id,
+        user: post.author,
         text: `${user.name} ha votado en tu publicación: "${post.title}"`,
         link: `/post/${id}`
       });
@@ -254,7 +273,7 @@ const addCommentToPost = async (req, res) => {
 
     const comment = {
       _id: new ObjectId(),
-      author_id: userId,
+      author: userId,
       content,
       attachments: attachments || [], // ADD attachments
       createdAt: new Date(),
@@ -297,9 +316,9 @@ const addCommentToPost = async (req, res) => {
       await mongoose.connection.db.collection('posts').updateOne({ _id: new ObjectId(id) }, { $push: { comments: comment } });
     }
 
-    if (post.author_id.toString() !== userId.toString()) {
+    if (post.author.toString() !== userId.toString()) {
       const notification = new Notification({
-        user: post.author_id,
+        user: post.author,
         text: `${user.name} ha comentado en tu publicación: "${post.title}"`,
         link: `/post/${id}#comment-${comment._id}`
       });
@@ -349,7 +368,7 @@ const createPost = async (req, res) => {
       course_id: course,
       hashtags,
       attachments,
-      author_id: userId,
+      author: userId,
       createdAt: new Date(),
       updatedAt: new Date(),
       upvote_count: 0,

@@ -178,7 +178,7 @@ const transformBackendComment = (comment: any): Comment => {
     createdAt: new Date(comment.createdAt),
     author: {
       id: comment.author?._id?.toString() || '',
-      name: comment.author?.name || 'Usuario Anónimo',
+      name: comment.author?.name?.trim() || 'Usuario Anónimo',
       avatar: comment.author?.avatar_key ? comment.author.avatar : undefined,
       university: 'UNAM',
       email: comment.author?.email || '',
@@ -198,7 +198,7 @@ const transformBackendPost = (post: any): Post => ({
   content: post.content,
   author: {
     id: post.author?._id?.toString() || '',
-    name: post.author?.name || 'Usuario Anónimo',
+    name: post.author?.name?.trim() || 'Usuario Anónimo',
     avatar: post.author?.avatar_key ? post.author.avatar : undefined,
     university: 'UNAM',
     email: post.author?.email || '',

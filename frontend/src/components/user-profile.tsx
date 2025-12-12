@@ -369,22 +369,34 @@ export function UserProfile({ isOpen, onClose, userId }: UserProfileProps) {
                   {isEditing ? (
                     <div className="space-y-3">
                       <div>
-                        <Label htmlFor="name">Nombre</Label>
+                        <div className="flex justify-between items-center">
+                          <Label htmlFor="name">Nombre</Label>
+                          <span className="text-xs text-muted-foreground">
+                            {editedProfile.name.length}/50
+                          </span>
+                        </div>
                         <Input
                           id="name"
                           value={editedProfile.name}
                           onChange={(e) => setEditedProfile(prev => ({ ...prev, name: e.target.value }))}
                           placeholder="Ingresa tu nombre"
+                          maxLength={50}
                           className="mt-1"
                         />
                       </div>
                       <div>
-                        <Label htmlFor="bio">Biografía</Label>
+                        <div className="flex justify-between items-center">
+                          <Label htmlFor="bio">Biografía</Label>
+                          <span className="text-xs text-muted-foreground">
+                            {editedProfile.bio.length}/300
+                          </span>
+                        </div>
                         <Textarea
                           id="bio"
                           placeholder="Cuéntanos sobre ti..."
                           value={editedProfile.bio}
                           onChange={(e) => setEditedProfile(prev => ({ ...prev, bio: e.target.value }))}
+                          maxLength={300}
                           className="mt-1 h-20 resize-none"
                         />
                       </div>
