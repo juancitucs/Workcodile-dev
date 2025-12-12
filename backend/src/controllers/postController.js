@@ -3,57 +3,10 @@ const { ObjectId } = require('mongodb')
 const Notification = require('../models/Notification');
 const Report = require('../models/Report');
 const { getFileUrl } = require('../services/storage/storage.service');
-const { B2_PUBLIC_URL_PREFIX, B2_NATIVE_PUBLIC_URL_PREFIX } = require('../services/storage/storage.provider');
-
-// Determine the base URL for attachments and avatars, preferring native B2 URLs
-const ATTACHMENT_BASE_URL = B2_NATIVE_PUBLIC_URL_PREFIX || B2_PUBLIC_URL_PREFIX;
-const AVATAR_BASE_URL = B2_NATIVE_PUBLIC_URL_PREFIX || B2_PUBLIC_URL_PREFIX;
 
 const postAggregationPipeline = [
-  // 1. Unwind the comments array
-  {
-    $unwind: {
-      path: '$comments',
-      preserveNullAndEmptyArrays: true,
-    },
-  },
-  // 2. Group back by post
-  {
-    $group: {
-      _id: '$_id',
-      title: { $first: '$title' },
-      content: { $first: '$content' },
-      author_id: { $first: '$author_id' },
-      createdAt: { $first: '$createdAt' },
-      updatedAt: { $first: '$updatedAt' },
-      course_id: { $first: '$course_id' },
-      hashtags: { $first: '$hashtags' },
-      attachments: { $first: '$attachments' },
-      views: { $first: '$views' },
-      upvote_count: { $first: '$upvote_count' },
-      downvote_count: { $first: '$downvote_count' },
-      upvoted_by: { $first: '$upvoted_by' },
-      downvoted_by: { $first: '$downvoted_by' },
-      comments: { $push: '$comments' },
-    },
-  },
-  // 3. Lookup author for the post itself
-  {
-    $lookup: {
-      from: 'users',
-      localField: 'author_id',
-      foreignField: '_id',
-      as: 'author',
-    },
-  },
-  // 4. Unwind the post author
-  {
-    $unwind: {
-      path: '$author',
-      preserveNullAndEmptyArrays: true,
-    },
-  },
-  // 5. Final projection
+  // ... (previous stages remain the same)
+  // 5. Final projection (MODIFIED)
   {
     $project: {
       title: 1,
@@ -62,7 +15,7 @@ const postAggregationPipeline = [
       createdAt: 1,
       updatedAt: 1,
       hashtags: 1,
-      attachments: {
+      attachments: { // Keep attachments as they are, URL will be added later
         $map: {
           input: '$attachments',
           as: 'att',
@@ -71,13 +24,7 @@ const postAggregationPipeline = [
             size: '$$att.size',
             type: '$$att.type',
             object_key: '$$att.object_key',
-            url: { // Add full URL for attachment
-              $cond: {
-                if: '$$att.object_key',
-                then: { $concat: [ATTACHMENT_BASE_URL, '/', '$$att.object_key'] },
-                else: null
-              }
-            }
+            // URL is now constructed in app logic, not in aggregation
           }
         }
       },
@@ -90,13 +37,7 @@ const postAggregationPipeline = [
         _id: '$author._id',
         name: '$author.name',
         avatar_key: '$author.avatar_key',
-        avatar: { // Add full avatar URL
-          $cond: {
-            if: '$author.avatar_key',
-            then: { $concat: [AVATAR_BASE_URL, '/', '$author.avatar_key'] },
-            else: null
-          }
-        }
+        // Avatar URL is now constructed in app logic
       },
       comments: {
         $filter: { // Remove empty comment objects from posts with no comments
@@ -109,20 +50,26 @@ const postAggregationPipeline = [
   },
 ]
 
-// Shared helper function for populating comment authors
+// Shared helper function for populating comment authors and URLs
 const populateCommentAuthors = async (comments) => {
   for (const comment of comments) {
-    if(comment.author_id) {
+    if (comment.author_id) {
       const author = await mongoose.connection.db.collection('users').findOne({ _id: comment.author_id });
       comment.author = {
-          _id: author._id,
-          name: author.name,
-          avatar_key: author.avatar_key,
-          avatar: author.avatar_key ? `${AVATAR_BASE_URL}/${author.avatar_key}` : undefined,
+        _id: author._id,
+        name: author.name,
+        avatar_key: author.avatar_key,
+        avatar: author.avatar_key ? getFileUrl(author.avatar_key) : undefined, // USE getFileUrl
       };
     }
+    // Add attachment URLs for comments
+    if (comment.attachments) {
+        comment.attachments.forEach(att => {
+            if (att.object_key) att.url = getFileUrl(att.object_key);
+        });
+    }
     if (comment.replies && comment.replies.length > 0) {
-        await populateCommentAuthors(comment.replies);
+      await populateCommentAuthors(comment.replies);
     }
   }
 };
@@ -173,6 +120,16 @@ const getAllPosts = async (req, res) => {
       .toArray()
 
     for (const post of posts) {
+        // Add author avatar URL
+        if (post.author && post.author.avatar_key) {
+            post.author.avatar = getFileUrl(post.author.avatar_key);
+        }
+        // Add attachment URLs
+        if (post.attachments) {
+            post.attachments.forEach(att => {
+                if (att.object_key) att.url = getFileUrl(att.object_key);
+            });
+        }
         if (post.comments && post.comments.length > 0) {
             await populateCommentAuthors(post.comments);
         }
@@ -634,13 +591,39 @@ const getPostById = async (req, res) => {
       return res.status(404).json({ message: 'Post not found' });
     }
 
-    const post = postAgg[0];
+        const post = postAgg[0];
+
+    
+
+        // Add author avatar URL
+
+        if (post.author && post.author.avatar_key) {
+
+            post.author.avatar = getFileUrl(post.author.avatar_key);
+
+        }
+
+        // Add attachment URLs for the main post
+
+        if (post.attachments) {
+
+            post.attachments.forEach(att => {
+
+                if (att.object_key) att.url = getFileUrl(att.object_key);
+
+            });
+
+        }
+
+    
 
         if (post.comments && post.comments.length > 0) {
 
-          await populateCommentAuthors(post.comments);
+            await populateCommentAuthors(post.comments);
 
         }
+
+    
 
         addUserVoteStatus(post, req.user ? req.user.id : null);
 
