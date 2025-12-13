@@ -10,7 +10,7 @@ interface CommentTreeProps {
 
 export function CommentTree({ comments, postId, onCommentVote, highlightCommentId, depth = 0 }: CommentTreeProps) {
   return (
-    <div className="space-y-4">
+    <div className="space-y-2">
       {comments.map((comment) => (
         <div key={`${comment.id}-${comment.userVote}`}>
           <Comment comment={comment} postId={postId} onCommentVote={onCommentVote} highlightCommentId={highlightCommentId} depth={depth} />

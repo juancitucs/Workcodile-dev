@@ -3,11 +3,13 @@ const b2Provider = require('./b2.provider');
 const cpanelProvider = require('./cpanel.provider');
 
 const { STORAGE_PROVIDER } = process.env;
+console.log('STORAGE_PROVIDER:', STORAGE_PROVIDER);
 
 let provider;
 
 switch (STORAGE_PROVIDER) {
   case 'cpanel':
+  case 'codetech':
     console.log('Using cPanel as storage provider.');
     provider = cpanelProvider;
     break;
