@@ -84,7 +84,7 @@ const populateCommentAuthors = async (comments) => {
     // Add attachment URLs for comments
     if (comment.attachments) {
         comment.attachments.forEach(att => {
-            if (att.object_key) att.url = getFileUrl(att.object_key);
+            if (att.object_key && !att.url) att.url = getFileUrl(att.object_key);
         });
     }
     if (comment.replies && comment.replies.length > 0) {
