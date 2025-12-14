@@ -1,0 +1,262 @@
+[33mcommit 657face4a467280b462b47a7b0dcf8a3c61cd80e[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mfrontend-fix[m[33m, [m[1;31morigin/frontend-fix[m[33m)[m
+Author: hamdsx <hamdsx@gmail.com>
+Date:   Fri Dec 12 17:18:16 2025 -0500
+
+    Prueba
+
+[33mcommit 8453c56f253c32eaa2f1758afd9cb3e8fb1eba2c[m[33m ([m[1;31morigin/storage-cpanel-rewrite[m[33m, [m[1;32mstorage-cpanel-rewrite[m[33m)[m
+Author: juancitucs <juancitolinuxlover@gmail.com>
+Date:   Fri Dec 12 13:20:31 2025 -0500
+
+    CPANEL 3
+
+[33mcommit 176973c6aa57c77cc54f3bcbd115284e832bef72[m
+Author: juancitucs <juancitolinuxlover@gmail.com>
+Date:   Fri Dec 12 13:06:53 2025 -0500
+
+    CPANEL 2
+
+[33mcommit 87d5da0daca3fb5de23bf195252d137c15e8ee54[m
+Author: juancitucs <juancitolinuxlover@gmail.com>
+Date:   Fri Dec 12 11:00:16 2025 -0500
+
+    CPANEL
+
+[33mcommit ac6c4df5c4b86f7d91ccceda4c8cdbdd796228f1[m[33m ([m[1;31morigin/storage-rewrite[m[33m)[m
+Author: juancitucs <juancitolinuxlover@gmail.com>
+Date:   Fri Dec 12 09:11:45 2025 -0500
+
+    FIX: top bar 4
+
+[33mcommit 8066b9ce3302a094b3c27230b3dd99bad2233dbf[m[33m ([m[1;31morigin/master[m[33m, [m[1;31morigin/HEAD[m[33m)[m
+Merge: c20d6a8 58a29df
+Author: juancitucs <139298084+juancitucs@users.noreply.github.com>
+Date:   Wed Dec 10 13:28:26 2025 -0500
+
+    Merge pull request #2 from hamdsx/patch-1
+    
+    Patch 1
+
+[33mcommit 58a29df72f8c5c6c29ae24bf058be1da55b4f901[m
+Author: hamdsx <hamdsx@gmail.com>
+Date:   Wed Dec 10 12:51:57 2025 -0500
+
+    Implement custom scrollbar styles
+    
+    Added custom scrollbar styles for sidebar and global usage.
+
+[33mcommit 39531628fbe340fc894222aaca8d6e9ac4bd5a78[m
+Author: juancitucs <juancitolinuxlover@gmail.com>
+Date:   Wed Dec 10 12:01:44 2025 -0500
+
+    FIX: top bar 3
+
+[33mcommit 61908dbf8df7bace0245558b7ae1e64064bd51cf[m
+Author: juancitucs <juancitolinuxlover@gmail.com>
+Date:   Wed Dec 10 11:57:58 2025 -0500
+
+    FIX: top bar 2
+
+[33mcommit dce1c08469703cea5baa11b66a408dfa8bef7bc4[m
+Author: juancitucs <juancitolinuxlover@gmail.com>
+Date:   Wed Dec 10 10:54:46 2025 -0500
+
+    FIX: top bar
+
+[33mcommit 2ef427c4567273a5265bfbf2576dbfb4caa2d87c[m
+Author: juancitucs <juancitolinuxlover@gmail.com>
+Date:   Wed Dec 10 10:35:28 2025 -0500
+
+    FIX: MOBILE MARKDOWN PREVIEW
+
+[33mcommit 10b3b5c157e74ab7d4b36f5fc228fc62130414cb[m
+Author: juancitucs <juancitolinuxlover@gmail.com>
+Date:   Wed Dec 10 00:57:58 2025 -0500
+
+    FIX: PREVIEW IMPROVEMENTS AND MARKDOWN COMMENTS
+
+[33mcommit 7c8e4afeee0675e5e59328483504d57c63f4e9d6[m
+Author: juancitucs <juancitolinuxlover@gmail.com>
+Date:   Tue Dec 9 23:15:12 2025 -0500
+
+    FIX: Performance fixes and improvements 6
+
+[33mcommit e0061dfa23fc3e8f51671f0f199e1137389928d8[m
+Author: juancitucs <juancitolinuxlover@gmail.com>
+Date:   Tue Dec 9 22:58:21 2025 -0500
+
+    FIX: Performance fixes and improvements 5
+
+[33mcommit e000f4c4a45895f163a7a8c7abe8014f697aefbd[m
+Author: juancitucs <juancitolinuxlover@gmail.com>
+Date:   Tue Dec 9 22:40:25 2025 -0500
+
+    FEAT: Comments Markdown support 2
+
+[33mcommit b8b0838f967953c122f47fbfabbcf7efa4d74892[m
+Author: juancitucs <juancitolinuxlover@gmail.com>
+Date:   Tue Dec 9 20:41:22 2025 -0500
+
+    FEAT: Comments Markdown support
+
+[33mcommit 716c4642c770b306a927d4f2eb85de39ebcc75c2[m
+Author: juancitucs <juancitolinuxlover@gmail.com>
+Date:   Tue Dec 9 19:34:04 2025 -0500
+
+    FIX: Performance fixes and improvements 4
+
+[33mcommit 807340716bf9c1da362b11447159002fe8f6ef87[m
+Author: juancitucs <juancitolinuxlover@gmail.com>
+Date:   Tue Dec 9 18:35:05 2025 -0500
+
+    FEAT: S3 storage re-implementation and MongoDB Atlas
+
+[33mcommit 383548e77f2c3d0ef33f234a157b68b2f22fac34[m
+Author: juancitucs <juancitolinuxlover@gmail.com>
+Date:   Tue Dec 9 18:02:34 2025 -0500
+
+    FIX: Topbar and mobile fixes
+
+[33mcommit e9cf20ae584afc0d8a2791db2b748ef00b5190b8[m
+Author: juancitucs <juancitolinuxlover@gmail.com>
+Date:   Tue Dec 9 13:07:47 2025 -0500
+
+    FIX: MAIL DOMAIN 2
+
+[33mcommit 2ca416f5ef387b63f4b0daa116a965657cae185a[m
+Author: juancitucs <juancitolinuxlover@gmail.com>
+Date:   Tue Dec 9 12:18:33 2025 -0500
+
+    FIX: MAIL DOMAIN
+
+[33mcommit 33abfa80a981fe0b50b2ffb2a42fef29329aa6e6[m
+Author: juancitucs <juancitolinuxlover@gmail.com>
+Date:   Tue Dec 9 12:05:30 2025 -0500
+
+    FIX: MAIL CONFIRMATION SYSTEM REWRITE (RESEND API)
+
+[33mcommit 66c03899f6c9f2ed6e3554942d131132ea35378d[m
+Author: juancitucs <juancitolinuxlover@gmail.com>
+Date:   Tue Dec 9 12:04:52 2025 -0500
+
+    FIX: MAIL CONFIRMATION SYSTEM REWRITE (RESEND API)
+
+[33mcommit bbc3305319eff1edcac3a965f94eb06543b3bfa7[m
+Author: juancitucs <juancitolinuxlover@gmail.com>
+Date:   Tue Dec 9 00:28:39 2025 -0500
+
+    FEAT: S3 storage re-implementation and MongoDB Atlas
+
+[33mcommit c20d6a8ece4d79ef87d5759b9b8b2d242731230a[m
+Merge: 3ec81f3 35020b8
+Author: juancitucs <139298084+juancitucs@users.noreply.github.com>
+Date:   Mon Dec 8 22:18:27 2025 -0500
+
+    Merge pull request #1 from juancitucs/feature/complete-backend-endpoints
+    
+    Feature/complete backend endpoints
+
+[33mcommit b7370faf9f0281367cdcb357d5adf2c7ebc1927d[m
+Author: juancitucs <juancitolinuxlover@gmail.com>
+Date:   Mon Dec 8 22:09:42 2025 -0500
+
+    FEAT: S3 storage re-implementation
+
+[33mcommit 35020b81025880fc2e45986959ce58f714c70575[m[33m ([m[1;31morigin/feature/complete-backend-endpoints[m[33m)[m
+Author: juancitucs <juancitolinuxlover@gmail.com>
+Date:   Mon Dec 8 21:30:01 2025 -0500
+
+    FIX: MAIL CONFIRMATION SYSTEM
+
+[33mcommit 8983504ffc05886523eccff2ffd2355a10a96647[m
+Author: juancitucs <juancitolinuxlover@gmail.com>
+Date:   Mon Dec 8 18:12:34 2025 -0500
+
+    FIX: Performance fixes and improvements 2
+
+[33mcommit cccab761a9d30e995f1d7b39f8eb02054b723df6[m
+Author: juancitucs <juancitolinuxlover@gmail.com>
+Date:   Mon Dec 8 12:02:42 2025 -0500
+
+    FIX: Performance fixes and improvements
+
+[33mcommit e72eb1fc83840676c128e1eb52aac274eb96ae84[m
+Author: juancitucs <juancitolinuxlover@gmail.com>
+Date:   Mon Dec 8 11:14:04 2025 -0500
+
+    FEAT: Post focus 5
+
+[33mcommit 5fa3ac4d848eb85dee4ba3cc21825b386bfbc0d4[m
+Author: juancitucs <juancitolinuxlover@gmail.com>
+Date:   Mon Dec 8 10:39:55 2025 -0500
+
+    FEAT: Media reference post
+
+[33mcommit 2a2f29a571eebd7d0a88889b61ca11439fa63c63[m
+Author: juancitucs <juancitolinuxlover@gmail.com>
+Date:   Mon Dec 8 03:21:11 2025 -0500
+
+    FEAT: Post focus 4
+
+[33mcommit fd0ae453f5c0c556fee63c7f7934cf222dffa424[m
+Author: juancitucs <juancitolinuxlover@gmail.com>
+Date:   Mon Dec 8 03:13:36 2025 -0500
+
+    FEAT: Post focus 3
+
+[33mcommit de380d84e803e8b12a89229457c1ce22f64e8d3f[m
+Author: juancitucs <juancitolinuxlover@gmail.com>
+Date:   Mon Dec 8 01:51:19 2025 -0500
+
+    FEAT: Post focus 2
+
+[33mcommit 28e086c79c39a14bbb106f3b8ad40a4a6bcfed94[m
+Author: juancitucs <juancitolinuxlover@gmail.com>
+Date:   Mon Dec 8 00:38:33 2025 -0500
+
+    FEAT: Post focus
+
+[33mcommit 30ace9a78c4a9c4b427c8977cd65c7529fe6dd08[m
+Author: juancitucs <juancitolinuxlover@gmail.com>
+Date:   Sun Dec 7 22:18:00 2025 -0500
+
+    FEAT: Post focus
+
+[33mcommit 365ba84183f059d3951750121de65518f73786c9[m
+Author: juancitucs <juancitolinuxlover@gmail.com>
+Date:   Sat Dec 6 08:49:43 2025 -0500
+
+    FIX: DEFAULT ENV OVERRIDE
+
+[33mcommit 5780888bf8f2895556fe0ed11a47c54dcbd2ae59[m
+Author: juancitucs <juancitolinuxlover@gmail.com>
+Date:   Sun Nov 30 20:00:57 2025 -0500
+
+    feat: markdown support 2
+
+[33mcommit 796d6c4ca2e9f6f394f9e45ceb718f0c097ebfe1[m
+Author: juancitucs <juancitolinuxlover@gmail.com>
+Date:   Sun Nov 30 16:31:20 2025 -0500
+
+    feat: markdown support
+
+[33mcommit 8bf0f82fcab343da207714dd853fdb2ffcf68f9e[m
+Author: juancitucs <juancitolinuxlover@gmail.com>
+Date:   Sun Nov 30 15:22:00 2025 -0500
+
+    base config
+
+[33mcommit 00ab2e8dfd52d220b16315ba1060cd8196703b87[m
+Author: juancitucs <juancitolinuxlover@gmail.com>
+Date:   Thu Nov 27 17:26:11 2025 -0500
+
+    edit test
+
+[33mcommit 02c50048f2ff4654c6b9d6fe3993faf083d0657d[m
+Author: juancitucs <juancitolinuxlover@gmail.com>
+Date:   Sat Nov 15 19:07:56 2025 -0500
+
+    PRE: DOCKERFILE AND FRONTEND BUILD2
+
+[33mcommit 09bb48adf4854b898d26c0c284aa211a2b84b3cf[m
+Author: juancitucs <juancitolinuxlover@gmail

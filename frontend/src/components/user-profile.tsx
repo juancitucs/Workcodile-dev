@@ -13,14 +13,16 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { useApp } from './app-context';
 import { WorkCodileLogo } from './crocodile-icon';
 import { toast } from 'sonner@2.0.3';
-import { 
-  User, 
-  Mail, 
-  GraduationCap, 
-  Calendar, 
-  MapPin, 
-  Edit3, 
-  Save, 
+import { autoSpaceInsertion } from '../utils/text-utils';
+import { ImageCropModal } from './ImageCropModal';
+import {
+  User,
+  Mail,
+  GraduationCap,
+  Calendar,
+  MapPin,
+  Edit3,
+  Save,
   X,
   Trophy,
   MessageSquare,
@@ -60,6 +62,8 @@ export function UserProfile({ isOpen, onClose, userId }: UserProfileProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+  const [cropModalOpen, setCropModalOpen] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [editedProfile, setEditedProfile] = useState({
     name: '',
@@ -104,7 +108,7 @@ export function UserProfile({ isOpen, onClose, userId }: UserProfileProps) {
         name: profileUser.name || '',
         email: profileUser.email || '',
         bio: profileUser.bio || '',
-        location: 'Moquegua, Perú',
+        location: profileUser.location || 'Moquegua, Perú',
         interests: profileUser.interests || ['Programación', 'Bases de datos', 'Desarrollo web'],
         avatar: profileUser.avatar || '',
         avatar_key: profileUser.avatar_key || '',
@@ -155,10 +159,21 @@ export function UserProfile({ isOpen, onClose, userId }: UserProfileProps) {
       return;
     }
 
+    // Load image and show crop modal
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = reader.result as string;
+      setSelectedImage(result);
+      setCropModalOpen(true);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleCropComplete = async (croppedImageBlob: Blob) => {
     setIsUploadingAvatar(true);
 
     const formData = new FormData();
-    formData.append('file', file);
+    formData.append('file', croppedImageBlob, 'avatar.jpg');
 
     try {
       const token = localStorage.getItem('token');
@@ -184,7 +199,7 @@ export function UserProfile({ isOpen, onClose, userId }: UserProfileProps) {
         setIsUploadingAvatar(false);
         toast.success('Avatar cargado correctamente');
       };
-      reader.readAsDataURL(file);
+      reader.readAsDataURL(croppedImageBlob);
     } catch (error) {
       setIsUploadingAvatar(false);
       toast.error('Error al subir el avatar');
@@ -234,7 +249,7 @@ export function UserProfile({ isOpen, onClose, userId }: UserProfileProps) {
       name: profileUser.name || '',
       email: profileUser.email || '',
       bio: profileUser.bio || '',
-      location: 'Moquegua, Perú',
+      location: profileUser.location || 'Moquegua, Perú',
       interests: profileUser.interests || ['Programación', 'Bases de datos', 'Desarrollo web'],
       avatar: profileUser.avatar || '',
       avatar_key: profileUser.avatar_key || '',
@@ -303,13 +318,13 @@ export function UserProfile({ isOpen, onClose, userId }: UserProfileProps) {
             <div className="space-y-6">
               <div className="flex flex-col sm:flex-row items-center sm:items-start space-y-4 sm:space-y-0 sm:space-x-6">
                 <div className="relative group">
-                  <Avatar 
+                  <Avatar
                     className={`h-24 w-24 ${isEditing ? 'cursor-pointer transition-all duration-200 hover:opacity-75' : ''}`}
                     onClick={handleAvatarClick}
                   >
-                    <AvatarImage 
-                      src={avatarPreview || editedProfile.avatar || profileUser.avatar} 
-                      alt={profileUser.name} 
+                    <AvatarImage
+                      src={avatarPreview || editedProfile.avatar || profileUser.avatar}
+                      alt={profileUser.name}
                     />
                     <AvatarFallback className="text-2xl bg-primary/10">
                       {profileUser.avatar ? (
@@ -319,7 +334,7 @@ export function UserProfile({ isOpen, onClose, userId }: UserProfileProps) {
                       )}
                     </AvatarFallback>
                   </Avatar>
-                  
+
                   {isEditing && (
                     <>
                       <input
@@ -380,7 +395,7 @@ export function UserProfile({ isOpen, onClose, userId }: UserProfileProps) {
                           value={editedProfile.name}
                           onChange={(e) => setEditedProfile(prev => ({ ...prev, name: e.target.value }))}
                           placeholder="Ingresa tu nombre"
-                          maxLength={50}
+                          maxLength={30}
                           className="mt-1"
                         />
                       </div>
@@ -395,7 +410,10 @@ export function UserProfile({ isOpen, onClose, userId }: UserProfileProps) {
                           id="bio"
                           placeholder="Cuéntanos sobre ti..."
                           value={editedProfile.bio}
-                          onChange={(e) => setEditedProfile(prev => ({ ...prev, bio: e.target.value }))}
+                          onChange={(e) => {
+                            const processedValue = autoSpaceInsertion(e.target.value, 20);
+                            setEditedProfile(prev => ({ ...prev, bio: processedValue }));
+                          }}
                           maxLength={300}
                           className="mt-1 h-20 resize-none"
                         />
@@ -412,7 +430,7 @@ export function UserProfile({ isOpen, onClose, userId }: UserProfileProps) {
                     </div>
                   ) : (
                     <>
-                      <h2 className="text-2xl font-bold">{profileUser.name}</h2>
+                      <h2 className="text-2xl font-bold truncate max-w-full">{profileUser.name}</h2>
                       <p className="text-muted-foreground mt-1">
                         {editedProfile.bio || 'Estudiante de Ingeniería de Sistemas en UNAM'}
                       </p>
@@ -430,7 +448,7 @@ export function UserProfile({ isOpen, onClose, userId }: UserProfileProps) {
                     </div>
                     <div className="flex items-center space-x-1">
                       <Calendar className="h-4 w-4" />
-                      <span>Miembro desde 2024</span>
+                      <span>Miembro desde {profileUser.createdAt ? new Date(profileUser.createdAt).getFullYear() : '2024'}</span>
                     </div>
                   </div>
                 </div>
@@ -535,8 +553,8 @@ export function UserProfile({ isOpen, onClose, userId }: UserProfileProps) {
                     <Input
                       id="interests"
                       value={editedProfile.interests.join(', ')}
-                      onChange={(e) => setEditedProfile(prev => ({ 
-                        ...prev, 
+                      onChange={(e) => setEditedProfile(prev => ({
+                        ...prev,
                         interests: e.target.value.split(',').map(item => item.trim()).filter(Boolean)
                       }))}
                       placeholder="Programación, Bases de datos, Desarrollo web..."
@@ -632,6 +650,16 @@ export function UserProfile({ isOpen, onClose, userId }: UserProfileProps) {
           )}
         </div>
       </DialogContent>
+
+      {/* Image Crop Modal */}
+      {selectedImage && (
+        <ImageCropModal
+          image={selectedImage}
+          isOpen={cropModalOpen}
+          onClose={() => setCropModalOpen(false)}
+          onCropComplete={handleCropComplete}
+        />
+      )}
     </Dialog>
   );
 }

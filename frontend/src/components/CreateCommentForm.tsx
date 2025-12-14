@@ -230,7 +230,7 @@ export function CreateCommentForm({ postId, parentId, onCommentSubmitted }: Crea
               ref={fileInputRef}
               type="file"
               multiple
-              accept=".pdf,.zip,.rar,.jpg,.jpeg,.png,.gif,.txt,.doc,.docx,.mp3,.wav,.ogg"
+              accept=".pdf,.zip,.rar,.jpg,.jpeg,.png,.gif,.txt,.doc,.docx,.mp3A,.wav,.ogg"
               onChange={handleFileSelect}
               className="hidden"
             />
