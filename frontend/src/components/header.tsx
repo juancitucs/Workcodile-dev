@@ -78,7 +78,7 @@ export const Header = memo(function Header({ onCreatePost, onSearch, onToggleMob
               <div className="bg-gradient-to-br from-workcodile-green/10 to-workcodile-green-light/10 p-2 rounded-lg border border-workcodile-green/20 shadow-sm">
                 <WorkCodileLogo className="h-8 w-8" />
               </div>
-              <div className='sm:block hidden'>
+              <div className='sm:block'>
                 <h1 className="text-xl font-bold text-primary">
                   Work<span className="text-foreground">Codile</span>
                 </h1>

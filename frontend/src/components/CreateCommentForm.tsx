@@ -8,6 +8,7 @@ import mentionsInputStyle from './mentions-input-style';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
 import { Card } from './ui/card';
 import MarkdownRenderer from './markdown-renderer';
+import { autoSpaceInsertion } from '../utils/text-utils';
 
 // ADAPTED FROM create-post-modal.tsx FOR COMMENTS
 
@@ -171,7 +172,10 @@ export function CreateCommentForm({ postId, parentId, onCommentSubmitted }: Crea
               inputRef={mentionsInputRef}
               id="content"
               value={content}
-              onChange={(e) => setContent(e.target.value)}
+              onChange={(e) => {
+                const processedValue = autoSpaceInsertion(e.target.value, 20);
+                setContent(processedValue);
+              }}
               placeholder="Escribe un comentario. Usa Markdown y menciona archivos con '@'."
               style={mentionsInputStyle}
               className="min-h-[120px] resize-y"
