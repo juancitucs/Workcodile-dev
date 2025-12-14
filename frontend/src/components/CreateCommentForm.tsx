@@ -135,8 +135,8 @@ export function CreateCommentForm({ postId, parentId, onCommentSubmitted }: Crea
         alert(`Tipo de archivo no permitido: ${file.name}`);
         return;
       }
-      if (!validateFileSize(file, 10)) {
-        alert(`El archivo ${file.name} es demasiado grande. Máximo 10MB.`);
+      if (!validateFileSize(file, 30)) {
+        alert(`El archivo ${file.name} es demasiado grande. Máximo 30MB.`);
         return;
       }
       const newAttachment = createFileAttachment(file);

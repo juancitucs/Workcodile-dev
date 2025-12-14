@@ -1,12 +1,31 @@
 /**
  * Auto-inserts spaces in words longer than maxLength characters
- * to prevent horizontal overflow in UI
+ * to prevent horizontal overflow in UI.
+ * Preserves @ mentions (format: @"filename") without inserting spaces.
  */
 export const autoSpaceInsertion = (text: string, maxLength: number = 20): string => {
     if (!text) return text;
 
-    const words = text.split(' ');
+    // Extract all @"..." mentions to preserve them
+    const mentions: { placeholder: string; original: string }[] = [];
+    let mentionIndex = 0;
+
+    // Replace mentions with placeholders
+    let processedText = text.replace(/@"[^"]+"/g, (match) => {
+        const placeholder = `__MENTION_${mentionIndex}__`;
+        mentions.push({ placeholder, original: match });
+        mentionIndex++;
+        return placeholder;
+    });
+
+    // Now apply space insertion on the text without mentions
+    const words = processedText.split(' ');
     const processedWords = words.map(word => {
+        // Don't process placeholders
+        if (word.includes('__MENTION_')) {
+            return word;
+        }
+
         if (word.length <= maxLength) {
             return word;
         }
@@ -19,5 +38,12 @@ export const autoSpaceInsertion = (text: string, maxLength: number = 20): string
         return chunks.join(' ');
     });
 
-    return processedWords.join(' ');
+    let result = processedWords.join(' ');
+
+    // Restore mentions
+    mentions.forEach(({ placeholder, original }) => {
+        result = result.replace(placeholder, original);
+    });
+
+    return result;
 };

@@ -53,7 +53,8 @@ export default {
       color: 'hsl(var(--foreground))', // Ensure text color adapts
 
       '&focused': {
-        backgroundColor: 'hsl(var(--muted))',
+        backgroundColor: 'hsl(142, 76%, 36%)', // Green color for feedback
+        color: '#ffffff', // White text for contrast
       },
     },
   },

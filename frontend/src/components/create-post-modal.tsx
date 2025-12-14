@@ -179,8 +179,8 @@ export function CreatePostModal({ isOpen, onClose }: CreatePostModalProps) {
         return;
       }
 
-      if (!validateFileSize(file, 10)) {
-        alert(`El archivo ${file.name} es demasiado grande. Máximo 10MB.`);
+      if (!validateFileSize(file, 30)) {
+        alert(`El archivo ${file.name} es demasiado grande. Máximo 30MB.`);
         return;
       }
 
@@ -201,8 +201,8 @@ export function CreatePostModal({ isOpen, onClose }: CreatePostModalProps) {
   // Hashtag handling functions
   const addHashtag = (tag: string) => {
     const cleanTag = tag.trim().replace(/^#/, '').toLowerCase();
-    // Limit each hashtag to 20 characters
-    const truncatedTag = cleanTag.substring(0, 20);
+    // Limit each hashtag to 15 characters
+    const truncatedTag = cleanTag.substring(0, 15);
     if (truncatedTag && !hashtags.includes(truncatedTag) && hashtags.length < 10) {
       setHashtags(prev => [...prev, truncatedTag]);
     }
@@ -361,12 +361,15 @@ export function CreatePostModal({ isOpen, onClose }: CreatePostModalProps) {
                       id="content"
                       value={formData.content}
                       onChange={(e) => {
-                        const processedValue = autoSpaceInsertion(e.target.value, 20);
+                        // First, enforce the 700 character limit
+                        let limitedValue = e.target.value.substring(0, 700);
+                        // Then apply auto-space insertion
+                        const processedValue = autoSpaceInsertion(limitedValue, 20);
                         setFormData(prev => ({ ...prev, content: processedValue }));
                       }}
                       placeholder="Describe detalladamente tu publicación. Usa Markdown y menciona archivos con '@'."
                       style={mentionsInputStyle}
-                      maxLength={5000}
+                      maxLength={700}
                       className="min-h-[200px] resize-y"
                     >
                       <Mention
@@ -385,7 +388,7 @@ export function CreatePostModal({ isOpen, onClose }: CreatePostModalProps) {
                         {showPreview ? 'Ocultar' : 'Mostrar'} Vista Previa
                       </Button>
                     )}
-                    <span>{formData.content.length}/5000</span>
+                    <span>{formData.content.length}/700</span>
                   </div>
                 </div>
 
@@ -501,7 +504,7 @@ export function CreatePostModal({ isOpen, onClose }: CreatePostModalProps) {
                         )}
 
                         <p className="text-xs text-muted-foreground">
-                          Máximo 10MB por archivo
+                          Máximo 30MB por archivo
                         </p>
                       </div>
                     </AccordionContent>
