@@ -294,7 +294,7 @@ export function AuthPage() {
                       <Input
                         id="register-name"
                         type="text"
-                        placeholder="Tu nombre de Usuario"
+                        placeholder="Tu nombre de usuario"
                         value={registerForm.name}
                         onChange={(e) => setRegisterForm(prev => ({ ...prev, name: e.target.value }))}
                         required

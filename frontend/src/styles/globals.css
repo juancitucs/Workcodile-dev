@@ -470,29 +470,6 @@ html {
   box-shadow: 0 10px 20px rgba(34, 197, 94, 0.3);
 }
 
-/* Custom scrollbar for sidebar areas */
-.sidebar-scroll {
-  scrollbar-width: thin;
-  scrollbar-color: rgba(107, 114, 128, 0.3) transparent;
-}
-
-.sidebar-scroll::-webkit-scrollbar {
-  width: 3px;
-}
-
-.sidebar-scroll::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.sidebar-scroll::-webkit-scrollbar-thumb {
-  background: linear-gradient(to bottom, rgba(34, 197, 94, 0.3), rgba(107, 114, 128, .3));
-  border-radius: 1.5px;
-}
-
-.sidebar-scroll::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(to bottom, rgba(34, 197, 94, 0.5), rgba(107, 114, 128, 0.5));
-}
-
 @layer base {
   .prose {
     h1 {
@@ -596,6 +573,76 @@ textarea,
   background-color: var(--workcodile-green) !important;
   color: #ffffff !important;
   border-color: var(--workcodile-green) !important;
+}
+
+/* Glassmorphism Effects */
+.glass-effect {
+  background-color: hsl(var(--background) / 0.3);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid hsl(var(--border) / 0.3);
+}
+
+.glass-card {
+  background-color: hsl(var(--card) / 0.4);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid hsl(var(--border) / 0.2);
+}
+
+/* Modern Scrollbar Styles - Auto-hide on hover */
+
+/* Firefox fallback */
+* {
+  scrollbar-width: thin !important;
+  scrollbar-color: hsl(142 76% 36% / 0.3) transparent !important;
+}
+
+/* Chromium browsers (Brave, Chrome, Edge) - Auto-hide scrollbars */
+::-webkit-scrollbar {
+  width: 6px !important;
+  height: 6px !important;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent !important;
+  border-radius: 10px !important;
+}
+
+/* INVISIBLE by default */
+::-webkit-scrollbar-thumb {
+  background: transparent !important;
+  border-radius: 10px !important;
+  transition: background-color 0.2s ease !important;
+}
+
+/* VISIBLE only when hovering over scrollable area */
+*:hover::-webkit-scrollbar-thumb {
+  background: hsl(142 76% 36% / 0.3) !important;
+}
+
+/* More visible when hovering directly on scrollbar */
+*:hover::-webkit-scrollbar-thumb:hover {
+  background: hsl(142 76% 36% / 0.5) !important;
+}
+
+/* Sidebar specific - slightly more visible on hover */
+.sidebar-scroll::-webkit-scrollbar {
+  width: 6px !important;
+}
+
+.sidebar-scroll::-webkit-scrollbar-thumb {
+  background: transparent !important;
+  border-radius: 10px !important;
+  transition: all 0.2s ease !important;
+}
+
+.sidebar-scroll:hover::-webkit-scrollbar-thumb {
+  background: hsl(142 76% 36% / 0.35) !important;
+}
+
+.sidebar-scroll:hover::-webkit-scrollbar-thumb:hover {
+  background: hsl(142 76% 36% / 0.6) !important;
 }
 
 [data-slot="select-trigger"]:hover svg {

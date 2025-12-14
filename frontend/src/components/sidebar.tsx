@@ -3,21 +3,36 @@ import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from './ui/accordion';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from './ui/select';
 import { useApp } from './app-context';
-import { 
-  Users, 
-  BookOpen, 
+import {
+  Users,
+  BookOpen,
   MessageSquare,
-  GraduationCap
+  GraduationCap,
+  Clock,
+  TrendingUp,
+  Filter,
+  RefreshCw
 } from 'lucide-react';
 
 interface SidebarProps {
   selectedCourse: string;
   onCourseSelect: (course: string) => void;
+  sortBy: 'recent' | 'popular' | 'commented';
+  onSortChange: (sort: 'recent' | 'popular' | 'commented') => void;
+  onRefresh: () => void;
+  className?: string;
 }
 
-export function Sidebar({ selectedCourse, onCourseSelect }: SidebarProps) {
-  const { posts, user, getCoursesByCycle, getCourseById } = useApp();
+export function Sidebar({ selectedCourse, onCourseSelect, sortBy, onSortChange, onRefresh }: SidebarProps) {
+  const { posts, user, getCoursesByCycle } = useApp();
 
   const getCourseCount = (courseId: string) => {
     if (courseId === 'all') return posts.length;
@@ -89,7 +104,7 @@ export function Sidebar({ selectedCourse, onCourseSelect }: SidebarProps) {
                 </p>
               </div>
             </div>
-            <Badge 
+            <Badge
               variant={selectedCourse === 'all' ? 'secondary' : 'outline'}
               className="ml-2"
             >
@@ -98,6 +113,62 @@ export function Sidebar({ selectedCourse, onCourseSelect }: SidebarProps) {
           </div>
         </Button>
       </motion.div>
+
+      {/* Sort Controls - Show only when viewing all posts */}
+      {selectedCourse === 'all' && (
+        <motion.div
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 0.18 }}
+        >
+          <Card className="glass-card shadow-modern p-4">
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <label className="text-sm font-medium">Ordenar por</label>
+              </div>
+              <Select
+                value={sortBy}
+                onValueChange={onSortChange}
+              >
+                <SelectTrigger className="w-full">
+                  <Filter className="h-4 w-4 mr-2" />
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="recent">
+                    <div className="flex items-center space-x-2">
+                      <Clock className="h-4 w-4" />
+                      <span>Más recientes</span>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="popular">
+                    <div className="flex items-center space-x-2">
+                      <TrendingUp className="h-4 w-4" />
+                      <span>Más populares</span>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="commented">
+                    <div className="flex items-center space-x-2">
+                      <MessageSquare className="h-4 w-4" />
+                      <span>Más comentados</span>
+                    </div>
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={onRefresh}
+                className="w-full"
+              >
+                <RefreshCw className="h-4 w-4 mr-2" />
+                Actualizar
+              </Button>
+            </div>
+          </Card>
+        </motion.div>
+      )}
 
       {/* Cycles and Courses */}
       <motion.div
@@ -117,13 +188,13 @@ export function Sidebar({ selectedCourse, onCourseSelect }: SidebarProps) {
               {cycles.map((cycle) => {
                 const cycleCourses = getCoursesByCycle(cycle);
                 const cycleCount = getCycleCount(cycle);
-                
+
                 if (cycleCourses.length === 0) return null;
 
                 const isCycleSelected = selectedCourse === `cycle-${cycle}`;
                 return (
                   <AccordionItem key={cycle} value={`cycle-${cycle}`}>
-                    <AccordionTrigger 
+                    <AccordionTrigger
                       className={`hover:no-underline ${isCycleSelected ? 'bg-primary/10 text-primary' : ''}`}
                       onClick={() => onCourseSelect(`cycle-${cycle}`)}
                     >
@@ -142,7 +213,7 @@ export function Sidebar({ selectedCourse, onCourseSelect }: SidebarProps) {
                         {cycleCourses.map((course) => {
                           const courseCount = getCourseCount(course.id);
                           const isSelected = selectedCourse === course.id;
-                          
+
                           return (
                             <motion.div
                               key={course.id}
@@ -163,7 +234,7 @@ export function Sidebar({ selectedCourse, onCourseSelect }: SidebarProps) {
                                     </p>
                                   </div>
                                   {courseCount > 0 && (
-                                    <Badge 
+                                    <Badge
                                       variant={isSelected ? 'secondary' : 'outline'}
                                       className="ml-1 text-xs px-1"
                                     >

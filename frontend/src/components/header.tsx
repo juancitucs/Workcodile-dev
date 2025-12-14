@@ -55,40 +55,40 @@ export const Header = memo(function Header({ onCreatePost, onSearch, onToggleMob
       transition={{ duration: 0.5, ease: [0.4, 0, 0.2, 1] }}
       className="sticky top-0 z-50 glass-card border-b border-workcodile-border-light shadow-modern"
     >
-      <div className="container max-w-6xl mx-auto px-4 py-3">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-3">
+      <div className="container max-w-[1800px] mx-auto px-4 py-3">
+        <div className="flex items-center justify-between gap-4">
+          {/* Left Section: Logo */}
+          <div className="flex items-center gap-4 min-w-0">
             {/* Hamburger Menu */}
             <Button
               variant="ghost"
               size="sm"
-              className="lg:hidden"
+              className="lg:hidden flex-shrink-0"
               onClick={onToggleMobileMenu}
             >
               <Menu className="h-6 w-6" />
             </Button>
 
-            {/* Logo */}
+            {/* Logo - Enlarged */}
             <motion.div
-              className="flex items-center space-x-3 cursor-pointer"
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
+              className="flex items-center gap-3 cursor-pointer flex-shrink-0"
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.97 }}
               onClick={resetMainFeed}
             >
               <div className="bg-gradient-to-br from-workcodile-green/10 to-workcodile-green-light/10 p-2 rounded-lg border border-workcodile-green/20 shadow-sm">
                 <WorkCodileLogo className="h-8 w-8" />
               </div>
-              <div className='sm:block'>
-                <h1 className="text-xl font-bold text-primary">
+              <div>
+                <h1 className="text-[62px] font-bold text-primary leading-tight">
                   Work<span className="text-foreground">Codile</span>
                 </h1>
-                {/*  <p className="text-xs text-muted-foreground">UNAM Community</p> */}
               </div>
             </motion.div>
           </div>
 
-          {/* Search Bar */}
-          <div className="flex-1 max-w-md mx-6 sm:block">
+          {/* Center Section: Search Bar */}
+          <div className="flex-1 max-w-[493px] mx-2 block md:hidden">
             <form onSubmit={handleSearch} className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
@@ -101,12 +101,12 @@ export const Header = memo(function Header({ onCreatePost, onSearch, onToggleMob
             </form>
           </div>
 
-          {/* Actions */}
-          <div className="flex items-center space-x-3">
+          {/* Right Section: Actions */}
+          <div className="flex items-center gap-2">
             {/* Create Post Button */}
             <Button
               onClick={onCreatePost}
-              className="hidden sm:flex items-center space-x-2 btn-modern"
+              className="hidden sm:flex items-center gap-2 btn-modern"
               size="sm"
             >
               <Plus className="h-4 w-4" />
@@ -121,6 +121,27 @@ export const Header = memo(function Header({ onCreatePost, onSearch, onToggleMob
             >
               <Plus className="h-4 w-4" />
             </Button>
+
+            {/* TODO: Placeholder buttons for future features */}
+            {/* Uncomment when ready to implement:
+            <Button
+              variant="ghost"
+              size="icon"
+              className="hidden md:inline-flex"
+              title="Mensajes (próximamente)"
+            >
+              <MessageCircle className="h-5 w-5" />
+            </Button>
+            
+            <Button
+              variant="ghost"
+              size="icon"
+              className="hidden md:inline-flex"
+              title="Calendario (próximamente)"
+            >
+              <Calendar className="h-5 w-5" />
+            </Button>
+            */}
 
             {/* Notifications */}
             <EnhancedNotifications />

@@ -1,25 +1,14 @@
-import { useState, useMemo, useEffect, useRef, forwardRef } from 'react';
+import { useMemo, useEffect, useRef, forwardRef } from 'react';
 import { motion } from 'motion/react';
 import { Card } from './ui/card';
 import { Button } from './ui/button';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue
-} from './ui/select';
 import { useApp } from './app-context';
 import { PostCard } from './post-card';
 import { Virtuoso } from 'react-virtuoso';
 import { MobileCourseFilter } from './mobile-course-filter';
 import { useMainLayoutContext } from './useMainLayoutContext';
 import {
-  TrendingUp,
-  Clock,
-  MessageCircle,
-  Filter,
-  RefreshCw
+  MessageCircle
 } from 'lucide-react';
 import { Post } from './types';
 
@@ -34,23 +23,21 @@ const CustomList = forwardRef(({ children, ...props }: { children: React.ReactNo
 });
 CustomList.displayName = 'CustomList';
 
-type SortOption = 'recent' | 'popular' | 'commented';
+
 
 export function MainFeed() {
   const {
     posts,
     searchPosts,
-    getCourseById,
     getCoursesByCycle,
     fetchMorePosts,
     hasMorePosts,
     isFetchingPosts,
-    resetMainFeed,
     incrementViewsBatch
   } = useApp();
-  const { selectedCourse, setSelectedCourse, searchQuery } =
+  const { selectedCourse, setSelectedCourse, searchQuery, sortBy } =
     useMainLayoutContext();
-  const [sortBy, setSortBy] = useState<SortOption>('recent');
+  // Remove sortBy state as it's managed by MainLayout now
 
   const viewedPostIdsRef = useRef(new Set<string>());
   const pendingViewBatch = useRef<Set<string>>(new Set());
@@ -119,15 +106,9 @@ export function MainFeed() {
     });
   }, [filteredPosts, sortBy]);
 
-  const handleRefresh = () => {
-    resetMainFeed();
-  };
 
-  const sortOptions = [
-    { value: 'recent', label: 'Más recientes', icon: Clock },
-    { value: 'popular', label: 'Más populares', icon: TrendingUp },
-    { value: 'commented', label: 'Más comentados', icon: MessageCircle }
-  ];
+
+
 
   const loadMore = () => {
     if (hasMorePosts) {
@@ -143,61 +124,7 @@ export function MainFeed() {
         postsCount={filteredAndSortedPosts.length}
       />
 
-      <Card className="glass-card gradient-border shadow-modern p-5 fade-in-up">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between space-y-4 sm:space-y-0">
-          <div>
-            <h2 className="text-xl font-bold">
-              {selectedCourse === 'all'
-                ? 'Todas las publicaciones'
-                : selectedCourse.startsWith('cycle-')
-                ? `Publicaciones del Ciclo ${selectedCourse.split('-')[1]}`
-                : (() => {
-                    const course = getCourseById(selectedCourse);
-                    return course ? `${course.id}` : 'Curso seleccionado';
-                  })()}
-            </h2>
-            <p className="text-sm text-muted-foreground">
-              {filteredAndSortedPosts.length} publicaciones
-              {searchQuery && ` • Buscando: "${searchQuery}"`}
-            </p>
-          </div>
-
-          <div className="flex items-center space-x-3">
-            <Select
-              value={sortBy}
-              onValueChange={(value: SortOption) => setSortBy(value)}
-            >
-              <SelectTrigger className="w-[160px]">
-                <Filter className="h-4 w-4 mr-2" />
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {sortOptions.map(option => {
-                  const Icon = option.icon;
-                  return (
-                    <SelectItem key={option.value} value={option.value}>
-                      <div className="flex items-center space-x-2">
-                        <Icon className="h-4 w-4" />
-                        <span>{option.label}</span>
-                      </div>
-                    </SelectItem>
-                  );
-                })}
-              </SelectContent>
-            </Select>
-
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleRefresh}
-              className="hidden sm:flex"
-            >
-              <RefreshCw className="h-4 w-4 mr-2" />
-              Actualizar
-            </Button>
-          </div>
-        </div>
-      </Card>
+      {/* Filter controls moved to sidebar */}
 
       {filteredAndSortedPosts.length > 0 ? (
         <Virtuoso
@@ -244,11 +171,11 @@ export function MainFeed() {
                 {searchQuery ? 'No se encontraron resultados' : 'No hay publicaciones'}
               </h3>
               <p className="text-muted-foreground mb-6">
-                {searchQuery 
+                {searchQuery
                   ? `No se encontraron publicaciones que coincidan con "${searchQuery}"`
                   : selectedCourse === 'all'
-                  ? 'Sé el primero en crear una publicación'
-                  : `No hay publicaciones en el curso seleccionado`
+                    ? 'Sé el primero en crear una publicación'
+                    : `No hay publicaciones en el curso seleccionado`
                 }
               </p>
             </div>
