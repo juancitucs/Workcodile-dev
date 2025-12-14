@@ -147,25 +147,25 @@ export function AuthPage() {
     <div className="min-h-screen workcodile-bg flex items-center justify-center p-4 relative overflow-hidden">
       {/* Animated background elements */}
       <div className="absolute inset-0 pointer-events-none">
-        <motion.div 
+        <motion.div
           className="absolute top-20 left-20 w-64 h-64 bg-primary/10 rounded-full blur-3xl"
-          animate={{ 
+          animate={{
             scale: [1, 1.2, 1],
             opacity: [0.3, 0.6, 0.3]
           }}
-          transition={{ 
+          transition={{
             duration: 8,
             repeat: Infinity,
             ease: "easeInOut"
           }}
         />
-        <motion.div 
+        <motion.div
           className="absolute bottom-20 right-20 w-96 h-96 bg-accent/10 rounded-full blur-3xl"
-          animate={{ 
+          animate={{
             scale: [1.2, 1, 1.2],
             opacity: [0.6, 0.3, 0.6]
           }}
-          transition={{ 
+          transition={{
             duration: 10,
             repeat: Infinity,
             ease: "easeInOut"
@@ -246,7 +246,7 @@ export function AuthPage() {
                   <TabsTrigger value="login">Iniciar Sesión</TabsTrigger>
                   <TabsTrigger value="register">Registrarse</TabsTrigger>
                 </TabsList>
-                
+
                 <TabsContent value="login">
                   <form onSubmit={handleLogin} className="space-y-4">
                     <div className="space-y-2">
@@ -265,6 +265,7 @@ export function AuthPage() {
                       <Input
                         id="login-password"
                         type="password"
+                        placeholder="**********"
                         value={loginForm.password}
                         onChange={(e) => setLoginForm(prev => ({ ...prev, password: e.target.value }))}
                         required
@@ -289,11 +290,11 @@ export function AuthPage() {
                 <TabsContent value="register">
                   <form onSubmit={handleRegister} className="space-y-4">
                     <div className="space-y-2">
-                      <Label htmlFor="register-name">Nombre completo</Label>
+                      <Label htmlFor="register-name">Nombre de Usuario</Label>
                       <Input
                         id="register-name"
                         type="text"
-                        placeholder="Tu nombre completo"
+                        placeholder="Tu nombre de Usuario"
                         value={registerForm.name}
                         onChange={(e) => setRegisterForm(prev => ({ ...prev, name: e.target.value }))}
                         required
@@ -315,6 +316,7 @@ export function AuthPage() {
                       <Input
                         id="register-password"
                         type="password"
+                        placeholder="**********"
                         value={registerForm.password}
                         onChange={(e) => setRegisterForm(prev => ({ ...prev, password: e.target.value }))}
                         required
@@ -325,6 +327,7 @@ export function AuthPage() {
                       <Input
                         id="register-confirm"
                         type="password"
+                        placeholder="**********"
                         value={registerForm.confirmPassword}
                         onChange={(e) => setRegisterForm(prev => ({ ...prev, confirmPassword: e.target.value }))}
                         required
@@ -387,7 +390,7 @@ export function AuthPage() {
               <Button type="submit" disabled={isLoading || verificationCode.length !== 6}>
                 {isLoading ? (
                   <>
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     Verificando...
                   </>
                 ) : (
