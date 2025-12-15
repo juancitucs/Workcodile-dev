@@ -648,3 +648,138 @@ textarea,
 [data-slot="select-trigger"]:hover svg {
   color: #ffffff !important;
 }
+
+/* =====================================================
+   CYCLE COLOR CLASSES
+   Blue gradient scale: lighter for lower cycles, darker for higher cycles
+   Based on Material Design Indigo palette
+   ===================================================== */
+
+/* Cycle 1 - Lightest */
+.cycle-1-bg {
+  background-color: #E8EAF6 !important;
+}
+
+.cycle-1-text {
+  color: #1a1a2e !important;
+}
+
+/* Cycle 2 */
+.cycle-2-bg {
+  background-color: #C5CBE9 !important;
+}
+
+.cycle-2-text {
+  color: #1a1a2e !important;
+}
+
+/* Cycle 3 */
+.cycle-3-bg {
+  background-color: #9FA8DA !important;
+}
+
+.cycle-3-text {
+  color: #1a1a2e !important;
+}
+
+/* Cycle 4 */
+.cycle-4-bg {
+  background-color: #7986CB !important;
+}
+
+.cycle-4-text {
+  color: #ffffff !important;
+}
+
+/* Cycle 5 */
+.cycle-5-bg {
+  background-color: #5C6BC0 !important;
+}
+
+.cycle-5-text {
+  color: #ffffff !important;
+}
+
+/* Cycle 6 */
+.cycle-6-bg {
+  background-color: #3F51B5 !important;
+}
+
+.cycle-6-text {
+  color: #ffffff !important;
+}
+
+/* Cycle 7 */
+.cycle-7-bg {
+  background-color: #394AAE !important;
+}
+
+.cycle-7-text {
+  color: #ffffff !important;
+}
+
+/* Cycle 8 */
+.cycle-8-bg {
+  background-color: #3140A5 !important;
+}
+
+.cycle-8-text {
+  color: #ffffff !important;
+}
+
+/* Cycle 9 */
+.cycle-9-bg {
+  background-color: #29379D !important;
+}
+
+.cycle-9-text {
+  color: #ffffff !important;
+}
+
+/* Cycle 10 - Darkest */
+.cycle-10-bg {
+  background-color: #1B278D !important;
+}
+
+.cycle-10-text {
+  color: #ffffff !important;
+}
+
+/* =====================================================
+   SELECT TRIGGER DARK MODE STYLES
+   Ensure SelectTrigger has proper dark background in dark mode
+   ===================================================== */
+
+.dark [data-slot="select-trigger"],
+.dark button[data-slot="select-trigger"],
+.dark [role="combobox"] {
+  background-color: var(--workcodile-gray-dark) !important;
+  border-color: rgba(107, 114, 128, 0.3) !important;
+  color: #ffffff !important;
+}
+
+/* =====================================================
+   SIDEBAR CARD COMPACT SPACING
+   Reduce vertical spacing in sidebar cards
+   ===================================================== */
+
+/* Reduce padding in sidebar card headers */
+.sidebar-scroll [data-slot="card-header"] {
+  padding-top: 0.75rem !important;
+  padding-bottom: 0.25rem !important;
+}
+
+/* Reduce padding in sidebar card content */
+.sidebar-scroll [data-slot="card-content"] {
+  padding-top: 0.25rem !important;
+  padding-bottom: 0.75rem !important;
+}
+
+/* Reduce spacing between label and select in sidebar */
+.sidebar-scroll .space-y-2 {
+  gap: 0.25rem !important;
+}
+
+.sidebar-scroll .space-y-1 {
+  gap: 0.125rem !important;
+}

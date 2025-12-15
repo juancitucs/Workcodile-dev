@@ -100,15 +100,15 @@ export function Sidebar({ selectedCourse, onCourseSelect, sortBy, onSortChange }
         transition={{ delay: 0.15 }}
       >
         <Card className="glass-card gradient-border shadow-modern">
-          <CardHeader className="pb-2 pt-4 px-4">
+          <CardHeader className="pb-1 pt-3 px-4">
             <CardTitle className="text-base flex items-center space-x-2">
               <MessageSquare className="h-4 w-4 text-primary" />
               <span>Publicaciones</span>
             </CardTitle>
           </CardHeader>
-          <CardContent className="pt-0 pb-4 px-4">
+          <CardContent className="pt-1 pb-3 px-4">
             {/* Sort Controls Only */}
-            <div className="space-y-2">
+            <div className="space-y-1">
               <label className="text-xs font-medium block">Ordenar por</label>
               <Select
                 value={sortBy}

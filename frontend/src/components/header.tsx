@@ -23,17 +23,19 @@ import {
   LogOut,
   Moon,
   Sun,
-  User
+  User,
+  Home
 } from 'lucide-react';
 
 interface HeaderProps {
   onCreatePost: () => void;
   onSearch: (query: string) => void;
   onToggleMobileMenu: () => void;
+  onResetFilters: () => void;
 }
 
-export const Header = memo(function Header({ onCreatePost, onSearch, onToggleMobileMenu }: HeaderProps) {
-  const { user, logout, theme, toggleTheme, resetMainFeed } = useApp();
+export const Header = memo(function Header({ onCreatePost, onSearch, onToggleMobileMenu, onResetFilters }: HeaderProps) {
+  const { user, logout, theme, toggleTheme } = useApp();
   const [searchQuery, setSearchQuery] = useState('');
   const [showProfile, setShowProfile] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
@@ -69,12 +71,13 @@ export const Header = memo(function Header({ onCreatePost, onSearch, onToggleMob
               <Menu className="h-6 w-6" />
             </Button>
 
-            {/* Logo - Enlarged */}
+            {/* Logo - Full Page Refresh */}
             <motion.div
               className="flex items-center gap-3 cursor-pointer flex-shrink-0"
               whileHover={{ scale: 1.03 }}
               whileTap={{ scale: 0.97 }}
-              onClick={resetMainFeed}
+              onClick={() => window.location.reload()}
+              title="Inicio - Refrescar página"
             >
               <div className="bg-gradient-to-br from-workcodile-green/10 to-workcodile-green-light/10 p-2 rounded-lg border border-workcodile-green/20 shadow-sm">
                 <WorkCodileLogo className="h-8 w-8" />
@@ -85,6 +88,17 @@ export const Header = memo(function Header({ onCreatePost, onSearch, onToggleMob
                 </h1>
               </div>
             </motion.div>
+
+            {/* Home Button - Soft Reset (filters only, no reload) */}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onResetFilters}
+              className="flex-shrink-0"
+              title="Limpiar filtros (sin recargar)"
+            >
+              <Home className="h-5 w-5" />
+            </Button>
           </div>
 
           {/* Center Section: Search Bar */}

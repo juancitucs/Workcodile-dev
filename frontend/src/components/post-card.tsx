@@ -38,20 +38,15 @@ interface PostCardProps {
 }
 
 const getCycleColor = (cycle: number) => {
-  const colors = [
-    'bg-red-500',
-    'bg-blue-500',
-    'bg-green-500',
-    'bg-yellow-500',
-    'bg-purple-500',
-    'bg-pink-500',
-    'bg-indigo-500',
-    'bg-teal-500',
-    'bg-orange-500',
-    'bg-cyan-500',
-  ]
-  return colors[(cycle - 1) % colors.length]
-}
+  // Returns CSS class for cycle background color
+  // Blue gradient scale: lighter for lower cycles, darker for higher cycles
+  return `cycle-${cycle}-bg`;
+};
+
+// Get text color class for cycle badge based on cycle number
+const getCycleTextColor = (cycle: number) => {
+  return `cycle-${cycle}-text`;
+};
 
 
 
@@ -181,7 +176,7 @@ export function PostCard({ post, startWithCommentsOpen = false, highlightComment
                     {course && (
                       <Badge
                         variant="secondary"
-                        className={`${getCycleColor(course.cycle)} text-white text-xs flex items-center space-x-1`}
+                        className={`${getCycleColor(course.cycle)} ${getCycleTextColor(course.cycle)} text-xs flex items-center space-x-1`}
                         onClick={(e) => e.stopPropagation()}
                       >
                         <GraduationCap className="h-3 w-3" />
@@ -218,13 +213,12 @@ export function PostCard({ post, startWithCommentsOpen = false, highlightComment
                 </Button>
 
                 <span
-                  className={`text-sm w-8 font-medium text-center ${
-                    netScore > 0
-                      ? 'text-primary'
-                      : netScore < 0
-                        ? 'text-destructive'
-                        : 'text-muted-foreground'
-                  }`}
+                  className={`text-sm w-8 font-medium text-center ${netScore > 0
+                    ? 'text-primary'
+                    : netScore < 0
+                      ? 'text-destructive'
+                      : 'text-muted-foreground'
+                    }`}
                 >
                   {netScore}
                 </span>
