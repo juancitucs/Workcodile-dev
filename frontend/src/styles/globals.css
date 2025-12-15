@@ -765,14 +765,14 @@ textarea,
 
 /* Reduce padding in sidebar card headers */
 .sidebar-scroll [data-slot="card-header"] {
-  padding-top: 0.75rem !important;
-  padding-bottom: 0.25rem !important;
+  padding-top: 0.5rem !important;
+  padding-bottom: 0 !important;
 }
 
 /* Reduce padding in sidebar card content */
 .sidebar-scroll [data-slot="card-content"] {
-  padding-top: 0.25rem !important;
-  padding-bottom: 0.75rem !important;
+  padding-top: 0.5rem !important;
+  padding-bottom: 0.5rem !important;
 }
 
 /* Reduce spacing between label and select in sidebar */
@@ -782,4 +782,51 @@ textarea,
 
 .sidebar-scroll .space-y-1 {
   gap: 0.125rem !important;
+}
+
+/* =====================================================
+   TOP USERS CARD COMPACT STYLING
+   Force compact size for Top Users card in right sidebar
+   ===================================================== */
+
+/* Make Top Users card more compact to show other cards */
+[data-top-users-card] .space-y-1\.5 {
+  gap: 0.375rem !important;
+}
+
+/* Ensure small text is visible */
+.text-\[10px\] {
+  font-size: 10px !important;
+}
+
+/* Badge compact sizing */
+.px-1\.5 {
+  padding-left: 0.375rem !important;
+  padding-right: 0.375rem !important;
+}
+
+.py-0\.5 {
+  padding-top: 0.125rem !important;
+  padding-bottom: 0.125rem !important;
+}
+
+.space-x-0\.5> :not([hidden])~ :not([hidden]) {
+  margin-left: 0.125rem !important;
+}
+
+/* Icon sizing */
+.h-2\.5 {
+  height: 0.625rem !important;
+}
+
+.w-2\.5 {
+  width: 0.625rem !important;
+}
+
+.h-3\.5 {
+  height: 0.875rem !important;
+}
+
+.w-3\.5 {
+  width: 0.875rem !important;
 }

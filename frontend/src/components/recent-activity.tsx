@@ -217,16 +217,6 @@ export const RecentActivity = memo(function RecentActivity({ onUserClick }: Rece
   return (
     <motion.div>
       <Card className="overflow-hidden">
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base sm:text-lg flex items-center space-x-2">
-            <div className="p-1.5 bg-gradient-to-br from-blue-400 to-cyan-500 rounded-lg">
-              <Zap className="h-4 w-4 text-white" />
-            </div>
-            <span className="hidden sm:inline">Actividad Reciente</span>
-            <span className="sm:hidden">⚡ Actividad</span>
-          </CardTitle>
-        </CardHeader>
-
         <CardContent className="p-0">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <div className="px-4">

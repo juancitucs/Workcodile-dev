@@ -1,7 +1,7 @@
 import { useMemo, memo, useDeferredValue } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'motion/react';
-import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
+import { Card, CardContent } from './ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { useApp } from './app-context';
 import { MessageSquare, ChevronRight } from 'lucide-react';
@@ -12,7 +12,7 @@ export const FeaturedComments = memo(function FeaturedComments() {
   const { posts } = useApp();
 
   const rawRecentComments = useMemo(() => {
-    const allComments = posts.flatMap(post => 
+    const allComments = posts.flatMap(post =>
       post.comments.map(comment => ({ ...comment, postId: post.id, postTitle: post.title }))
     );
     return allComments
@@ -26,16 +26,10 @@ export const FeaturedComments = memo(function FeaturedComments() {
   return (
     <motion.div>
       <Card>
-        <CardHeader>
-          <CardTitle className="text-base sm:text-lg flex items-center space-x-2">
-            <MessageSquare className="h-5 w-5 text-primary" />
-            <span>Comentarios Recientes</span>
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-4 pt-4">
           {recentComments.map((comment) => (
-            <Link 
-              to={`/post/${comment.postId}#comment-${comment.id}`} 
+            <Link
+              to={`/post/${comment.postId}#comment-${comment.id}`}
               key={comment.id}
               className="block group"
             >

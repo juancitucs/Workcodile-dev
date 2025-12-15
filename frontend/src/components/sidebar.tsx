@@ -100,13 +100,15 @@ export function Sidebar({ selectedCourse, onCourseSelect, sortBy, onSortChange }
         transition={{ delay: 0.15 }}
       >
         <Card className="glass-card gradient-border shadow-modern">
-          <CardHeader className="pb-1 pt-3 px-4">
-            <CardTitle className="text-base flex items-center space-x-2">
-              <MessageSquare className="h-4 w-4 text-primary" />
+          <CardHeader className="pb-0 pt-3 px-4">
+            <CardTitle className="text-base flex items-center space-x-3">
+              <div className="bg-primary p-2 rounded-lg">
+                <MessageSquare className="h-5 w-5 text-primary-foreground" />
+              </div>
               <span>Publicaciones</span>
             </CardTitle>
           </CardHeader>
-          <CardContent className="pt-1 pb-3 px-4">
+          <CardContent className="pt-2 pb-3 px-4">
             {/* Sort Controls Only */}
             <div className="space-y-1">
               <label className="text-xs font-medium block">Ordenar por</label>
@@ -151,9 +153,11 @@ export function Sidebar({ selectedCourse, onCourseSelect, sortBy, onSortChange }
         transition={{ delay: 0.2 }}
       >
         <Card className="glass-card gradient-border shadow-modern">
-          <CardHeader>
-            <CardTitle className="text-lg flex items-center space-x-2">
-              <GraduationCap className="h-5 w-5 text-primary" />
+          <CardHeader className="pb-2 pt-3 px-4">
+            <CardTitle className="text-base flex items-center space-x-3">
+              <div className="bg-primary p-2 rounded-lg">
+                <GraduationCap className="h-5 w-5 text-primary-foreground" />
+              </div>
               <span>Ciclos y Cursos</span>
             </CardTitle>
           </CardHeader>
