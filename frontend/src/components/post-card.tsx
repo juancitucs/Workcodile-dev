@@ -13,6 +13,13 @@ import { WorkCodileLogo } from './crocodile-icon'
 import { UserProfile } from './user-profile'
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from './ui/accordion';
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from './ui/dropdown-menu';
+import {
   ChevronUp,
   ChevronDown,
   MessageCircle,
@@ -23,6 +30,12 @@ import {
   Hash,
   Paperclip,
   Download,
+  Pencil,
+  Trash2,
+  MessageSquareOff,
+  Flag,
+  Bookmark,
+  Bell,
 } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
 import { es } from 'date-fns/locale'
@@ -186,13 +199,88 @@ export function PostCard({ post, startWithCommentsOpen = false, highlightComment
                   </div>
                 </div>
               </div>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <MoreHorizontal className="h-4 w-4" />
-              </Button>
+              {/* Post Options Menu - Different options for owner vs visitor */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                  <Button variant="ghost" size="sm">
+                    <MoreHorizontal className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
+                  {/* Owner Options - When user is the post author */}
+                  {user?.id === post.author.id ? (
+                    <>
+                      <DropdownMenuItem
+                        className="cursor-pointer"
+                        onClick={() => {
+                          // TODO (Tux): Implement edit post modal
+                          console.log('Editar post:', post.id);
+                        }}
+                      >
+                        <Pencil className="h-4 w-4 mr-2" />
+                        Editar publicación
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        className="cursor-pointer text-destructive focus:text-destructive"
+                        onClick={() => {
+                          // TODO (Tux): Implement delete post API call
+                          // DELETE /api/posts/:postId
+                          console.log('Eliminar post:', post.id);
+                        }}
+                      >
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        Eliminar
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem
+                        className="cursor-pointer"
+                        onClick={() => {
+                          // TODO (Tux): Implement toggle comments API
+                          // PATCH /api/posts/:postId { commentsEnabled: false }
+                          console.log('Desactivar comentarios:', post.id);
+                        }}
+                      >
+                        <MessageSquareOff className="h-4 w-4 mr-2" />
+                        Desactivar comentarios
+                      </DropdownMenuItem>
+                    </>
+                  ) : (
+                    /* Visitor Options - When user is NOT the post author */
+                    <>
+                      <DropdownMenuItem
+                        className="cursor-pointer"
+                        onClick={() => {
+                          handleBookmark();
+                        }}
+                      >
+                        <Bookmark className="h-4 w-4 mr-2" />
+                        Guardar en favoritos
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        className="cursor-pointer"
+                        onClick={() => {
+                          // TODO (Tux): Implement post notifications API
+                          // POST /api/posts/:postId/subscribe
+                          console.log('Activar notificaciones:', post.id);
+                        }}
+                      >
+                        <Bell className="h-4 w-4 mr-2" />
+                        Activar notificaciones
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem
+                        className="cursor-pointer text-destructive focus:text-destructive"
+                        onClick={() => {
+                          handleReport();
+                        }}
+                      >
+                        <Flag className="h-4 w-4 mr-2" />
+                        Reportar publicación
+                      </DropdownMenuItem>
+                    </>
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </CardHeader>
 
