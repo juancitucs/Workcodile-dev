@@ -8,9 +8,9 @@ import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { useApp } from './app-context';
 import { WorkCodileLogo } from './crocodile-icon';
-import { 
-  Clock, 
-  MessageSquare, 
+import {
+  Clock,
+  MessageSquare,
   Plus,
   Star,
   TrendingUp,
@@ -55,38 +55,38 @@ export const RecentActivity = memo(function RecentActivity({ onUserClick }: Rece
   const rawActivityItems = useMemo(() => {
     const items: ActivityItem[] = [];
 
-          // Add post creation activities
-          posts.forEach(post => {
-            items.push({
-              id: `post-${post.id}`,
-              type: 'post',
-              timestamp: new Date(post.createdAt),
-              user: post.author,
-              post: {
-                id: post.id,
-                title: post.title,
-                course: post.course
-              }
-            });
-    
-            // Simulate vote activities
-            if (post.upvotes > 0) {
-              items.push({
-                id: `upvote-${post.id}`,
-                type: 'vote',
-                timestamp: new Date(new Date(post.createdAt).getTime() + Math.random() * 12 * 60 * 60 * 1000),
-                user: post.author, // In reality, this would be different users voting
-                post: {
-                  id: post.id,
-                  title: post.title,
-                  course: post.course
-                },
-                details: {
-                  voteType: 'up'
-                }
-              });
-            }
-          });
+    // Add post creation activities
+    posts.forEach(post => {
+      items.push({
+        id: `post-${post.id}`,
+        type: 'post',
+        timestamp: new Date(post.createdAt),
+        user: post.author,
+        post: {
+          id: post.id,
+          title: post.title,
+          course: post.course
+        }
+      });
+
+      // Simulate vote activities
+      if (post.upvotes > 0) {
+        items.push({
+          id: `upvote-${post.id}`,
+          type: 'vote',
+          timestamp: new Date(new Date(post.createdAt).getTime() + Math.random() * 12 * 60 * 60 * 1000),
+          user: post.author, // In reality, this would be different users voting
+          post: {
+            id: post.id,
+            title: post.title,
+            course: post.course
+          },
+          details: {
+            voteType: 'up'
+          }
+        });
+      }
+    });
     return items.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
   }, [posts]);
 
@@ -95,7 +95,7 @@ export const RecentActivity = memo(function RecentActivity({ onUserClick }: Rece
 
   const filteredActivities = useMemo(() => {
     let filtered = activityItems;
-    
+
     if (activeTab !== 'all') {
       filtered = filtered.filter(item => item.type === activeTab);
     }
@@ -165,8 +165,8 @@ export const RecentActivity = memo(function RecentActivity({ onUserClick }: Rece
 
   const ActivityItem = forwardRef<HTMLDivElement, { item: ActivityItem; index: number }>(
     ({ item, index }, ref) => {
-      const linkTo = item.type === 'comment' 
-        ? `/post/${item.post.id}#comment-${item.id}` 
+      const linkTo = item.type === 'comment'
+        ? `/post/${item.post.id}#comment-${item.id}`
         : `/post/${item.post.id}`;
 
       return (
@@ -184,16 +184,16 @@ export const RecentActivity = memo(function RecentActivity({ onUserClick }: Rece
                 {getActivityIcon(item.type)}
               </div>
             </div>
-            
+
             <div className="flex-1 min-w-0">
               <div className="text-sm mb-1">
                 {getActivityText(item)}
               </div>
-              
+
               <p className="text-sm font-medium text-foreground line-clamp-2 group-hover:text-primary transition-colors">
                 {item.post.title}
               </p>
-              
+
               <div className="flex items-center justify-between mt-2">
                 <span className="text-xs text-muted-foreground">
                   {formatTimeAgo(item.timestamp)}
@@ -226,18 +226,18 @@ export const RecentActivity = memo(function RecentActivity({ onUserClick }: Rece
             <span className="sm:hidden">⚡ Actividad</span>
           </CardTitle>
         </CardHeader>
-        
+
         <CardContent className="p-0">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <div className="px-4">
-              <TabsList className="flex items-center -mb-px border-b border-border">
-                <TabsTrigger value="all" className="text-xs sm:text-sm whitespace-nowrap border-b-2 border-transparent px-3 py-2 text-muted-foreground hover:text-foreground data-[state=active]:border-primary data-[state=active]:text-primary">
+              <TabsList className="flex items-center w-full justify-around -mb-px border-b border-border">
+                <TabsTrigger value="all" className="flex-1 text-xs sm:text-sm whitespace-nowrap border-b-2 border-transparent px-3 py-2 text-muted-foreground hover:text-foreground data-[state=active]:border-primary data-[state=active]:text-primary cursor-pointer">
                   Todo
                 </TabsTrigger>
-                <TabsTrigger value="post" className="text-xs sm:text-sm whitespace-nowrap border-b-2 border-transparent px-3 py-2 text-muted-foreground hover:text-foreground data-[state=active]:border-primary data-[state=active]:text-primary">
+                <TabsTrigger value="post" className="flex-1 text-xs sm:text-sm whitespace-nowrap border-b-2 border-transparent px-3 py-2 text-muted-foreground hover:text-foreground data-[state=active]:border-primary data-[state=active]:text-primary cursor-pointer">
                   Posts
                 </TabsTrigger>
-                <TabsTrigger value="vote" className="text-xs sm:text-sm whitespace-nowrap border-b-2 border-transparent px-3 py-2 text-muted-foreground hover:text-foreground data-[state=active]:border-primary data-[state=active]:text-primary">
+                <TabsTrigger value="vote" className="flex-1 text-xs sm:text-sm whitespace-nowrap border-b-2 border-transparent px-3 py-2 text-muted-foreground hover:text-foreground data-[state=active]:border-primary data-[state=active]:text-primary cursor-pointer">
                   Votos
                 </TabsTrigger>
               </TabsList>
@@ -252,7 +252,7 @@ export const RecentActivity = memo(function RecentActivity({ onUserClick }: Rece
                         <ActivityItem key={item.id} item={item} index={index} />
                       ))}
                     </AnimatePresence>
-                    
+
                     {!showAll && activityItems.length > 10 && (
                       <motion.div
                         initial={{ opacity: 0 }}
@@ -269,7 +269,7 @@ export const RecentActivity = memo(function RecentActivity({ onUserClick }: Rece
                         </Button>
                       </motion.div>
                     )}
-                    
+
                     {showAll && (
                       <motion.div
                         initial={{ opacity: 0 }}

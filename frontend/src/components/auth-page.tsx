@@ -243,8 +243,8 @@ export function AuthPage() {
             <CardContent>
               <Tabs defaultValue="login" className="w-full">
                 <TabsList className="grid w-full grid-cols-2">
-                  <TabsTrigger value="login">Iniciar Sesión</TabsTrigger>
-                  <TabsTrigger value="register">Registrarse</TabsTrigger>
+                  <TabsTrigger value="login" className="cursor-pointer">Iniciar Sesión</TabsTrigger>
+                  <TabsTrigger value="register" className="cursor-pointer">Registrarse</TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="login">

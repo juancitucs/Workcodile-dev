@@ -278,12 +278,23 @@ export function UserProfile({ isOpen, onClose, userId }: UserProfileProps) {
     setEditedProfile(prev => ({ ...prev, socialLinks: newLinks }));
   };
 
+  // Handle dialog close - reset editing state if it was active
+  const handleDialogClose = (open: boolean) => {
+    if (!open) {
+      // Dialog is closing - reset editing state
+      if (isEditing) {
+        handleCancel();
+      }
+      onClose();
+    }
+  };
+
   if (!profileUser) {
     return null;
   }
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={isOpen} onOpenChange={handleDialogClose}>
       <DialogContent className="sm:max-w-7xl w-[95vw] max-h-[90vh] p-0 overflow-hidden">
         <div className="flex h-full max-h-[85vh] flex-col">
           <div className="p-6 border-b border-border flex-shrink-0">
@@ -319,7 +330,7 @@ export function UserProfile({ isOpen, onClose, userId }: UserProfileProps) {
               <div className="flex flex-col sm:flex-row items-center sm:items-start space-y-4 sm:space-y-0 sm:space-x-6">
                 <div className="relative group">
                   <Avatar
-                    className={`h-24 w-24 ${isEditing ? 'cursor-pointer transition-all duration-200 hover:opacity-75' : ''}`}
+                    className={`h-24 w-24 ${isEditing ? 'transition-all duration-200 hover:opacity-75' : ''}`}
                     onClick={handleAvatarClick}
                   >
                     <AvatarImage
@@ -362,7 +373,7 @@ export function UserProfile({ isOpen, onClose, userId }: UserProfileProps) {
                       <Button
                         size="sm"
                         onClick={handleAvatarClick}
-                        className="absolute -bottom-2 -right-2 rounded-full h-8 w-8 p-0"
+                        className="absolute -bottom-2 -right-2 rounded-full h-8 w-8 p-0 cursor-pointer"
                         disabled={isUploadingAvatar}
                       >
                         {isUploadingAvatar ? (

@@ -182,22 +182,22 @@ export const Header = memo(function Header({ onCreatePost, onSearch, onToggleMob
                   <p className="text-xs text-muted-foreground">{user?.email}</p>
                 </div>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => setShowProfile(true)}>
+                <DropdownMenuItem onClick={() => setShowProfile(true)} className="cursor-pointer">
                   <User className="mr-2 h-4 w-4" />
                   Mi Perfil
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setShowSettings(true)}>
+                <DropdownMenuItem onClick={() => setShowSettings(true)} className="cursor-pointer">
                   <SettingsIcon className="mr-2 h-4 w-4" />
                   Configuración
                 </DropdownMenuItem>
-                <DropdownMenuItem className="sm:hidden" onClick={toggleTheme}>
+                <DropdownMenuItem className="sm:hidden cursor-pointer" onClick={toggleTheme}>
                   {theme === 'dark' ?
                     <Sun className="mr-2 h-4 w-4" /> :
                     <Moon className="mr-2 h-4 w-4" />}
                   Cambiar Tema
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={logout} className="text-destructive">
+                <DropdownMenuItem onClick={logout} className="text-destructive cursor-pointer">
                   <LogOut className="mr-2 h-4 w-4" />
                   Cerrar Sesión
                 </DropdownMenuItem>

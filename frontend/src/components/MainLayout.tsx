@@ -10,7 +10,7 @@ import { Sheet, SheetContent } from './ui/sheet';
 
 export function MainLayout() {
   const [isCreatePostOpen, setIsCreatePostOpen] = useState(false);
-  const { searchPosts, resetMainFeed } = useApp();
+  const { searchPosts } = useApp();
   const [selectedCourse, setSelectedCourse] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -45,7 +45,6 @@ export function MainLayout() {
             onCourseSelect={handleCourseSelect}
             sortBy={sortBy}
             onSortChange={setSortBy}
-            onRefresh={resetMainFeed}
             className="h-full"
           />
         </SheetContent>
@@ -65,7 +64,6 @@ export function MainLayout() {
                 onCourseSelect={setSelectedCourse}
                 sortBy={sortBy}
                 onSortChange={setSortBy}
-                onRefresh={resetMainFeed}
               />
             </div>
           </motion.aside>

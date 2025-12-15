@@ -260,12 +260,12 @@ export function CreatePostModal({ isOpen, onClose }: CreatePostModalProps) {
                       value={formData.cycle}
                       onValueChange={handleCycleChange}
                     >
-                      <SelectTrigger>
+                      <SelectTrigger className="cursor-pointer">
                         <SelectValue placeholder="Selecciona un ciclo" />
                       </SelectTrigger>
                       <SelectContent>
                         {cycles.map((cycle) => (
-                          <SelectItem key={cycle} value={cycle.toString()}>
+                          <SelectItem key={cycle} value={cycle.toString()} className="cursor-pointer">
                             <div className="flex items-center space-x-2">
                               <GraduationCap className="h-4 w-4 text-primary" />
                               <span>Ciclo {cycle}</span>
@@ -284,12 +284,12 @@ export function CreatePostModal({ isOpen, onClose }: CreatePostModalProps) {
                       onValueChange={(value) => setFormData(prev => ({ ...prev, course: value }))}
                       disabled={!formData.cycle}
                     >
-                      <SelectTrigger>
+                      <SelectTrigger className="cursor-pointer">
                         <SelectValue placeholder={formData.cycle ? "Selecciona un curso" : "Primero selecciona un ciclo"} />
                       </SelectTrigger>
                       <SelectContent>
                         {availableCourses.map((course) => (
-                          <SelectItem key={course.id} value={course.id}>
+                          <SelectItem key={course.id} value={course.id} className="cursor-pointer">
                             <div className="flex flex-col items-start">
                               <span className="font-medium">{course.id}</span>
                               <span className="text-xs text-muted-foreground max-w-[300px] truncate">
@@ -395,7 +395,7 @@ export function CreatePostModal({ isOpen, onClose }: CreatePostModalProps) {
                 <Accordion type="multiple" className="w-full">
                   {/* Hashtags */}
                   <AccordionItem value="hashtags">
-                    <AccordionTrigger>
+                    <AccordionTrigger className="cursor-pointer">
                       <Label className="flex items-center space-x-2 cursor-pointer">
                         <Hash className="h-4 w-4 text-primary" />
                         <span>Hashtags ({hashtags.length}/10)</span>
@@ -442,7 +442,7 @@ export function CreatePostModal({ isOpen, onClose }: CreatePostModalProps) {
 
                   {/* File Attachments */}
                   <AccordionItem value="attachments">
-                    <AccordionTrigger>
+                    <AccordionTrigger className="cursor-pointer">
                       <Label className="flex items-center space-x-2 cursor-pointer">
                         <Upload className="h-4 w-4 text-primary" />
                         <span>Archivos adjuntos ({attachments.length})</span>
@@ -600,7 +600,7 @@ export function CreatePostModal({ isOpen, onClose }: CreatePostModalProps) {
                       {attachments.length > 0 && (
                         <Accordion type="single" collapsible className="w-full">
                           <AccordionItem value="attachments-preview">
-                            <AccordionTrigger>
+                            <AccordionTrigger className="cursor-pointer">
                               <div className="flex items-center space-x-2 text-sm text-muted-foreground">
                                 <Paperclip className="h-4 w-4" />
                                 <span>{attachments.length} archivo{attachments.length > 1 ? 's' : ''} adjunto{attachments.length > 1 ? 's' : ''}</span>
