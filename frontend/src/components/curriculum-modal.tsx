@@ -2,17 +2,19 @@ import { useState, useMemo, memo, useRef, useEffect, useCallback } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog';
 import { Badge } from './ui/badge';
 import { GraduationCap, ArrowRight, Lock, Check } from 'lucide-react';
+import { useAuth } from './auth-context';
+
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
 // === TYPES ===
+// Local Course interface to avoid conflicts with global types.ts
 interface Course {
-    id: string;
-    code: string;
+    _id: string;
     name: string;
-    credits: number;
-    hours: number;
-    type: 'general' | 'basic' | 'specialty' | 'elective' | 'practice';
-    prerequisites?: string[];
-    description?: string;
+    cycle: number;
+    prerequisites: string[];
+    type: 'general' | 'basic' | 'specialty' | 'elective' | 'practice'; // Added type for styling
+    code: string; // Added for display
 }
 
 interface CycleData {
@@ -31,14 +33,6 @@ const COURSE_TYPE_COLORS: Record<Course['type'], { bg: string; border: string; t
     specialty: { bg: '#faf5ff', border: '#c084fc', text: '#581c87' },    // purple
     elective: { bg: '#fff7ed', border: '#fb923c', text: '#7c2d12' },     // orange
     practice: { bg: '#fdf2f8', border: '#f472b6', text: '#831843' },     // pink
-};
-
-const COURSE_TYPE_LABELS: Record<Course['type'], string> = {
-    general: 'General',
-    basic: 'Básico',
-    specialty: 'Especialidad',
-    elective: 'Electivo',
-    practice: 'Prácticas',
 };
 
 // Progressive cycle colors - lighter to darker
@@ -69,144 +63,25 @@ function toRoman(num: number): string {
     return romanNumerals[num] || num.toString();
 }
 
-// === MOCK DATA - MALLA CURRICULAR (Datos reales de UNAM) ===
-const MOCK_CURRICULUM: CycleData[] = [
-    {
-        cycle: 1,
-        courses: [
-            { id: 'IS-124', code: 'IS-124', name: 'REDACCION Y COMUNICACION', credits: 3, hours: 4, type: 'basic' },
-            { id: 'IS-127', code: 'IS-127', name: 'BIOLOGIA Y MEDIO AMBIENTE', credits: 3, hours: 4, type: 'basic' },
-            { id: 'IS-122', code: 'IS-122', name: 'MATEMATICA 1', credits: 4, hours: 6, type: 'basic' },
-            { id: 'IS-123', code: 'IS-123', name: 'METODOLOGIA Y TECNICAS DE ESTUDIO', credits: 2, hours: 3, type: 'basic' },
-            { id: 'IS-121', code: 'IS-121', name: 'FUNDAMENTOS DE PROGRAMACION', credits: 4, hours: 6, type: 'basic' },
-            { id: 'IS-125', code: 'IS-125', name: 'FILOSOFIA', credits: 2, hours: 3, type: 'basic' },
-            { id: 'IS-126', code: 'IS-126', name: 'SOCIOLOGIA Y REALIDAD NACIONAL', credits: 2, hours: 3, type: 'basic' },
-        ],
-    },
-    {
-        cycle: 2,
-        courses: [
-            { id: 'IS-225', code: 'IS-225', name: 'MATEMATICAS DISCRETAS 1', credits: 3, hours: 4, type: 'basic' },
-            { id: 'IS-226', code: 'IS-226', name: 'MATEMATICA 2', credits: 4, hours: 6, type: 'basic', prerequisites: ['IS-122'] },
-            { id: 'IS-224', code: 'IS-224', name: 'ALGEBRA LINEAL', credits: 3, hours: 4, type: 'basic', prerequisites: ['IS-122'] },
-            { id: 'IS-223', code: 'IS-223', name: 'PROGRAMACION ORIENTADA A OBJETOS 1', credits: 4, hours: 6, type: 'basic', prerequisites: ['IS-121'] },
-            { id: 'IS-221', code: 'IS-221', name: 'ESTRUCTURA DE DATOS', credits: 4, hours: 6, type: 'basic', prerequisites: ['IS-121'] },
-            { id: 'IS-227', code: 'IS-227', name: 'ESTADISTICA BASICA', credits: 3, hours: 4, type: 'basic' },
-            { id: 'IS-228', code: 'IS-228', name: 'ETICA', credits: 2, hours: 3, type: 'basic' },
-        ],
-    },
-    {
-        cycle: 3,
-        courses: [
-            { id: 'IS-325', code: 'IS-325', name: 'MATEMATICAS DISCRETAS 2', credits: 3, hours: 4, type: 'basic', prerequisites: ['IS-225'] },
-            { id: 'IS-324', code: 'IS-324', name: 'MATEMATICA 3', credits: 4, hours: 6, type: 'basic', prerequisites: ['IS-226'] },
-            { id: 'IS-327', code: 'IS-327', name: 'FISICA ELECTRICA', credits: 3, hours: 4, type: 'basic' },
-            { id: 'IS-322', code: 'IS-322', name: 'PROGRAMACION ORIENTADA A OBJETOS 2', credits: 4, hours: 6, type: 'basic', prerequisites: ['IS-223'] },
-            { id: 'IS-323', code: 'IS-323', name: 'FUNDAMENTOS DE SISTEMAS DE INFORMACION', credits: 3, hours: 4, type: 'basic', prerequisites: ['IS-223'] },
-            { id: 'IS-321', code: 'IS-321', name: 'ANALISIS Y DISEÑO DE ALGORITMOS', credits: 4, hours: 6, type: 'basic', prerequisites: ['IS-221'] },
-            { id: 'IS-326', code: 'IS-326', name: 'PROBABILIDADES', credits: 3, hours: 4, type: 'basic', prerequisites: ['IS-227'] },
-        ],
-    },
-    {
-        cycle: 4,
-        courses: [
-            { id: 'IS-424', code: 'IS-424', name: 'SISTEMAS OPERATIVOS', credits: 4, hours: 6, type: 'basic' },
-            { id: 'IS-425', code: 'IS-425', name: 'MATEMATICA 4', credits: 4, hours: 6, type: 'basic', prerequisites: ['IS-324'] },
-            { id: 'IS-426', code: 'IS-426', name: 'CIRCUITOS ELECTRICOS Y ELECTRONICOS', credits: 3, hours: 4, type: 'basic' },
-            { id: 'IS-427', code: 'IS-427', name: 'INVESTIGACION OPERATIVA 1', credits: 4, hours: 6, type: 'basic' },
-            { id: 'IS-422', code: 'IS-422', name: 'ANALISIS Y DISEÑO DE SISTEMAS 1', credits: 4, hours: 6, type: 'basic' },
-            { id: 'IS-421', code: 'IS-421', name: 'ALGORITMOS PARALELOS', credits: 3, hours: 4, type: 'basic', prerequisites: ['IS-321'] },
-            { id: 'IS-423', code: 'IS-423', name: 'BASE DE DATOS 1', credits: 4, hours: 6, type: 'basic' },
-        ],
-    },
-    {
-        cycle: 5,
-        courses: [
-            { id: 'IS-524', code: 'IS-524', name: 'APLICACIONES WEB 1', credits: 4, hours: 6, type: 'basic' },
-            { id: 'IS-525', code: 'IS-525', name: 'METODOS NUMERICOS', credits: 3, hours: 4, type: 'basic', prerequisites: ['IS-425'] },
-            { id: 'IS-526', code: 'IS-526', name: 'SISTEMAS DIGITALES', credits: 3, hours: 4, type: 'basic', prerequisites: ['IS-426'] },
-            { id: 'IS-527', code: 'IS-527', name: 'INVESTIGACION OPERATIVA 2', credits: 4, hours: 6, type: 'basic', prerequisites: ['IS-427'] },
-            { id: 'IS-522', code: 'IS-522', name: 'ANALISIS Y DISEÑO DE SISTEMAS 2', credits: 4, hours: 6, type: 'basic', prerequisites: ['IS-422'] },
-            { id: 'IS-521', code: 'IS-521', name: 'SISTEMAS DISTRIBUIDOS', credits: 3, hours: 4, type: 'basic', prerequisites: ['IS-421'] },
-            { id: 'IS-523', code: 'IS-523', name: 'BASE DE DATOS 2', credits: 4, hours: 6, type: 'basic', prerequisites: ['IS-423'] },
-        ],
-    },
-    {
-        cycle: 6,
-        courses: [
-            { id: 'IS-624', code: 'IS-624', name: 'APLICACIONES WEB 2', credits: 4, hours: 6, type: 'basic', prerequisites: ['IS-524'] },
-            { id: 'IS-625', code: 'IS-625', name: 'REALIDAD AUMENTADA', credits: 3, hours: 4, type: 'basic' },
-            { id: 'IS-626', code: 'IS-626', name: 'ARQUITECTURA DE COMPUTADORAS', credits: 4, hours: 6, type: 'basic', prerequisites: ['IS-526'] },
-            { id: 'IS-623', code: 'IS-623', name: 'PROGRAMACION DE DISPOSITIVOS MOVILES 1', credits: 4, hours: 6, type: 'basic' },
-            { id: 'IS-621', code: 'IS-621', name: 'INGENIERIA DE SOFTWARE', credits: 4, hours: 6, type: 'basic', prerequisites: ['IS-522', 'IS-523'] },
-            { id: 'IS-622', code: 'IS-622', name: 'BUSINESS INTELLIGENCE', credits: 3, hours: 4, type: 'basic', prerequisites: ['IS-523'] },
-        ],
-    },
-    {
-        cycle: 7,
-        courses: [
-            { id: 'IS-721', code: 'IS-721', name: 'DATA MINING', credits: 4, hours: 6, type: 'basic' },
-            { id: 'IS-724', code: 'IS-724', name: 'PROGRAMACION DE VIDEO JUEGOS 1', credits: 3, hours: 4, type: 'basic' },
-            { id: 'IS-726', code: 'IS-726', name: 'LENGUAJE DE BAJO NIVEL', credits: 3, hours: 4, type: 'basic', prerequisites: ['IS-626'] },
-            { id: 'IS-723', code: 'IS-723', name: 'PROGRAMACION DE DISPOSITIVOS MOVILES 2', credits: 4, hours: 6, type: 'basic', prerequisites: ['IS-623'] },
-            { id: 'IS-722', code: 'IS-722', name: 'CALIDAD DE SOFTWARE', credits: 3, hours: 4, type: 'basic', prerequisites: ['IS-621'] },
-            { id: 'IS-725', code: 'IS-725', name: 'REDES 1', credits: 4, hours: 6, type: 'basic' },
-        ],
-    },
-    {
-        cycle: 8,
-        courses: [
-            { id: 'IS-821', code: 'IS-821', name: 'CLOUD COMPUTING', credits: 4, hours: 6, type: 'basic', prerequisites: ['IS-721'] },
-            { id: 'IS-824', code: 'IS-824', name: 'PROGRAMACION DE VIDEO JUEGOS 2', credits: 3, hours: 4, type: 'basic', prerequisites: ['IS-724'] },
-            { id: 'IS-823', code: 'IS-823', name: 'PROYECTO DE INVESTIGACION 1', credits: 3, hours: 4, type: 'basic' },
-            { id: 'IS-822', code: 'IS-822', name: 'PROCESAMIENTO DE IMAGENES Y VIDEOS', credits: 4, hours: 6, type: 'basic' },
-            { id: 'IS-827', code: 'IS-827', name: 'ROBOTICA 1', credits: 3, hours: 4, type: 'basic' },
-            { id: 'IS-825', code: 'IS-825', name: 'INTERACCION HUMANO COMPUTADOR', credits: 3, hours: 4, type: 'basic' },
-            { id: 'IS-826', code: 'IS-826', name: 'REDES 2', credits: 4, hours: 6, type: 'basic', prerequisites: ['IS-725'] },
-        ],
-    },
-    {
-        cycle: 9,
-        courses: [
-            { id: 'IS-924', code: 'IS-924', name: 'FORMACION DE EMPRESAS CON BASE TECNOLOGICA', credits: 3, hours: 4, type: 'basic' },
-            { id: 'IS-922', code: 'IS-922', name: 'SEGURIDAD INFORMATICA', credits: 4, hours: 6, type: 'basic' },
-            { id: 'IS-923', code: 'IS-923', name: 'PROYECTO DE INVESTIGACION 2', credits: 3, hours: 4, type: 'basic', prerequisites: ['IS-823'] },
-            { id: 'IS-921', code: 'IS-921', name: 'INTELIGENCIA ARTIFICIAL 1', credits: 4, hours: 6, type: 'basic', prerequisites: ['IS-822'] },
-            { id: 'IS-926', code: 'IS-926', name: 'ROBOTICA 2', credits: 3, hours: 4, type: 'basic', prerequisites: ['IS-827'] },
-            { id: 'IS-925', code: 'IS-925', name: 'PROYECTOS INFORMATICOS 1', credits: 4, hours: 8, type: 'basic' },
-        ],
-    },
-    {
-        cycle: 10,
-        courses: [
-            { id: 'IS-1022', code: 'IS-1022', name: 'AUDITORIA DE SISTEMAS DE INFORMACION', credits: 4, hours: 6, type: 'basic', prerequisites: ['IS-922'] },
-            { id: 'IS-1023', code: 'IS-1023', name: 'SEGURIDAD DE LA INFORMACION', credits: 4, hours: 6, type: 'basic', prerequisites: ['IS-922'] },
-            { id: 'IS-1024', code: 'IS-1024', name: 'SEMINARIO DE TESIS', credits: 2, hours: 4, type: 'basic', prerequisites: ['IS-923'] },
-            { id: 'IS-1021', code: 'IS-1021', name: 'INTELIGENCIA ARTIFICIAL 2', credits: 4, hours: 6, type: 'basic', prerequisites: ['IS-921'] },
-            { id: 'IS-1026', code: 'IS-1026', name: 'PROYECTOS INFORMATICOS 2', credits: 4, hours: 8, type: 'basic', prerequisites: ['IS-925'] },
-        ],
-    },
-];
-
 // Helper function to create short abbreviations
 function getShortName(fullName: string): string {
     const abbreviations: Record<string, string> = {
         'FUNDAMENTOS DE PROGRAMACION': 'F. Programacion',
-        'MATEMATICA 1': 'Matemática 1',
-        'MATEMATICA 2': 'Matemática 2',
-        'MATEMATICA 3': 'Matemática 3',
-        'MATEMATICA 4': 'Matemática 4',
-        'METODOLOGIA Y TECNICAS DE ESTUDIO': 'Metodología',
+        'MATEMATICA I': 'Matemática 1',
+        'MATEMATICA II': 'Matemática 2',
+        'MATEMATICA III': 'Matemática 3',
+        'MATEMATICA IV': 'Matemática 4',
+        'METODOLOGIA Y TECNICAS DE ESTUDIO UNIVERSITARIO': 'Metodología',
         'REDACCION Y COMUNICACION': 'Redacción',
         'FILOSOFIA': 'Filosofía',
         'SOCIOLOGIA Y REALIDAD NACIONAL': 'Sociología',
         'BIOLOGIA Y MEDIO AMBIENTE': 'Biología',
         'ESTRUCTURA DE DATOS': 'Est. Datos',
-        'PROGRAMACION ORIENTADA A OBJETOS 1': 'POO 1',
-        'PROGRAMACION ORIENTADA A OBJETOS 2': 'POO 2',
+        'PROGRAMACION ORIENTADA A OBJETOS I': 'POO 1',
+        'PROGRAMACION ORIENTADA A OBJETOS II': 'POO 2',
         'ALGEBRA LINEAL': 'Álg. Lineal',
-        'MATEMATICAS DISCRETAS 1': 'M. Discretas 1',
-        'MATEMATICAS DISCRETAS 2': 'MDiscretas 2',
+        'MATEMATICAS DISCRETAS I': 'M. Discretas 1',
+        'MATEMATICAS DISCRETAS II': 'MDiscretas 2',
         'ESTADISTICA BASICA': 'Estadística',
         'ETICA': 'Ética',
         'ANALISIS Y DISEÑO DE ALGORITMOS': 'ADA',
@@ -214,45 +89,45 @@ function getShortName(fullName: string): string {
         'PROBABILIDADES': 'Probabilidad',
         'FISICA ELECTRICA': 'Física Eléc.',
         'ALGORITMOS PARALELOS': 'Algo. Paralelos',
-        'ANALISIS Y DISEÑO DE SISTEMAS 1': 'ADS 1',
-        'ANALISIS Y DISEÑO DE SISTEMAS 2': 'ADS 2',
-        'BASE DE DATOS 1': 'BD 1',
-        'BASE DE DATOS 2': 'BD 2',
+        'ANALISIS Y DISEÑO DE SISTEMAS I': 'ADS 1',
+        'ANALISIS Y DISEÑO DE SISTEMAS II': 'ADS 2',
+        'BASE DE DATOS I': 'BD 1',
+        'BASE DE DATOS II': 'BD 2',
         'SISTEMAS OPERATIVOS': 'Sist. Operativos',
         'CIRCUITOS ELECTRICOS Y ELECTRONICOS': 'Circuitos Elec.',
-        'INVESTIGACION OPERATIVA 1': 'Inv. Operat. 1',
-        'INVESTIGACION OPERATIVA 2': 'Inv. Operat.2',
+        'INVESTIGACION OPERATIVA I': 'Inv. Operat. 1',
+        'INVESTIGACION OPERATIVA II': 'Inv. Operat.2',
         'SISTEMAS DISTRIBUIDOS': 'Sist. Distribuidos',
-        'APLICACIONES WEB 1': 'App Web 1',
-        'APLICACIONES WEB 2': 'App Web 2',
+        'APLICACIONES WEB I': 'App Web 1',
+        'APLICACIONES WEB II': 'App Web 2',
         'METODOS NUMERICOS': 'Mét. Numéricos',
         'SISTEMAS DIGITALES': 'Sist. Digitales',
         'INGENIERIA DE SOFTWARE': 'Ing. Software',
         'BUSINESS INTELLIGENCE': 'Business Intel.',
-        'PROGRAMACION DE DISPOSITIVOS MOVILES 1': 'Pro. Móviles 1',
-        'PROGRAMACION DE DISPOSITIVOS MOVILES 2': 'Pro. Móviles 2',
+        'PROGRAMACION DE DISPOSITIVOS MOVILES I': 'Pro. Móviles 1',
+        'PROGRAMACION DE DISPOSITIVOS MOVILES II': 'Pro. Móviles 2',
         'REALIDAD AUMENTADA': 'Realidad Aum.',
         'ARQUITECTURA DE COMPUTADORAS': 'Arq. Comp.',
         'DATA MINING': 'Data Mining',
         'CALIDAD DE SOFTWARE': 'Calidad SW',
-        'PROGRAMACION DE VIDEO JUEGOS 1': 'Videojuego 1 ',
-        'PROGRAMACION DE VIDEO JUEGOS 2': 'Videojuego 2',
-        'REDES 1': 'Redes 1',
-        'REDES 2': 'Redes 2',
+        'PROGRAMACION DE VIDEO JUEGOS I': 'Videojuego 1 ',
+        'PROGRAMACION DE VIDEO JUEGOS II': 'Videojuego 2',
+        'REDES I': 'Redes 1',
+        'REDES II': 'Redes 2',
         'LENGUAJE DE BAJO NIVEL': 'Bajo Nivel',
         'CLOUD COMPUTING': 'Cloud Comp.',
         'PROCESAMIENTO DE IMAGENES Y VIDEOS': 'Proc. Img/Video',
-        'PROYECTO DE INVESTIGACION 1': 'Proy. Invest. 1',
-        'PROYECTO DE INVESTIGACION 2': 'Proy. Invest. 2',
+        'PROYECTO DE INVESTIGACION I': 'Proy. Invest. 1',
+        'PROYECTO DE INVESTIGACION II': 'Proy. Invest. 2',
         'INTERACCION HUMANO COMPUTADOR': 'HCI',
-        'ROBOTICA 1': 'Robótica 1',
-        'ROBOTICA 2': 'Robótica 2',
-        'INTELIGENCIA ARTIFICIAL 1': 'IA 1',
-        'INTELIGENCIA ARTIFICIAL 2': 'IA 2',
+        'ROBOTICA I': 'Robótica 1',
+        'ROBOTICA II': 'Robótica 2',
+        'INTELIGENCIA ARTIFICIAL I': 'IA 1',
+        'INTELIGENCIA ARTIFICIAL II': 'IA 2',
         'SEGURIDAD INFORMATICA': 'Seg. Inform.',
         'FORMACION DE EMPRESAS CON BASE TECNOLOGICA': 'Form. Empresas',
-        'PROYECTOS INFORMATICOS 1': 'Proy. Informat. 1',
-        'PROYECTOS INFORMATICOS 2': 'Proy. Informat. 2',
+        'PROYECTOS INFORMATICOS I': 'Proy. Informat. 1',
+        'PROYECTOS INFORMATICOS II': 'Proy. Informat. 2',
         'AUDITORIA DE SISTEMAS DE INFORMACION': 'Auditoría SI',
         'SEGURIDAD DE LA INFORMACION': 'Seg. Info.',
         'SEMINARIO DE TESIS': 'Sem. Tesis',
@@ -302,27 +177,95 @@ function getAllDescendants(courseId: string, unlocksMap: Record<string, string[]
 
 // === MAIN COMPONENT ===
 export const CurriculumModal = memo(function CurriculumModal({ trigger }: CurriculumModalProps) {
+    const { user, authStatus } = useAuth(); // Use auth context
     const [hoveredCourseId, setHoveredCourseId] = useState<string | null>(null);
     const containerRef = useRef<HTMLDivElement>(null);
     const courseRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
-    // Build maps
+    const [allCourses, setAllCourses] = useState<Course[]>([]);
+    const [completedCourses, setCompletedCourses] = useState<Set<string>>(new Set());
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+
+    // Fetch all courses
+    useEffect(() => {
+        const fetchAllCourses = async () => {
+            setIsLoading(true);
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/courses`);
+                if (!response.ok) {
+                    throw new Error('Failed to fetch all courses');
+                }
+                const data: Course[] = await response.json();
+                setAllCourses(data.map(c => ({...c, code: c._id, type: 'basic'}))); // Add default type and code
+            } catch (err: any) {
+                setError(err.message);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+        fetchAllCourses();
+    }, []);
+
+    // Fetch user's completed courses
+    useEffect(() => {
+        const fetchCompletedCourses = async () => {
+            if (authStatus !== 'authenticated' || !user) {
+                setCompletedCourses(new Set());
+                return;
+            }
+
+            try {
+                const token = localStorage.getItem('token');
+                const response = await fetch(`${API_BASE_URL}/api/settings/completed-courses`, {
+                    headers: {
+                        'x-auth-token': token || '',
+                    },
+                });
+                if (!response.ok) {
+                    throw new Error('Failed to fetch completed courses');
+                }
+                const data: string[] = await response.json();
+                setCompletedCourses(new Set(data));
+            } catch (err: any) {
+                console.error('Error fetching completed courses:', err);
+                setError(err.message);
+            }
+        };
+        fetchCompletedCourses();
+    }, [authStatus, user]);
+
+
+    // Group courses by cycle for rendering
+    const curriculumByCycle = useMemo(() => {
+        const cyclesMap = new Map<number, Course[]>();
+        allCourses.forEach(course => {
+            if (!cyclesMap.has(course.cycle)) {
+                cyclesMap.set(course.cycle, []);
+            }
+            cyclesMap.get(course.cycle)?.push(course);
+        });
+
+        return Array.from(cyclesMap.entries())
+            .sort(([cycleA], [cycleB]) => cycleA - cycleB)
+            .map(([cycle, courses]) => ({ cycle, courses }));
+    }, [allCourses]);
+
+    // Build maps for prerequisites and unlocks
     const { prereqMap, unlocksMap } = useMemo(() => {
         const prereqMap: Record<string, string[]> = {};
         const unlocksMap: Record<string, string[]> = {};
 
-        MOCK_CURRICULUM.forEach(cycle => {
-            cycle.courses.forEach(course => {
-                prereqMap[course.id] = course.prerequisites || [];
-                course.prerequisites?.forEach(prereqId => {
-                    if (!unlocksMap[prereqId]) unlocksMap[prereqId] = [];
-                    unlocksMap[prereqId].push(course.id);
-                });
+        allCourses.forEach(course => {
+            prereqMap[course._id] = course.prerequisites || [];
+            course.prerequisites?.forEach(prereqId => {
+                if (!unlocksMap[prereqId]) unlocksMap[prereqId] = [];
+                unlocksMap[prereqId].push(course._id);
             });
         });
 
         return { prereqMap, unlocksMap };
-    }, []);
+    }, [allCourses]);
 
     // Get highlighted IDs
     const highlighted = useMemo(() => {
@@ -336,99 +279,66 @@ export const CurriculumModal = memo(function CurriculumModal({ trigger }: Curric
     // State to trigger arrow recalculation
     const [arrowTrigger, setArrowTrigger] = useState(0);
 
-    /**
-     * ============================================================================
-     * CURSOS COMPLETADOS - INTEGRACIÓN BACKEND (para Tux)
-     * ============================================================================
-     * 
-     * ESTADO ACTUAL: Usa localStorage como fallback temporal.
-     * OBJETIVO: Conectar con API del backend para persistir en MongoDB.
-     * 
-     * --- ENDPOINTS QUE TUX DEBE CREAR EN EL BACKEND ---
-     * 
-     * 1. GET /api/users/:userId/completed-courses
-     *    - Retorna array de IDs de cursos completados: ["IS-122", "IS-124", ...]
-     *    - Requiere autenticación (token JWT)
-     * 
-     * 2. POST /api/users/:userId/completed-courses
-     *    - Body: { courseId: "IS-122" }
-     *    - Agrega un curso a la lista de completados
-     *    - Retorna: { success: true, completedCourses: [...] }
-     * 
-     * 3. DELETE /api/users/:userId/completed-courses/:courseId
-     *    - Elimina un curso de la lista de completados
-     *    - Retorna: { success: true, completedCourses: [...] }
-     * 
-     * --- MODELO MONGODB (Schema para User) ---
-     * 
-     * // En el modelo User agregar:
-     * completedCourses: {
-     *   type: [String],  // Array de IDs de cursos: ["IS-122", "IS-224", ...]
-     *   default: []
-     * }
-     * 
-     * --- CÓMO CONECTAR (reemplazar el código de abajo) ---
-     * 
-     * import { useAuth } from '../hooks/useAuth'; // o como tengan autenticación
-     * import { useQuery, useMutation } from '@tanstack/react-query'; // si usan react-query
-     * 
-     * // En el componente:
-     * const { user } = useAuth();
-     * 
-     * // Cargar cursos completados del backend:
-     * const { data: completedCourses = [] } = useQuery({
-     *   queryKey: ['completed-courses', user?.id],
-     *   queryFn: () => fetch(`/api/users/${user.id}/completed-courses`).then(r => r.json()),
-     *   enabled: !!user?.id
-     * });
-     * 
-     * // Mutación para toggle:
-     * const toggleMutation = useMutation({
-     *   mutationFn: (courseId) => {
-     *     const isCompleted = completedCourses.includes(courseId);
-     *     if (isCompleted) {
-     *       return fetch(`/api/users/${user.id}/completed-courses/${courseId}`, { method: 'DELETE' });
-     *     } else {
-     *       return fetch(`/api/users/${user.id}/completed-courses`, {
-     *         method: 'POST',
-     *         body: JSON.stringify({ courseId })
-     *       });
-     *     }
-     *   },
-     *   onSuccess: () => queryClient.invalidateQueries(['completed-courses'])
-     * });
-     * 
-     * ============================================================================
-     */
-
-    // TEMPORAL: Usa localStorage hasta que Tux conecte el backend
-    const [completedCourses, setCompletedCourses] = useState<Set<string>>(() => {
-        // TODO (Tux): Reemplazar con useQuery para cargar de /api/users/:userId/completed-courses
-        const saved = localStorage.getItem('workcodile-completed-courses');
-        return saved ? new Set(JSON.parse(saved)) : new Set();
-    });
-
-    // TEMPORAL: Guarda en localStorage hasta que Tux conecte el backend
-    useEffect(() => {
-        // TODO (Tux): Eliminar este useEffect cuando conectes el backend
-        localStorage.setItem('workcodile-completed-courses', JSON.stringify([...completedCourses]));
-    }, [completedCourses]);
-
-    // Toggle curso completado
-    const toggleCourseCompletion = useCallback((courseId: string, e: React.MouseEvent) => {
+    // Toggle curso completado via API
+    const toggleCourseCompletion = useCallback(async (courseId: string, e: React.MouseEvent) => {
         e.stopPropagation(); // Evita activar el click de la tarjeta
 
-        // TODO (Tux): Reemplazar con toggleMutation.mutate(courseId)
+        if (authStatus !== 'authenticated' || !user) {
+            alert('Debes iniciar sesión para marcar cursos como completados.');
+            return;
+        }
+
+        const isCurrentlyCompleted = completedCourses.has(courseId);
+        const token = localStorage.getItem('token');
+
+        // Optimistic UI update
         setCompletedCourses(prev => {
             const newSet = new Set(prev);
-            if (newSet.has(courseId)) {
+            if (isCurrentlyCompleted) {
                 newSet.delete(courseId);
             } else {
                 newSet.add(courseId);
             }
             return newSet;
         });
-    }, []);
+
+        try {
+            const method = isCurrentlyCompleted ? 'DELETE' : 'POST';
+            const url = isCurrentlyCompleted
+                ? `${API_BASE_URL}/api/settings/completed-courses/${courseId}`
+                : `${API_BASE_URL}/api/settings/completed-courses`;
+
+            const response = await fetch(url, {
+                method,
+                headers: {
+                    'Content-Type': 'application/json',
+                    'x-auth-token': token || '',
+                },
+                body: method === 'POST' ? JSON.stringify({ courseId }) : undefined,
+            });
+
+            if (!response.ok) {
+                throw new Error(`Failed to ${isCurrentlyCompleted ? 'remove' : 'add'} completed course`);
+            }
+
+            // Backend response contains the updated list, reconcile if needed
+            // For now, optimistic update is sufficient, if it fails, the catch block will revert.
+        } catch (err) {
+            console.error('Error toggling course completion:', err);
+            // Revert optimistic UI update on error
+            setCompletedCourses(prev => {
+                const newSet = new Set(prev);
+                if (isCurrentlyCompleted) { // if it was completed, add it back
+                    newSet.add(courseId);
+                } else { // if it was not completed, remove the added one
+                    newSet.delete(courseId);
+                }
+                return newSet;
+            });
+            alert('Error al actualizar el estado del curso. Por favor, inténtalo de nuevo.');
+        }
+    }, [completedCourses, authStatus, user]);
+
 
     // Calculate ALL arrows (always visible)
     const allArrows = useMemo(() => {
@@ -438,12 +348,12 @@ export const CurriculumModal = memo(function CurriculumModal({ trigger }: Curric
         const newArrows: { x1: number; y1: number; x2: number; y2: number; from: string; to: string }[] = [];
 
         // Draw arrows for ALL prerequisite relationships
-        MOCK_CURRICULUM.forEach(cycle => {
+        curriculumByCycle.forEach(cycle => {
             cycle.courses.forEach(course => {
                 const prereqs = course.prerequisites || [];
                 prereqs.forEach(prereqId => {
                     const fromEl = courseRefs.current[prereqId];
-                    const toEl = courseRefs.current[course.id];
+                    const toEl = courseRefs.current[course._id]; // Use _id
 
                     if (fromEl && toEl) {
                         const fromRect = fromEl.getBoundingClientRect();
@@ -455,7 +365,7 @@ export const CurriculumModal = memo(function CurriculumModal({ trigger }: Curric
                             x2: toRect.left - containerRect.left,
                             y2: toRect.top + toRect.height / 2 - containerRect.top,
                             from: prereqId,
-                            to: course.id,
+                            to: course._id, // Use _id
                         });
                     }
                 });
@@ -463,7 +373,7 @@ export const CurriculumModal = memo(function CurriculumModal({ trigger }: Curric
         });
 
         return newArrows;
-    }, [arrowTrigger]);
+    }, [arrowTrigger, curriculumByCycle]);
 
     // State to track if dialog is open
     const [isOpen, setIsOpen] = useState(false);
@@ -497,6 +407,41 @@ export const CurriculumModal = memo(function CurriculumModal({ trigger }: Curric
             };
         }
     }, [isOpen]);
+
+    if (isLoading) {
+        return (
+            <Dialog open={isOpen} onOpenChange={setIsOpen}>
+                <DialogTrigger asChild>{trigger}</DialogTrigger>
+                <DialogContent className="max-w-[95vw] max-h-[90vh] flex flex-col p-0">
+                    <DialogHeader className="p-6 pb-3">
+                        <DialogTitle className="flex items-center gap-2">
+                            <GraduationCap className="h-6 w-6" />
+                            Malla Curricular - Ingeniería de Sistemas
+                        </DialogTitle>
+                    </DialogHeader>
+                    <div className="p-4 text-center">Cargando malla curricular...</div>
+                </DialogContent>
+            </Dialog>
+        );
+    }
+
+    if (error) {
+        return (
+            <Dialog open={isOpen} onOpenChange={setIsOpen}>
+                <DialogTrigger asChild>{trigger}</DialogTrigger>
+                <DialogContent className="max-w-[95vw] max-h-[90vh] flex flex-col p-0">
+                    <DialogHeader className="p-6 pb-3">
+                        <DialogTitle className="flex items-center gap-2">
+                            <GraduationCap className="h-6 w-6" />
+                            Malla Curricular - Ingeniería de Sistemas
+                        </DialogTitle>
+                    </DialogHeader>
+                    <div className="p-4 text-center text-red-500">Error: {error}</div>
+                </DialogContent>
+            </Dialog>
+        );
+    }
+
 
     return (
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -608,7 +553,7 @@ export const CurriculumModal = memo(function CurriculumModal({ trigger }: Curric
                         })}
                     </svg>
                     <div className="flex gap-12 min-w-max">
-                        {MOCK_CURRICULUM.map((cycle) => {
+                        {curriculumByCycle.map((cycle) => {
                             const cycleColor = CYCLE_COLORS[cycle.cycle] || CYCLE_COLORS[10];
                             return (
                                 <div key={cycle.cycle} className="w-[130px] flex-shrink-0">
@@ -621,9 +566,9 @@ export const CurriculumModal = memo(function CurriculumModal({ trigger }: Curric
                                     <div className="space-y-2">
                                         {cycle.courses.map((course) => {
                                             const colors = COURSE_TYPE_COLORS[course.type];
-                                            const isHovered = hoveredCourseId === course.id;
-                                            const isPrereq = highlighted.prereqs.includes(course.id);
-                                            const isUnlock = highlighted.unlocks.includes(course.id);
+                                            const isHovered = hoveredCourseId === course._id;
+                                            const isPrereq = highlighted.prereqs.includes(course._id);
+                                            const isUnlock = highlighted.unlocks.includes(course._id);
                                             const isConnected = isHovered || isPrereq || isUnlock;
 
                                             // Base inline styles for colors
@@ -652,7 +597,7 @@ export const CurriculumModal = memo(function CurriculumModal({ trigger }: Curric
                                                 }
                                             }
 
-                                            const isCompleted = completedCourses.has(course.id);
+                                            const isCompleted = completedCourses.has(course._id);
 
                                             // Apply completed styling with cycle blue colors
                                             const completedStyle = isCompleted ? {
@@ -664,11 +609,11 @@ export const CurriculumModal = memo(function CurriculumModal({ trigger }: Curric
 
                                             return (
                                                 <div
-                                                    key={course.id}
-                                                    ref={(el) => { courseRefs.current[course.id] = el; }}
+                                                    key={course._id}
+                                                    ref={(el) => { courseRefs.current[course._id] = el; }}
                                                     className={`${className} relative`}
                                                     style={completedStyle}
-                                                    onClick={() => setHoveredCourseId(prev => prev === course.id ? null : course.id)}
+                                                    onClick={() => setHoveredCourseId(prev => prev === course._id ? null : course._id)}
                                                 >
 
                                                     <p
@@ -684,7 +629,7 @@ export const CurriculumModal = memo(function CurriculumModal({ trigger }: Curric
                                                         </span>
                                                         {/* Check button at bottom right */}
                                                         <button
-                                                            onClick={(e) => toggleCourseCompletion(course.id, e)}
+                                                            onClick={(e) => toggleCourseCompletion(course._id, e)}
                                                             className="w-4 h-4 rounded flex items-center justify-center transition-all z-30"
                                                             style={{
                                                                 backgroundColor: isCompleted ? '#5C6BC0' : '#e5e7eb',
