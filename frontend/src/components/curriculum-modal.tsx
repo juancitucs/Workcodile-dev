@@ -237,7 +237,7 @@ function getShortName(fullName: string): string {
         'INTELIGENCIA ARTIFICIAL 2': 'IA 2',
         'SEGURIDAD INFORMATICA': 'Seg. Informática',
         'FORMACION DE EMPRESAS CON BASE TECNOLOGICA': 'Form. Empresas',
-        'PROYECTOS INFORMATICOS I': 'Proy. Inf. 1',
+        'PROYECTOS INFORMATICOS 1': 'Proy. Inf. 1',
         'PROYECTOS INFORMATICOS 2': 'Proy. Inf. 2',
         'AUDITORIA DE SISTEMAS DE INFORMACION': 'Auditoría SI',
         'SEGURIDAD DE LA INFORMACION': 'Seg. Info.',
@@ -289,7 +289,6 @@ function getAllDescendants(courseId: string, unlocksMap: Record<string, string[]
 // === MAIN COMPONENT ===
 export const CurriculumModal = memo(function CurriculumModal({ trigger }: CurriculumModalProps) {
     const [hoveredCourseId, setHoveredCourseId] = useState<string | null>(null);
-    const [arrows, setArrows] = useState<{ x1: number; y1: number; x2: number; y2: number }[]>([]);
     const containerRef = useRef<HTMLDivElement>(null);
     const courseRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
@@ -320,32 +319,28 @@ export const CurriculumModal = memo(function CurriculumModal({ trigger }: Curric
         };
     }, [hoveredCourseId, prereqMap, unlocksMap]);
 
-    // Calculate arrows when hovering
-    const calculateArrows = useCallback(() => {
-        if (!hoveredCourseId || !containerRef.current) {
-            setArrows([]);
-            return;
-        }
+    // State to trigger arrow recalculation
+    const [arrowTrigger, setArrowTrigger] = useState(0);
+
+    // Calculate ALL arrows (always visible)
+    const allArrows = useMemo(() => {
+        if (!containerRef.current || arrowTrigger === 0) return [];
 
         const containerRect = containerRef.current.getBoundingClientRect();
         const newArrows: { x1: number; y1: number; x2: number; y2: number }[] = [];
 
-        // Get all related course IDs (hover + prereqs + unlocks)
-        const allRelated = [hoveredCourseId, ...highlighted.prereqs, ...highlighted.unlocks];
-
-        // Draw arrows for each prerequisite relationship
-        allRelated.forEach(courseId => {
-            const prereqs = prereqMap[courseId] || [];
-            prereqs.forEach(prereqId => {
-                if (allRelated.includes(prereqId)) {
+        // Draw arrows for ALL prerequisite relationships
+        MOCK_CURRICULUM.forEach(cycle => {
+            cycle.courses.forEach(course => {
+                const prereqs = course.prerequisites || [];
+                prereqs.forEach(prereqId => {
                     const fromEl = courseRefs.current[prereqId];
-                    const toEl = courseRefs.current[courseId];
+                    const toEl = courseRefs.current[course.id];
 
                     if (fromEl && toEl) {
                         const fromRect = fromEl.getBoundingClientRect();
                         const toRect = toEl.getBoundingClientRect();
 
-                        // Arrow from right side of prereq to left side of course
                         newArrows.push({
                             x1: fromRect.right - containerRect.left,
                             y1: fromRect.top + fromRect.height / 2 - containerRect.top,
@@ -353,20 +348,36 @@ export const CurriculumModal = memo(function CurriculumModal({ trigger }: Curric
                             y2: toRect.top + toRect.height / 2 - containerRect.top,
                         });
                     }
-                }
+                });
             });
         });
 
-        setArrows(newArrows);
-    }, [hoveredCourseId, highlighted, prereqMap]);
+        return newArrows;
+    }, [arrowTrigger]);
 
-    // Recalculate arrows on hover change
+    // State to track if dialog is open
+    const [isOpen, setIsOpen] = useState(false);
+
+    // Trigger arrow recalculation when dialog opens
     useEffect(() => {
-        calculateArrows();
-    }, [calculateArrows]);
+        if (isOpen) {
+            // Recalculate arrows with delay to ensure DOM is ready
+            const timer = setTimeout(() => {
+                setArrowTrigger(t => t + 1);
+            }, 150);
+
+            const recalc = () => setArrowTrigger(t => t + 1);
+            window.addEventListener('resize', recalc);
+
+            return () => {
+                clearTimeout(timer);
+                window.removeEventListener('resize', recalc);
+            };
+        }
+    }, [isOpen]);
 
     return (
-        <Dialog>
+        <Dialog open={isOpen} onOpenChange={setIsOpen}>
             <DialogTrigger asChild>{trigger}</DialogTrigger>
             <DialogContent className="max-w-[95vw] max-h-[90vh] flex flex-col p-0">
                 <DialogHeader className="p-6 pb-3">
@@ -388,28 +399,34 @@ export const CurriculumModal = memo(function CurriculumModal({ trigger }: Curric
                 </div>
 
                 <div className="flex-1 overflow-auto p-4 bg-slate-50 relative" ref={containerRef}>
-                    {/* SVG Overlay for Arrows */}
-                    {arrows.length > 0 && (
-                        <svg className="absolute inset-0 pointer-events-none z-50" style={{ overflow: 'visible' }}>
-                            <defs>
-                                <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
-                                    <polygon points="0 0, 10 3.5, 0 7" fill="#f59e0b" />
-                                </marker>
-                            </defs>
-                            {arrows.map((arrow, i) => (
-                                <line
+                    {/* SVG Overlay for Curved Arrows */}
+                    <svg className="absolute inset-0 pointer-events-none z-20" style={{ overflow: 'visible' }}>
+                        <defs>
+                            <marker id="arrowhead-green" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+                                <polygon points="0 0, 8 3, 0 6" fill="#059669" />
+                            </marker>
+                        </defs>
+                        {allArrows.map((arrow, i) => {
+                            // Calculate bezier curve control points
+                            const dx = arrow.x2 - arrow.x1;
+                            const midX = arrow.x1 + dx / 2;
+
+                            // Create a smooth S-curve
+                            const path = `M ${arrow.x1} ${arrow.y1} C ${midX} ${arrow.y1}, ${midX} ${arrow.y2}, ${arrow.x2} ${arrow.y2}`;
+
+                            return (
+                                <path
                                     key={i}
-                                    x1={arrow.x1}
-                                    y1={arrow.y1}
-                                    x2={arrow.x2}
-                                    y2={arrow.y2}
-                                    stroke="#f59e0b"
+                                    d={path}
+                                    fill="none"
+                                    stroke="#059669"
                                     strokeWidth="2"
-                                    markerEnd="url(#arrowhead)"
+                                    strokeOpacity="0.7"
+                                    markerEnd="url(#arrowhead-green)"
                                 />
-                            ))}
-                        </svg>
-                    )}
+                            );
+                        })}
+                    </svg>
                     <div className="flex gap-12 min-w-max">
                         {MOCK_CURRICULUM.map((cycle) => (
                             <div key={cycle.cycle} className="w-[130px] flex-shrink-0">
