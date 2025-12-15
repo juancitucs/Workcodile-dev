@@ -51,7 +51,7 @@ export const RightSidebar = memo(function RightSidebar() {
   return (
     <div className="space-y-4">
       {/* All Collapsible Sections */}
-      <Accordion type="multiple" defaultValue={[]} className="space-y-3">
+      <Accordion type="multiple" defaultValue={['top-users']} className="space-y-3">
         {/* Top Users - Collapsible */}
         <AccordionItem value="top-users" className="border-none">
           <AccordionTrigger className="hover:no-underline cursor-pointer glass-card gradient-border shadow-sm px-4 py-4 rounded-lg hover:bg-accent/50 transition-all">

@@ -1,7 +1,7 @@
 import { useState, useMemo, memo, useRef, useEffect, useCallback } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog';
 import { Badge } from './ui/badge';
-import { GraduationCap, ArrowRight, Lock } from 'lucide-react';
+import { GraduationCap, ArrowRight, Lock, Check } from 'lucide-react';
 
 // === TYPES ===
 interface Course {
@@ -336,6 +336,100 @@ export const CurriculumModal = memo(function CurriculumModal({ trigger }: Curric
     // State to trigger arrow recalculation
     const [arrowTrigger, setArrowTrigger] = useState(0);
 
+    /**
+     * ============================================================================
+     * CURSOS COMPLETADOS - INTEGRACIÓN BACKEND (para Tux)
+     * ============================================================================
+     * 
+     * ESTADO ACTUAL: Usa localStorage como fallback temporal.
+     * OBJETIVO: Conectar con API del backend para persistir en MongoDB.
+     * 
+     * --- ENDPOINTS QUE TUX DEBE CREAR EN EL BACKEND ---
+     * 
+     * 1. GET /api/users/:userId/completed-courses
+     *    - Retorna array de IDs de cursos completados: ["IS-122", "IS-124", ...]
+     *    - Requiere autenticación (token JWT)
+     * 
+     * 2. POST /api/users/:userId/completed-courses
+     *    - Body: { courseId: "IS-122" }
+     *    - Agrega un curso a la lista de completados
+     *    - Retorna: { success: true, completedCourses: [...] }
+     * 
+     * 3. DELETE /api/users/:userId/completed-courses/:courseId
+     *    - Elimina un curso de la lista de completados
+     *    - Retorna: { success: true, completedCourses: [...] }
+     * 
+     * --- MODELO MONGODB (Schema para User) ---
+     * 
+     * // En el modelo User agregar:
+     * completedCourses: {
+     *   type: [String],  // Array de IDs de cursos: ["IS-122", "IS-224", ...]
+     *   default: []
+     * }
+     * 
+     * --- CÓMO CONECTAR (reemplazar el código de abajo) ---
+     * 
+     * import { useAuth } from '../hooks/useAuth'; // o como tengan autenticación
+     * import { useQuery, useMutation } from '@tanstack/react-query'; // si usan react-query
+     * 
+     * // En el componente:
+     * const { user } = useAuth();
+     * 
+     * // Cargar cursos completados del backend:
+     * const { data: completedCourses = [] } = useQuery({
+     *   queryKey: ['completed-courses', user?.id],
+     *   queryFn: () => fetch(`/api/users/${user.id}/completed-courses`).then(r => r.json()),
+     *   enabled: !!user?.id
+     * });
+     * 
+     * // Mutación para toggle:
+     * const toggleMutation = useMutation({
+     *   mutationFn: (courseId) => {
+     *     const isCompleted = completedCourses.includes(courseId);
+     *     if (isCompleted) {
+     *       return fetch(`/api/users/${user.id}/completed-courses/${courseId}`, { method: 'DELETE' });
+     *     } else {
+     *       return fetch(`/api/users/${user.id}/completed-courses`, {
+     *         method: 'POST',
+     *         body: JSON.stringify({ courseId })
+     *       });
+     *     }
+     *   },
+     *   onSuccess: () => queryClient.invalidateQueries(['completed-courses'])
+     * });
+     * 
+     * ============================================================================
+     */
+
+    // TEMPORAL: Usa localStorage hasta que Tux conecte el backend
+    const [completedCourses, setCompletedCourses] = useState<Set<string>>(() => {
+        // TODO (Tux): Reemplazar con useQuery para cargar de /api/users/:userId/completed-courses
+        const saved = localStorage.getItem('workcodile-completed-courses');
+        return saved ? new Set(JSON.parse(saved)) : new Set();
+    });
+
+    // TEMPORAL: Guarda en localStorage hasta que Tux conecte el backend
+    useEffect(() => {
+        // TODO (Tux): Eliminar este useEffect cuando conectes el backend
+        localStorage.setItem('workcodile-completed-courses', JSON.stringify([...completedCourses]));
+    }, [completedCourses]);
+
+    // Toggle curso completado
+    const toggleCourseCompletion = useCallback((courseId: string, e: React.MouseEvent) => {
+        e.stopPropagation(); // Evita activar el click de la tarjeta
+
+        // TODO (Tux): Reemplazar con toggleMutation.mutate(courseId)
+        setCompletedCourses(prev => {
+            const newSet = new Set(prev);
+            if (newSet.has(courseId)) {
+                newSet.delete(courseId);
+            } else {
+                newSet.add(courseId);
+            }
+            return newSet;
+        });
+    }, []);
+
     // Calculate ALL arrows (always visible)
     const allArrows = useMemo(() => {
         if (!containerRef.current || arrowTrigger === 0) return [];
@@ -415,8 +509,21 @@ export const CurriculumModal = memo(function CurriculumModal({ trigger }: Curric
                     </DialogTitle>
                 </DialogHeader>
 
-                <div className="px-6 py-2 bg-muted/30 border-y flex gap-4 text-xs">
+                <div className="px-6 py-2 bg-muted/30 border-y flex flex-wrap gap-x-6 gap-y-1 text-xs">
+                    {/* Course type */}
                     <div className="flex items-center gap-1.5">
+                        <div className="w-3 h-3 rounded" style={{ backgroundColor: '#ecfdf5', border: '1px solid #34d399' }} />
+                        <span>Curso</span>
+                    </div>
+
+                    {/* Completed */}
+                    <div className="flex items-center gap-1.5" style={{ marginLeft: '5px' }}>
+                        <div className="w-3 h-3 rounded" style={{ backgroundColor: '#C5CBE9', border: '1px solid #5C6BC0' }} />
+                        <span>Completado</span>
+                    </div>
+
+                    {/* Connections legend */}
+                    <div className="border-l border-border pl-4 flex items-center gap-1.5">
                         <Lock className="h-3 w-3 text-amber-600" />
                         <span>Prerrequisito</span>
                     </div>
@@ -424,6 +531,7 @@ export const CurriculumModal = memo(function CurriculumModal({ trigger }: Curric
                         <ArrowRight className="h-3 w-3 text-emerald-600" />
                         <span>Desbloquea</span>
                     </div>
+
                 </div>
 
                 <div
@@ -544,14 +652,25 @@ export const CurriculumModal = memo(function CurriculumModal({ trigger }: Curric
                                                 }
                                             }
 
+                                            const isCompleted = completedCourses.has(course.id);
+
+                                            // Apply completed styling with cycle blue colors
+                                            const completedStyle = isCompleted ? {
+                                                ...cardStyle,
+                                                backgroundColor: '#C5CBE9', // Lighter cycle blue
+                                                borderColor: '#5C6BC0',     // Cycle 5 indigo
+                                                opacity: Math.min((cardStyle.opacity || 1) as number, 0.85),
+                                            } : cardStyle;
+
                                             return (
                                                 <div
                                                     key={course.id}
                                                     ref={(el) => { courseRefs.current[course.id] = el; }}
-                                                    className={className}
-                                                    style={cardStyle}
+                                                    className={`${className} relative`}
+                                                    style={completedStyle}
                                                     onClick={() => setHoveredCourseId(prev => prev === course.id ? null : course.id)}
                                                 >
+
                                                     <p
                                                         className="text-xs font-bold leading-tight mb-1.5 line-clamp-2"
                                                         style={{ color: colors.text }}
@@ -563,9 +682,18 @@ export const CurriculumModal = memo(function CurriculumModal({ trigger }: Curric
                                                         <span className="text-muted-foreground font-mono">
                                                             {course.code}
                                                         </span>
-                                                        <span className="font-semibold text-slate-600">
-                                                            {course.credits}c
-                                                        </span>
+                                                        {/* Check button at bottom right */}
+                                                        <button
+                                                            onClick={(e) => toggleCourseCompletion(course.id, e)}
+                                                            className="w-4 h-4 rounded flex items-center justify-center transition-all z-30"
+                                                            style={{
+                                                                backgroundColor: isCompleted ? '#5C6BC0' : '#e5e7eb',
+                                                                color: isCompleted ? 'white' : '#9ca3af'
+                                                            }}
+                                                            title={isCompleted ? 'Marcar como pendiente' : 'Marcar como completado'}
+                                                        >
+                                                            <Check className="h-2.5 w-2.5" />
+                                                        </button>
                                                     </div>
                                                 </div>
                                             );
