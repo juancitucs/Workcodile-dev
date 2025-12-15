@@ -46,7 +46,7 @@ export function ImageCropModal({ image, isOpen, onClose, onCropComplete }: Image
         const ctx = canvas.getContext('2d');
         if (!ctx) return;
 
-        const size = 400;
+        const size = 220;
         canvas.width = size;
         canvas.height = size;
 
@@ -131,23 +131,23 @@ export function ImageCropModal({ image, isOpen, onClose, onCropComplete }: Image
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
-            <DialogContent className="max-w-4xl">
+            <DialogContent className="!max-w-[320px] !w-[320px]" style={{ width: '320px', maxWidth: '320px' }}>
                 <DialogHeader>
                     <DialogTitle>Ajustar Foto de Perfil</DialogTitle>
-                    <p className="text-sm text-muted-foreground mt-2">
-                        Arrastra para mover, usa la rueda del mouse o el deslizador para zoom
+                    <p className="text-sm text-muted-foreground mt-1">
+                        Arrastra para mover, usa la rueda del mouse para zoom
                     </p>
                 </DialogHeader>
 
-                <div className="space-y-4">
+                <div className="space-y-3">
                     {/* Canvas Area */}
                     <div className="flex justify-center">
                         <canvas
                             ref={canvasRef}
-                            width={400}
-                            height={400}
+                            width={220}
+                            height={220}
                             className="rounded-full cursor-move border-2 border-border"
-                            style={{ width: '400px', height: '400px' }}
+                            style={{ width: '220px', height: '220px' }}
                             onMouseDown={handleMouseDown}
                             onMouseMove={handleMouseMove}
                             onMouseUp={handleMouseUp}
@@ -158,14 +158,14 @@ export function ImageCropModal({ image, isOpen, onClose, onCropComplete }: Image
 
                     {/* Zoom Control */}
                     <div className="space-y-2">
-                        <Label>Zoom</Label>
+                        <Label></Label>
                         <Slider
                             value={[zoom]}
                             onValueChange={(value) => setZoom(value[0])}
                             min={0.5}
                             max={3}
                             step={0.1}
-                            className="w-full"
+                            className="w-full [&>span:first-child]:bg-green-500 [&_[role=slider]]:bg-green-500 [&_[role=slider]]:border-green-600"
                         />
                     </div>
 

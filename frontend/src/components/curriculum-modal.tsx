@@ -426,7 +426,16 @@ export const CurriculumModal = memo(function CurriculumModal({ trigger }: Curric
                     </div>
                 </div>
 
-                <div className="flex-1 overflow-auto p-4 bg-slate-50 relative" ref={containerRef}>
+                <div
+                    className="flex-1 overflow-auto p-4 bg-slate-50 relative"
+                    ref={containerRef}
+                    onClick={(e) => {
+                        // Only deselect if clicking directly on the container, not on a card
+                        if (e.target === e.currentTarget) {
+                            setHoveredCourseId(null);
+                        }
+                    }}
+                >
                     {/* SVG Overlay for Curved Lines with Circle Ends */}
                     <svg className="absolute inset-0 pointer-events-none z-20" style={{ overflow: 'visible' }}>
                         <defs>
@@ -469,8 +478,8 @@ export const CurriculumModal = memo(function CurriculumModal({ trigger }: Curric
                             const connectedCourses = hoveredCourseId
                                 ? [hoveredCourseId, ...highlighted.prereqs, ...highlighted.unlocks]
                                 : [];
-
-                            const isHighlighted = connectedCourses.includes(arrow.from) || connectedCourses.includes(arrow.to);
+                            // Arrow is highlighted only if BOTH endpoints are in the connected set
+                            const isHighlighted = connectedCourses.includes(arrow.from) && connectedCourses.includes(arrow.to);
 
                             const lineClass = hoveredCourseId
                                 ? (isHighlighted ? 'highlighted-line' : 'dimmed-line')
@@ -541,8 +550,7 @@ export const CurriculumModal = memo(function CurriculumModal({ trigger }: Curric
                                                     ref={(el) => { courseRefs.current[course.id] = el; }}
                                                     className={className}
                                                     style={cardStyle}
-                                                    onMouseEnter={() => setHoveredCourseId(course.id)}
-                                                    onMouseLeave={() => setHoveredCourseId(null)}
+                                                    onClick={() => setHoveredCourseId(prev => prev === course.id ? null : course.id)}
                                                 >
                                                     <p
                                                         className="text-xs font-bold leading-tight mb-1.5 line-clamp-2"

@@ -2,6 +2,8 @@ import { RecentActivity } from './recent-activity';
 import { FeaturedComments } from './featured-comments';
 import { TopUsersCard } from './top-users';
 import { CurriculumModal } from './curriculum-modal';
+import { GuideModal } from './guide-modal';
+import { EventsModal } from './events-modal';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from './ui/accordion';
 import { Activity, MessageSquare, Trophy, BookOpen, Calendar, ChevronRight } from 'lucide-react';
 import { Card, CardContent } from './ui/card';
@@ -39,9 +41,9 @@ const MOCK_EVENTS = [
  * isModal: true means it opens a modal instead of navigating
  */
 const GUIDE_LINKS = [
-  { label: 'Malla Curricular', href: '/guia/malla', icon: '📚', isModal: true },
-  { label: 'Consejos para Nuevos', href: '/guia/consejos', icon: '💡', isModal: false },
-  { label: 'Preguntas Frecuentes', href: '/guia/faq', icon: '❓', isModal: false },
+  { label: 'Malla Curricular', href: '/guia/malla', icon: '📚', modalType: 'curriculum' as const },
+  { label: 'Consejos para Nuevos', href: '/guia/consejos', icon: '💡', modalType: 'consejos' as const },
+  { label: 'Preguntas Frecuentes', href: '/guia/faq', icon: '❓', modalType: 'faq' as const },
 ];
 
 export const RightSidebar = memo(function RightSidebar() {
@@ -49,7 +51,7 @@ export const RightSidebar = memo(function RightSidebar() {
   return (
     <div className="space-y-4">
       {/* All Collapsible Sections */}
-      <Accordion type="multiple" defaultValue={['top-users', 'guide', 'events']} className="space-y-3">
+      <Accordion type="multiple" defaultValue={[]} className="space-y-3">
         {/* Top Users - Collapsible */}
         <AccordionItem value="top-users" className="border-none">
           <AccordionTrigger className="hover:no-underline cursor-pointer glass-card gradient-border shadow-sm px-4 py-4 rounded-lg hover:bg-accent/50 transition-all">
@@ -77,38 +79,32 @@ export const RightSidebar = memo(function RightSidebar() {
           </AccordionTrigger>
           <AccordionContent className="pt-3">
             <Card className="glass-card gradient-border shadow-modern">
-              <CardContent className="pt-4 pb-3 px-4 space-y-2">
-                {GUIDE_LINKS.map((link) => (
-                  link.isModal ? (
-                    <CurriculumModal
-                      key={link.href}
-                      trigger={
-                        <div className="flex items-center justify-between p-2.5 rounded-lg hover:bg-accent/50 transition-colors cursor-pointer group">
-                          <div className="flex items-center space-x-2">
-                            <span>{link.icon}</span>
-                            <span className="text-sm font-medium">{link.label}</span>
-                          </div>
-                          <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
+              <CardContent className="pt-4 pb-4 px-4 space-y-3">
+                {GUIDE_LINKS.map((link) => {
+                  const buttonContent = (
+                    <div className="guide-button flex items-center justify-between p-3 rounded-xl cursor-pointer">
+                      <div className="flex items-center space-x-3">
+                        <div className="guide-button-icon p-2 rounded-lg bg-muted transition-all">
+                          <span className="text-lg">{link.icon}</span>
                         </div>
-                      }
-                    />
-                  ) : (
-                    <Link
-                      key={link.href}
-                      to={link.href}
-                      className="flex items-center justify-between p-2.5 rounded-lg hover:bg-accent/50 transition-colors cursor-pointer group"
-                    >
-                      <div className="flex items-center space-x-2">
-                        <span>{link.icon}</span>
-                        <span className="text-sm font-medium">{link.label}</span>
+                        <div className="flex flex-col">
+                          <span className="guide-button-text text-sm font-semibold transition-colors">
+                            {link.label}
+                          </span>
+                        </div>
                       </div>
-                      <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
-                    </Link>
-                  )
-                ))}
-                <Button variant="outline" className="w-full mt-2" asChild>
-                  <Link to="/guia">Ver guía completa</Link>
-                </Button>
+                      <ChevronRight className="guide-button-arrow h-4 w-4 text-muted-foreground transition-all" />
+                    </div>
+                  );
+
+                  if (link.modalType === 'curriculum') {
+                    return <CurriculumModal key={link.href} trigger={buttonContent} />;
+                  } else if (link.modalType === 'consejos') {
+                    return <GuideModal key={link.href} trigger={buttonContent} type="consejos" />;
+                  } else {
+                    return <GuideModal key={link.href} trigger={buttonContent} type="faq" />;
+                  }
+                })}
               </CardContent>
             </Card>
           </AccordionContent>
@@ -130,17 +126,21 @@ export const RightSidebar = memo(function RightSidebar() {
                 {MOCK_EVENTS.map((event) => (
                   <div
                     key={event.id}
-                    className="flex items-center justify-between p-2.5 rounded-lg hover:bg-accent/50 transition-colors cursor-pointer"
+                    className="sidebar-item flex items-center justify-between p-2.5 cursor-pointer"
                   >
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate">{event.title}</p>
+                      <p className="sidebar-item-title text-sm font-medium truncate">{event.title}</p>
                       <p className="text-xs text-muted-foreground">{event.date}</p>
                     </div>
                   </div>
                 ))}
-                <Button variant="outline" className="w-full mt-2" asChild>
-                  <Link to="/eventos">Ver todos los eventos</Link>
-                </Button>
+                <EventsModal
+                  trigger={
+                    <Button variant="outline" className="w-full mt-2">
+                      Ver todos los eventos
+                    </Button>
+                  }
+                />
               </CardContent>
             </Card>
           </AccordionContent>

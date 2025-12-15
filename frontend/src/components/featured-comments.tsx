@@ -33,14 +33,14 @@ export const FeaturedComments = memo(function FeaturedComments() {
               key={comment.id}
               className="block group"
             >
-              <div className="flex items-start space-x-3 p-3 rounded-lg hover:bg-muted/30 transition-colors duration-200">
+              <div className="sidebar-item flex items-start space-x-3 p-3 cursor-pointer">
                 <Avatar className="h-8 w-8">
                   <AvatarImage src={comment.author.avatar} />
                   <AvatarFallback>{comment.author.name.charAt(0)}</AvatarFallback>
                 </Avatar>
                 <div className="flex-1 min-w-0">
                   <div className="text-sm flex items-center justify-between">
-                    <span className="font-medium truncate text-primary">{comment.author.name}</span>
+                    <span className="sidebar-item-title font-medium truncate text-primary">{comment.author.name}</span>
                     <span className="text-xs text-muted-foreground">
                       {formatDistanceToNow(new Date(comment.createdAt), { addSuffix: true, locale: es })}
                     </span>
@@ -52,7 +52,7 @@ export const FeaturedComments = memo(function FeaturedComments() {
                     en: <span className="font-medium group-hover:underline">{comment.postTitle}</span>
                   </p>
                 </div>
-                <ChevronRight className="h-4 w-4 text-muted-foreground self-center group-hover:text-primary transition-colors" />
+                <ChevronRight className="sidebar-item-icon h-4 w-4 text-muted-foreground self-center transition-colors" />
               </div>
             </Link>
           ))}

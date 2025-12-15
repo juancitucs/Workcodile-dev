@@ -172,7 +172,7 @@ export const TopUsersCard = memo(function TopUsersCard() {
                         return (
                             <div
                                 key={user.id}
-                                className="flex items-center space-x-2.5 p-2 rounded-lg hover:bg-accent/50 transition-colors cursor-pointer"
+                                className="sidebar-item flex items-center space-x-2.5 p-2 cursor-pointer"
                             >
                                 {/* Rank Number */}
                                 <div className="flex-shrink-0 w-6 text-center">
@@ -189,7 +189,7 @@ export const TopUsersCard = memo(function TopUsersCard() {
 
                                 {/* User Info */}
                                 <div className="flex-1 min-w-0">
-                                    <p className="text-sm font-medium truncate">{user.name}</p>
+                                    <p className="sidebar-item-title text-sm font-medium truncate">{user.name}</p>
                                     <div className="flex items-center space-x-1.5 text-xs text-muted-foreground">
                                         <span>{user.totalPosts} posts</span>
                                         <span>•</span>

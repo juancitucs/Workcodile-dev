@@ -177,10 +177,10 @@ export const RecentActivity = memo(function RecentActivity({ onUserClick }: Rece
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: 10 }}
             transition={{ delay: 0.03 * index }}
-            className="group flex items-start space-x-3 p-3 rounded-lg hover:bg-muted/30 transition-all duration-200 cursor-pointer"
+            className="sidebar-item group flex items-start space-x-3 p-3 cursor-pointer"
           >
             <div className="flex-shrink-0">
-              <div className={`p-1.5 rounded-full bg-muted/50 ${getActivityColor(item.type)}`}>
+              <div className={`sidebar-item-icon p-1.5 rounded-full bg-muted/50 ${getActivityColor(item.type)}`}>
                 {getActivityIcon(item.type)}
               </div>
             </div>
@@ -190,7 +190,7 @@ export const RecentActivity = memo(function RecentActivity({ onUserClick }: Rece
                 {getActivityText(item)}
               </div>
 
-              <p className="text-sm font-medium text-foreground line-clamp-2 group-hover:text-primary transition-colors">
+              <p className="sidebar-item-title text-sm font-medium text-foreground line-clamp-2 transition-colors">
                 {item.post.title}
               </p>
 
