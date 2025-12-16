@@ -7,12 +7,14 @@ const uploadMiddleware = upload.single('file');
 
 async function uploadHandler(req, res) {
   console.log('Upload handler called');
+  console.log('STORAGE_PROVIDER in controller:', process.env.STORAGE_PROVIDER);
   console.log('req.file:', req.file);
   try {
     if (!req.file) return res.status(400).json({ message: 'No se envió ningún archivo.' });
 
     const objectName = `${Date.now()}-${req.file.originalname}`;
     const url = await uploadFile(objectName, req.file.buffer);
+    console.log('URL from uploadFile:', url);
 
     res.status(201).json({ objectName, url });
   } catch (error) {

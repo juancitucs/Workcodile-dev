@@ -86,6 +86,7 @@ const uploadFiles = async (files: File[]): Promise<(Omit<FileAttachment, 'id'> &
         size: file.size,
         type: file.type,
         object_key: result.objectName,
+        url: result.url,
       };
     } catch (error) {
       console.error(error);

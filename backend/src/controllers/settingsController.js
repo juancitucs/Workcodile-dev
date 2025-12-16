@@ -1,4 +1,5 @@
 const Settings = require('../models/Settings');
+const User = require('../models/User'); // Import the User model
 
 exports.getSettings = async (req, res) => {
   try {
@@ -36,6 +37,57 @@ exports.updateSettings = async (req, res) => {
     res.json(settings);
   } catch (err) {
     console.error(err.message);
+    res.status(500).send('Server Error');
+  }
+};
+
+exports.getCompletedCourses = async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id).select('completedCourses');
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    res.status(200).json(user.completedCourses);
+  } catch (error) {
+    console.error(error.message);
+    res.status(500).send('Server Error');
+  }
+};
+
+exports.addCompletedCourse = async (req, res) => {
+  const { courseId } = req.body;
+  try {
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    if (!user.completedCourses.includes(courseId)) {
+      user.completedCourses.push(courseId);
+      await user.save();
+    }
+    res.status(200).json(user.completedCourses);
+  } catch (error) {
+    console.error(error.message);
+    res.status(500).send('Server Error');
+  }
+};
+
+exports.removeCompletedCourse = async (req, res) => {
+  const { courseId } = req.params;
+  try {
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    user.completedCourses = user.completedCourses.filter(
+      (course) => course !== courseId
+    );
+    await user.save();
+    res.status(200).json(user.completedCourses);
+  } catch (error) {
+    console.error(error.message);
     res.status(500).send('Server Error');
   }
 };

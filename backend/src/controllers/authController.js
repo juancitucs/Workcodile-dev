@@ -99,6 +99,10 @@ const getMe = async (req, res) => {
     if (user.avatar_key) {
       user.avatar = getFileUrl(user.avatar_key); // Add full avatar URL
     }
+    // Manually map _id to id (as a string) to match frontend Type
+    user.id = user._id.toString();
+    delete user._id;
+
     res.json(user)
   } catch (err) {
     console.error(err.message)
@@ -164,6 +168,10 @@ const getUserById = async (req, res) => {
     if (user.avatar_key) {
       user.avatar = getFileUrl(user.avatar_key); // Add full avatar URL
     }
+    // Manually map _id to id (as a string) to match frontend Type
+    user.id = user._id.toString();
+    delete user._id;
+    
     res.json(user);
   } catch (err) {
     console.error(err.message);
