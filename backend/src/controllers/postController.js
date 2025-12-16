@@ -67,12 +67,21 @@ const populateCommentAuthors = async (comments) => {
 
     if (authorIdToLookup) {
       const author = await mongoose.connection.db.collection('users').findOne({ _id: authorIdToLookup });
-      comment.author = {
-        _id: author._id,
-        name: author.name,
-        avatar_key: author.avatar_key,
-        avatar: author.avatar_key ? getFileUrl(author.avatar_key) : undefined,
-      };
+      if (author) {
+        comment.author = {
+          _id: author._id,
+          name: author.name,
+          avatar_key: author.avatar_key,
+          avatar: author.avatar_key ? getFileUrl(author.avatar_key) : undefined,
+        };
+      } else {
+        comment.author = {
+          _id: authorIdToLookup,
+          name: 'Usuario Eliminado',
+          avatar_key: null,
+          avatar: undefined,
+        };
+      }
     } else {
       comment.author = {
         _id: null,

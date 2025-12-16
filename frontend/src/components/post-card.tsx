@@ -213,7 +213,7 @@ export function PostCard({ post, startWithCommentsOpen = false, highlightComment
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
-                  {user?.id === post.author.id ? (
+                  {user?.id === post.author.id && (
                     <>
                       <DropdownMenuItem
                         className="cursor-pointer"
@@ -229,42 +229,9 @@ export function PostCard({ post, startWithCommentsOpen = false, highlightComment
                         <Trash2 className="h-4 w-4 mr-2" />
                         Eliminar
                       </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem
-                        className="cursor-pointer"
-                        onClick={() => {
-                          console.log('Desactivar comentarios:', post.id);
-                        }}
-                      >
-                        <MessageSquareOff className="h-4 w-4 mr-2" />
-                        Desactivar comentarios
-                      </DropdownMenuItem>
-                    </>
-                  ) : (
-                    <>
-                      <DropdownMenuItem className="cursor-pointer" onClick={handleBookmark}>
-                        <Bookmark className="h-4 w-4 mr-2" />
-                        Guardar en favoritos
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        className="cursor-pointer"
-                        onClick={() => {
-                          console.log('Activar notificaciones:', post.id);
-                        }}
-                      >
-                        <Bell className="h-4 w-4 mr-2" />
-                        Activar notificaciones
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem
-                        className="cursor-pointer text-destructive focus:text-destructive"
-                        onClick={handleReport}
-                      >
-                        <Flag className="h-4 w-4 mr-2" />
-                        Reportar publicación
-                      </DropdownMenuItem>
                     </>
                   )}
+                  {/* User-facing options for non-authors are hidden as per request */}
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
