@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useRef } from 'react';
+import { useState, useMemo, useEffect, useRef, forwardRef } from 'react';
 import { motion } from 'motion/react';
 import { Card } from './ui/card';
 import { Button } from './ui/button';
@@ -23,17 +23,16 @@ import {
 } from 'lucide-react';
 import { Post } from './types';
 
-const ItemContainer = ({
-  children,
-  ...props
-}: {
-  children: React.ReactNode;
-  [key: string]: any;
-}) => {
+const CustomList = forwardRef(({ children, ...props }: { children: React.ReactNode }, ref: React.ForwardedRef<HTMLDivElement>) => {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { visibleItemsChanged, ...rest } = props;
-  return <div {...rest}>{children}</div>;
-};
+  return (
+    <div ref={ref} {...rest}>
+      {children}
+    </div>
+  );
+});
+CustomList.displayName = 'CustomList';
 
 type SortOption = 'recent' | 'popular' | 'commented';
 
@@ -212,7 +211,7 @@ export function MainFeed() {
           )}
           visibleItemsChanged={handleVisibleItemsChange}
           components={{
-            Item: ItemContainer,
+            List: CustomList,
             Footer: () => (
               <div className="text-center py-8">
                 {isFetchingPosts ? (

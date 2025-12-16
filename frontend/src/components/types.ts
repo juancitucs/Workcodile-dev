@@ -52,6 +52,7 @@ export interface Comment {
   userVote?: 'up' | 'down'
   replies: Comment[]
   parentId?: string
+  attachments: FileAttachment[]
 }
 
 export interface Notification {

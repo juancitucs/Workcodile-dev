@@ -5,7 +5,6 @@ export interface FileAttachment {
   type: string;
   url?: string;
   file?: File;
-  object_key?: string;
 }
 
 export const createFileAttachment = (file: File): FileAttachment => {
@@ -20,16 +19,9 @@ export const createFileAttachment = (file: File): FileAttachment => {
 };
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
-const S3_BASE_URL = import.meta.env.VITE_S3_BASE_URL || 'https://f004.backblazeb2.com/file/WorkcodileBucket';
 
 export const getAttachmentUrl = (attachment: Partial<FileAttachment>): string | undefined => {
-  if (attachment.url) {
-    return attachment.url; // Local preview URL
-  }
-  if (attachment.object_key) {
-    return `${S3_BASE_URL}/${attachment.object_key}`; // Direct S3 URL
-  }
-  return undefined;
+  return attachment.url; // Return the direct URL from the backend, or undefined.
 };
 
 export const formatFileSize = (bytes: number): string => {

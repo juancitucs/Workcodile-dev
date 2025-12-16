@@ -70,7 +70,7 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = React.memo(({ children
   };
 
   return (
-    <div className="prose dark:prose-invert max-w-none">
+    <div className="prose dark:prose-invert max-w-none break-words">
       <ReactMarkdown
         remarkPlugins={[remarkGfm, remarkMath, remarkAttachmentPlugin]}
         rehypePlugins={[[rehypeSanitize, schema], rehypeKatex, rehypeHighlight]}

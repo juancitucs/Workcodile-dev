@@ -13,11 +13,20 @@ services:
       - MONGO_URI=${MONGO_URI}
       - PORT=${PORT:-3001}
       - JWT_SECRET=${JWT_SECRET:-WorkcoWord}
-      - B2_ENDPOINT_URL=${B2_ENDPOINT_URL} # Added for Backblaze B2
-      - B2_APPLICATION_KEY_ID=${B2_APPLICATION_KEY_ID} # Added for Backblaze B2
-      - B2_APPLICATION_KEY=${B2_APPLICATION_KEY} # Added for Backblaze B2
-      - B2_BUCKET_NAME=${B2_BUCKET_NAME:-WorkcodileBucket} # Added for Backblaze B2
-      - B2_NATIVE_PUBLIC_URL_PREFIX=${B2_NATIVE_PUBLIC_URL_PREFIX} # Added for Backblaze B2 Friendly URL
+      - STORAGE_PROVIDER=${STORAGE_PROVIDER:-cpanel} # 'b2' or 'cpanel'
+      # Backblaze B2 Credentials
+      - B2_ENDPOINT_URL=${B2_ENDPOINT_URL}
+      - B2_APPLICATION_KEY_ID=${B2_APPLICATION_KEY_ID}
+      - B2_APPLICATION_KEY=${B2_APPLICATION_KEY}
+      - B2_BUCKET_NAME=${B2_BUCKET_NAME:-WorkcodileBucket}
+      - B2_NATIVE_PUBLIC_URL_PREFIX=${B2_NATIVE_PUBLIC_URL_PREFIX}
+      # cPanel Credentials
+      - CPANEL_SERVER=${CPANEL_SERVER:-https://codetechilo.com:2083}
+      - CPANEL_USER=${CPANEL_USER:-codetech}
+      - CPANEL_API_TOKEN=${CPANEL_API_TOKEN:-your_cpanel_api_token}
+      - CPANEL_PUBLIC_URL=${CPANEL_PUBLIC_URL:-https://codetechilo.com/workcodile/files}
+      - CPANEL_UPLOAD_DIR=${CPANEL_UPLOAD_DIR:-/public_html/storage}
+      # Email Credentials
       - GMAIL_USER=${GMAIL_USER} # Added for email functionality
       - GMAIL_APP_PASSWORD=${GMAIL_APP_PASSWORD} # Added for email functionality
     networks:

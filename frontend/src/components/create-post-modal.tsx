@@ -321,7 +321,12 @@ export function CreatePostModal({ isOpen, onClose }: CreatePostModalProps) {
 
                 {/* Title */}
                 <div className="space-y-2">
-                  <Label htmlFor="title">Título</Label>
+                  <div className="flex justify-between items-center">
+                    <Label htmlFor="title">Título</Label>
+                    <span className="text-xs text-muted-foreground">
+                      {formData.title.length}/150
+                    </span>
+                  </div>
                   <Input
                     id="title"
                     placeholder="Ej: Busco tutor para el curso, Ofrezco servicios de programación..."
@@ -353,6 +358,7 @@ export function CreatePostModal({ isOpen, onClose }: CreatePostModalProps) {
                       onChange={(e) => setFormData(prev => ({ ...prev, content: e.target.value }))}
                       placeholder="Describe detalladamente tu publicación. Usa Markdown y menciona archivos con '@'."
                       style={mentionsInputStyle}
+                      maxLength={5000}
                       className="min-h-[200px] resize-y"
                     >
                       <Mention
