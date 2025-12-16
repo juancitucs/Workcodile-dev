@@ -8,6 +8,7 @@ const notificationRoutes = require('./notifications');
 const settingsRoutes = require('./settings');
 const storageRoutes = require('./storage');
 const courseRoutes = require('./courses');
+const userRoutes = require('./users');
 
 router.use('/posts', postRoutes);
 router.use('/health', healthRoutes);
@@ -16,5 +17,6 @@ router.use('/notifications', notificationRoutes);
 router.use('/settings', settingsRoutes);
 router.use('/storage', storageRoutes);
 router.use('/courses', courseRoutes);
+router.use('/users', userRoutes);
 
 module.exports = router;

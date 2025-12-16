@@ -23,6 +23,25 @@ const userSchema = new mongoose.Schema(
       },
     ],
     bookmarked_posts: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Post' }],
+    // Sistema de XP y Niveles
+    xp: { type: Number, default: 0 },
+    level: { type: Number, default: 1 },
+
+    // Estadísticas del usuario
+    stats: {
+      totalPosts: { type: Number, default: 0 },
+      totalComments: { type: Number, default: 0 },
+      totalLikesReceived: { type: Number, default: 0 },
+      totalLikesGiven: { type: Number, default: 0 },
+    },
+
+    // Medallas desbloqueadas (opcional, para logros)
+    badges: [
+      {
+        badgeId: String,
+        unlockedAt: Date,
+      },
+    ],
     theme: {
       type: String,
       enum: ['light', 'dark'],

@@ -2,7 +2,7 @@ import { useState, useMemo, memo, useRef, useEffect, useCallback } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog';
 import { Badge } from './ui/badge';
 import { GraduationCap, ArrowRight, Lock, Check } from 'lucide-react';
-import { useAuth } from './auth-context';
+import { useApp } from './app-context';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
@@ -177,7 +177,7 @@ function getAllDescendants(courseId: string, unlocksMap: Record<string, string[]
 
 // === MAIN COMPONENT ===
 export const CurriculumModal = memo(function CurriculumModal({ trigger }: CurriculumModalProps) {
-    const { user, authStatus } = useAuth(); // Use auth context
+    const { user, authStatus } = useApp(); // Use auth context
     const [hoveredCourseId, setHoveredCourseId] = useState<string | null>(null);
     const containerRef = useRef<HTMLDivElement>(null);
     const courseRefs = useRef<Record<string, HTMLDivElement | null>>({});
