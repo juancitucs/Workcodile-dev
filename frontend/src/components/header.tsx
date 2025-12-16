@@ -19,12 +19,15 @@ import {
   Menu,
   Search,
   Plus,
+  Gift,
   Settings as SettingsIcon,
   LogOut,
   Moon,
   Sun,
   User,
-  Home
+  Home,
+  TreePine,
+  Star
 } from 'lucide-react';
 
 interface HeaderProps {
@@ -35,7 +38,7 @@ interface HeaderProps {
 }
 
 export const Header = memo(function Header({ onCreatePost, onSearch, onToggleMobileMenu, onResetFilters }: HeaderProps) {
-  const { user, logout, theme, toggleTheme } = useApp();
+  const { user, logout, theme, toggleTheme, christmasTheme, toggleChristmasTheme } = useApp();
   const [searchQuery, setSearchQuery] = useState('');
   const [showProfile, setShowProfile] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
@@ -79,13 +82,19 @@ export const Header = memo(function Header({ onCreatePost, onSearch, onToggleMob
               onClick={() => window.location.reload()}
               title="Inicio - Refrescar página"
             >
-              <div className="bg-gradient-to-br from-workcodile-green/10 to-workcodile-green-light/10 p-2 rounded-lg border border-workcodile-green/20 shadow-sm">
+              <div className={`bg-gradient-to-br from-workcodile-green/10 to-workcodile-green-light/10 p-2 rounded-lg border border-workcodile-green/20 shadow-sm ${christmasTheme ? 'santa-hat-logo' : ''}`}>
                 <WorkCodileLogo className="h-8 w-8" />
               </div>
-              <div>
+              <div className="flex items-center gap-1">
                 <h1 className="text-[62px] font-bold text-primary leading-tight">
                   Work<span className="text-foreground">Codile</span>
                 </h1>
+                {/* Estrella brillante navideña */}
+                {christmasTheme && (
+                  <span className="christmas-star" title="¡Feliz Navidad!">
+                    ⭐
+                  </span>
+                )}
               </div>
             </motion.div>
 
@@ -123,8 +132,12 @@ export const Header = memo(function Header({ onCreatePost, onSearch, onToggleMob
               className="hidden sm:flex items-center gap-2 btn-modern"
               size="sm"
             >
-              <Plus className="h-4 w-4" />
-              <span>Crear Post</span>
+              {christmasTheme ? (
+                <Gift className="h-4 w-4 gift-icon" />
+              ) : (
+                <Plus className="h-4 w-4" />
+              )}
+              <span>{christmasTheme ? 'Crear Regalo' : 'Crear Post'}</span>
             </Button>
 
             <Button
@@ -133,7 +146,11 @@ export const Header = memo(function Header({ onCreatePost, onSearch, onToggleMob
               size="icon"
               variant="outline"
             >
-              <Plus className="h-4 w-4" />
+              {christmasTheme ? (
+                <Gift className="h-4 w-4 gift-icon" />
+              ) : (
+                <Plus className="h-4 w-4" />
+              )}
             </Button>
 
             {/* TODO: Placeholder buttons for future features */}
@@ -172,6 +189,17 @@ export const Header = memo(function Header({ onCreatePost, onSearch, onToggleMob
               ) : (
                 <Moon className="h-5 w-5" />
               )}
+            </Button>
+
+            {/* Christmas Theme Toggle 🎄 */}
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={toggleChristmasTheme}
+              className={`sm:inline-flex transition-colors ${christmasTheme ? 'text-red-500 bg-red-500/10 hover:bg-red-500/20' : ''}`}
+              title={christmasTheme ? 'Desactivar tema navideño' : 'Activar tema navideño'}
+            >
+              <TreePine className="h-5 w-5" />
             </Button>
 
             {/* User Menu */}

@@ -169,11 +169,27 @@ export function CreatePostModal({ isOpen, onClose }: CreatePostModalProps) {
   const selectedCourse = courses.find(c => c.id === formData.course);
 
   // File handling functions
+  const MAX_ATTACHMENTS = 5;
+
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files) return;
 
-    Array.from(files).forEach(file => {
+    // Check current attachment count
+    if (attachments.length >= MAX_ATTACHMENTS) {
+      alert(`Máximo ${MAX_ATTACHMENTS} archivos permitidos.`);
+      return;
+    }
+
+    // Calculate how many more files we can add
+    const remainingSlots = MAX_ATTACHMENTS - attachments.length;
+    const filesToAdd = Array.from(files).slice(0, remainingSlots);
+
+    if (files.length > remainingSlots) {
+      alert(`Solo puedes agregar ${remainingSlots} archivo(s) más. Máximo ${MAX_ATTACHMENTS} en total.`);
+    }
+
+    filesToAdd.forEach(file => {
       if (!validateFileType(file)) {
         alert(`Tipo de archivo no permitido: ${file.name}`);
         return;
@@ -363,6 +379,8 @@ export function CreatePostModal({ isOpen, onClose }: CreatePostModalProps) {
                       onChange={(e) => {
                         // First, enforce the 700 character limit
                         let limitedValue = e.target.value.substring(0, 700);
+                        // Limit consecutive line breaks to max 2 (one blank line)
+                        limitedValue = limitedValue.replace(/\n{3,}/g, '\n\n');
                         // Then apply auto-space insertion
                         const processedValue = autoSpaceInsertion(limitedValue, 20);
                         setFormData(prev => ({ ...prev, content: processedValue }));
