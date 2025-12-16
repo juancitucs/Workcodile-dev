@@ -28,6 +28,7 @@ const userSchema = new mongoose.Schema(
       enum: ['light', 'dark'],
       default: 'light',
     },
+    completedCourses: [{ type: String, ref: 'Course' }],
   },
   { timestamps: true }
 )
