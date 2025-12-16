@@ -1,4 +1,5 @@
 const User = require('../models/User');
+const { getFileUrl } = require('../services/storage/storage.service');
 
 /**
  * Get Top Users by XP
@@ -14,12 +15,10 @@ exports.getTopUsers = async (req, res) => {
       .limit(limit)
       .select('name avatar_key level xp stats.totalPosts stats.totalLikesReceived');
 
-    // The full avatar URL is now constructed on the frontend or is already stored.
-    // Here, we just pass the necessary data.
     const formattedUsers = topUsers.map(user => ({
       id: user._id,
       name: user.name,
-      avatar: user.avatar_key, // The frontend will handle constructing the full URL if needed
+      avatar: user.avatar_key ? getFileUrl(user.avatar_key) : null,
       level: user.level,
       xp: user.xp,
       totalPosts: user.stats.totalPosts,

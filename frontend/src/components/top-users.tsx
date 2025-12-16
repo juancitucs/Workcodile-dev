@@ -81,10 +81,10 @@ const fetchTopUsers = async (): Promise<UserRank[]> => {
         throw new Error('Network response was not ok');
     }
     const users: UserRank[] = await response.json();
-    // Construct full avatar URL
+    // Backend sends full URL or null, provide fallback if null
     return users.map(user => ({
         ...user,
-        avatar: user.avatar ? `${API_BASE_URL}/workcodile-files/${user.avatar}` : `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.name}`
+        avatar: user.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(user.name)}`
     }));
 };
 

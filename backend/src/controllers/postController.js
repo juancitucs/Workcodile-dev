@@ -3,6 +3,7 @@ const { ObjectId } = require('mongodb')
 const Notification = require('../models/Notification');
 const Report = require('../models/Report');
 const { getFileUrl } = require('../services/storage/storage.service');
+const { addXP } = require('../services/xpService');
 
 const postAggregationPipeline = [
   // 0. Ensure author field exists, falling back to author_id for old documents
@@ -176,6 +177,9 @@ const votePost = async (req, res) => {
     const userId = new ObjectId(req.user.id)
     const user = await mongoose.connection.db.collection('users').findOne({ _id: userId });
 
+    // Award 1 XP for participation (voting)
+    await addXP(userId.toString(), 1, { totalLikesGiven: 1 });
+
     const post = await mongoose.connection.db
       .collection('posts')
       .findOne({ _id: new ObjectId(id) })
@@ -209,6 +213,10 @@ const votePost = async (req, res) => {
           $inc: { upvote_count: 1 },
           $push: { upvoted_by: userId },
         };
+        // Award XP to post author for receiving an upvote
+        if (post.author.toString() !== userId.toString()) {
+          await addXP(post.author.toString(), 5, { totalLikesReceived: 1 });
+        }
         if (alreadyDownvoted) {
           // Remove downvote if it exists
           await mongoose.connection.db.collection('posts').updateOne({ _id: new ObjectId(id) }, { $inc: { downvote_count: -1 }, $pull: { downvoted_by: userId } });
@@ -325,6 +333,9 @@ const addCommentToPost = async (req, res) => {
       await notification.save();
     }
 
+    // Add XP for creating a comment
+    await addXP(userId.toString(), 3, { totalComments: 1 });
+
     const updatedPostForAgg = await mongoose.connection.db
       .collection('posts')
       .aggregate([
@@ -383,6 +394,9 @@ const createPost = async (req, res) => {
       .collection('posts')
       .insertOne(newPost)
     
+    // Add XP for creating a post
+    await addXP(userId.toString(), 10, { totalPosts: 1 });
+
     const createdPost = await mongoose.connection.db
       .collection('posts')
             .aggregate([
@@ -416,6 +430,9 @@ const voteComment = async (req, res) => {
     const { postId, commentId } = req.params
     const { vote } = req.body
     const userId = new ObjectId(req.user.id)
+
+    // Award 1 XP for participation (voting on a comment)
+    await addXP(userId.toString(), 1, { totalLikesGiven: 1 });
 
     const post = await mongoose.connection.db
       .collection('posts')
@@ -452,6 +469,10 @@ const voteComment = async (req, res) => {
         // User is upvoting
         commentToVote.score++;
         commentToVote.upvoted_by.push(userId);
+        // Award XP to comment author for receiving an upvote
+        if (commentToVote.author.toString() !== userId.toString()) {
+            await addXP(commentToVote.author.toString(), 2, { totalLikesReceived: 1 });
+        }
         if (downvoted) {
           // User was downvoting, remove downvote
           commentToVote.score++; // Compensate for the previous downvote
