@@ -7,6 +7,14 @@ export default {
     "./App.tsx",
     "./components/**/*.{js,ts,jsx,tsx}",
   ],
+  safelist: [
+    // Course type colors - needed for dynamic class generation
+    'bg-blue-50', 'border-blue-400', 'text-blue-900',
+    'bg-emerald-50', 'border-emerald-400', 'text-emerald-900',
+    'bg-purple-50', 'border-purple-400', 'text-purple-900',
+    'bg-orange-50', 'border-orange-400', 'text-orange-900',
+    'bg-pink-50', 'border-pink-400', 'text-pink-900',
+  ],
   theme: {
     extend: {
       colors: {

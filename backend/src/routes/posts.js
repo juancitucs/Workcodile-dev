@@ -6,6 +6,8 @@ const {
   getPostByCommentId,
   getCommentReplies,
   createPost,
+  updatePost,
+  deletePost,
   votePost,
   addCommentToPost,
   voteComment,
@@ -21,6 +23,8 @@ router.get('/:id', optionalAuth, getPostById);
 router.get('/by-comment/:commentId', optionalAuth, getPostByCommentId);
 router.get('/:postId/comments/:commentId/replies', optionalAuth, getCommentReplies);
 router.post('/', auth, createPost);
+router.put('/:id', auth, updatePost);
+router.delete('/:id', auth, deletePost);
 router.post('/:id/vote', auth, votePost);
 router.post('/:id/bookmark', auth, bookmarkPost);
 router.post('/:id/report', auth, reportPost);

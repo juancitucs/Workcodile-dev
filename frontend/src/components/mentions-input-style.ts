@@ -10,17 +10,19 @@ export default {
     control: {
       fontFamily: 'sans-serif',
       minHeight: 200,
+      maxHeight: 300,
+      overflow: 'auto',
     },
     highlighter: {
       padding: 12,
-      overflowX: 'auto',
-      wordBreak: 'break-word',
+      wordBreak: 'break-all',
+      overflowWrap: 'anywhere',
     },
     input: {
       padding: 12,
       outline: 'none',
-      overflowX: 'auto',
-      wordBreak: 'break-word',
+      wordBreak: 'break-all',
+      overflowWrap: 'anywhere',
     },
   },
 
@@ -53,7 +55,8 @@ export default {
       color: 'hsl(var(--foreground))', // Ensure text color adapts
 
       '&focused': {
-        backgroundColor: 'hsl(var(--muted))',
+        backgroundColor: '#22c55e', // Green color for feedback
+        color: '#ffffff', // White text for contrast
       },
     },
   },

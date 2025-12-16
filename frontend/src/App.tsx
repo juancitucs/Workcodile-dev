@@ -4,6 +4,7 @@ import { MainFeed } from './components/main-feed'
 import { Toaster } from './components/ui/sonner'
 import { SinglePostView } from './components/single-post-view'
 import { MainLayout } from './components/MainLayout'
+import { Snowflakes } from './components/snowflakes'
 import { Loader2 } from 'lucide-react'
 import { Routes, Route } from 'react-router-dom'
 
@@ -36,6 +37,7 @@ export default function App() {
   return (
     <AppProvider>
       <AppContent />
+      <Snowflakes /> {/* 🎄 Copos de nieve navideños */}
       <Toaster />
     </AppProvider>
   )

@@ -1,7 +1,7 @@
 import { useMemo, memo, useDeferredValue } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'motion/react';
-import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
+import { Card, CardContent } from './ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { useApp } from './app-context';
 import { MessageSquare, ChevronRight } from 'lucide-react';
@@ -12,7 +12,7 @@ export const FeaturedComments = memo(function FeaturedComments() {
   const { posts } = useApp();
 
   const rawRecentComments = useMemo(() => {
-    const allComments = posts.flatMap(post => 
+    const allComments = posts.flatMap(post =>
       post.comments.map(comment => ({ ...comment, postId: post.id, postTitle: post.title }))
     );
     return allComments
@@ -26,27 +26,21 @@ export const FeaturedComments = memo(function FeaturedComments() {
   return (
     <motion.div>
       <Card>
-        <CardHeader>
-          <CardTitle className="text-base sm:text-lg flex items-center space-x-2">
-            <MessageSquare className="h-5 w-5 text-primary" />
-            <span>Comentarios Recientes</span>
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-4 pt-4">
           {recentComments.map((comment) => (
-            <Link 
-              to={`/post/${comment.postId}#comment-${comment.id}`} 
+            <Link
+              to={`/post/${comment.postId}#comment-${comment.id}`}
               key={comment.id}
               className="block group"
             >
-              <div className="flex items-start space-x-3 p-3 rounded-lg hover:bg-muted/30 transition-colors duration-200">
+              <div className="sidebar-item flex items-start space-x-3 p-3 cursor-pointer">
                 <Avatar className="h-8 w-8">
                   <AvatarImage src={comment.author.avatar} />
                   <AvatarFallback>{comment.author.name.charAt(0)}</AvatarFallback>
                 </Avatar>
                 <div className="flex-1 min-w-0">
                   <div className="text-sm flex items-center justify-between">
-                    <span className="font-medium truncate text-primary">{comment.author.name}</span>
+                    <span className="sidebar-item-title font-medium truncate text-primary">{comment.author.name}</span>
                     <span className="text-xs text-muted-foreground">
                       {formatDistanceToNow(new Date(comment.createdAt), { addSuffix: true, locale: es })}
                     </span>
@@ -58,7 +52,7 @@ export const FeaturedComments = memo(function FeaturedComments() {
                     en: <span className="font-medium group-hover:underline">{comment.postTitle}</span>
                   </p>
                 </div>
-                <ChevronRight className="h-4 w-4 text-muted-foreground self-center group-hover:text-primary transition-colors" />
+                <ChevronRight className="sidebar-item-icon h-4 w-4 text-muted-foreground self-center transition-colors" />
               </div>
             </Link>
           ))}

@@ -36,7 +36,7 @@ export function EnhancedNotifications() {
       } else {
         group = format(date, 'd MMMM, yyyy', { locale: es })
       }
-      
+
       if (!acc[group]) {
         acc[group] = []
       }
@@ -81,7 +81,7 @@ export function EnhancedNotifications() {
                       </p>
                     </div>
                     {!notification.read && (
-                       <div className="h-2 w-2 rounded-full bg-primary self-center ml-2 flex-shrink-0" />
+                      <div className="h-2 w-2 rounded-full bg-primary self-center ml-2 flex-shrink-0" />
                     )}
                   </div>
                 )
@@ -122,9 +122,9 @@ export function EnhancedNotifications() {
           )}
         </div>
         <Tabs defaultValue="all" className="flex-1 flex flex-col">
-          <TabsList className="flex justify-center mx-auto px-4 pt-4 pb-2"> {/* Centered and adjusted margins */}
-            <TabsTrigger value="all" className="flex items-center justify-center">Todas</TabsTrigger> {/* Removed w-full */}
-            <TabsTrigger value="unread" className="flex items-center justify-center"> {/* Removed w-full */}
+          <TabsList className="flex justify-center mx-auto px-4 pt-4 pb-2 gap-2 h-12"> {/* Added gap and increased height */}
+            <TabsTrigger value="all" className="flex items-center justify-center cursor-pointer px-6 py-2">Todas</TabsTrigger>
+            <TabsTrigger value="unread" className="flex items-center justify-center cursor-pointer px-6 py-2">
               No leídas {unreadCount > 0 && `(${unreadCount})`}
             </TabsTrigger>
           </TabsList>

@@ -8,6 +8,7 @@ import mentionsInputStyle from './mentions-input-style';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
 import { Card } from './ui/card';
 import MarkdownRenderer from './markdown-renderer';
+import { autoSpaceInsertion } from '../utils/text-utils';
 
 // ADAPTED FROM create-post-modal.tsx FOR COMMENTS
 
@@ -135,8 +136,8 @@ export function CreateCommentForm({ postId, parentId, onCommentSubmitted }: Crea
         alert(`Tipo de archivo no permitido: ${file.name}`);
         return;
       }
-      if (!validateFileSize(file, 10)) {
-        alert(`El archivo ${file.name} es demasiado grande. Máximo 10MB.`);
+      if (!validateFileSize(file, 30)) {
+        alert(`El archivo ${file.name} es demasiado grande. Máximo 30MB.`);
         return;
       }
       const newAttachment = createFileAttachment(file);
@@ -172,7 +173,10 @@ export function CreateCommentForm({ postId, parentId, onCommentSubmitted }: Crea
               inputRef={mentionsInputRef}
               id="content"
               value={content}
-              onChange={(e) => setContent(e.target.value)}
+              onChange={(e) => {
+                const processedValue = autoSpaceInsertion(e.target.value, 20);
+                setContent(processedValue);
+              }}
               placeholder="Escribe un comentario. Usa Markdown y menciona archivos con '@'."
               style={mentionsInputStyle}
               className="min-h-[120px] resize-y"
@@ -227,7 +231,7 @@ export function CreateCommentForm({ postId, parentId, onCommentSubmitted }: Crea
               ref={fileInputRef}
               type="file"
               multiple
-              accept=".pdf,.zip,.rar,.jpg,.jpeg,.png,.gif,.txt,.doc,.docx,.mp3,.wav,.ogg"
+              accept=".pdf,.zip,.rar,.jpg,.jpeg,.png,.gif,.txt,.doc,.docx,.mp3A,.wav,.ogg"
               onChange={handleFileSelect}
               className="hidden"
             />

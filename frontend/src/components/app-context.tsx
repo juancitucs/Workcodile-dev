@@ -30,6 +30,8 @@ interface AppContextType {
     hashtags: string[],
     attachments: FileAttachment[]
   ) => Promise<void>
+  deletePost: (postId: string) => Promise<void>
+  updatePost: (postId: string, data: { title: string; content: string }) => Promise<void>
   votePost: (postId: string, vote: 'up' | 'down') => Promise<void>
   addComment: (
     postId: string,
@@ -48,6 +50,8 @@ interface AppContextType {
   getCoursesByCycle: (cycle: number) => Course[]
   theme: 'light' | 'dark'
   toggleTheme: () => void
+  christmasTheme: boolean
+  toggleChristmasTheme: () => void
   toggleBookmark: (postId: string) => void
   reportPost: (postId: string) => void
   incrementViews: (postId: string) => void
@@ -235,21 +239,41 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [posts, setPosts] = useState<Post[]>([])
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [theme, setTheme] = useState<'light' | 'dark'>('light')
+  const [christmasTheme, setChristmasTheme] = useState<boolean>(() => {
+    const saved = localStorage.getItem('workcodile-christmas-theme');
+    return saved === 'true';
+  })
   const [mainFeedKey, setMainFeedKey] = useState(0)
   const [postPage, setPostPage] = useState(1);
   const [hasMorePosts, setHasMorePosts] = useState(true);
   const [isFetchingPosts, setIsFetchingPosts] = useState(false);
 
+  // Efecto para tema claro/oscuro
   useEffect(() => {
     const root = window.document.documentElement
     root.classList.remove('light', 'dark')
     root.classList.add(theme)
   }, [theme])
 
+  // Efecto para tema navideño
+  useEffect(() => {
+    const root = window.document.documentElement
+    if (christmasTheme) {
+      root.classList.add('christmas')
+    } else {
+      root.classList.remove('christmas')
+    }
+    localStorage.setItem('workcodile-christmas-theme', christmasTheme.toString())
+  }, [christmasTheme])
+
   const toggleTheme = () => {
     const newTheme = theme === 'light' ? 'dark' : 'light'
     setTheme(newTheme)
     updateUserTheme(newTheme)
+  }
+
+  const toggleChristmasTheme = () => {
+    setChristmasTheme(prev => !prev)
   }
 
   const updateUserTheme = async (newTheme: 'light' | 'dark') => {
@@ -343,7 +367,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       }
       const data = await response.json();
       const transformedPost = transformBackendPost(data);
-      
+
       // Optionally, update the global posts state
       setPosts(prevPosts => {
         const postExists = prevPosts.some(p => p.id === transformedPost.id);
@@ -736,56 +760,56 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   }
 
-// Helper function to find and optimistically update a comment in a nested structure
-const findAndUpdateCommentRecursive = (
-  comments: Comment[],
-  targetCommentId: string,
-  vote: 'up' | 'down',
-  userId: string // Not directly used for userVote anymore, but can be for score if needed
-): Comment[] => {
-  return comments.map(comment => {
-                if (comment.id === targetCommentId) {
-                  let newScore = comment.score;
-                  let newUserVote = comment.userVote;
-                  console.log(`Optimistically updating comment: ${targetCommentId}, new userVote: ${newUserVote}, new score: ${newScore}`);      if (vote === 'up') {
-        if (comment.userVote === 'up') { // Un-upvoting
-          newScore--;
-          newUserVote = null;
-        } else { // Upvoting
-          newScore++;
-          newUserVote = 'up';
-          if (comment.userVote === 'down') { // Was downvoting
-            newScore++; // Undo previous downvote from score
+  // Helper function to find and optimistically update a comment in a nested structure
+  const findAndUpdateCommentRecursive = (
+    comments: Comment[],
+    targetCommentId: string,
+    vote: 'up' | 'down',
+    userId: string // Not directly used for userVote anymore, but can be for score if needed
+  ): Comment[] => {
+    return comments.map(comment => {
+      if (comment.id === targetCommentId) {
+        let newScore = comment.score;
+        let newUserVote = comment.userVote;
+        console.log(`Optimistically updating comment: ${targetCommentId}, new userVote: ${newUserVote}, new score: ${newScore}`); if (vote === 'up') {
+          if (comment.userVote === 'up') { // Un-upvoting
+            newScore--;
+            newUserVote = null;
+          } else { // Upvoting
+            newScore++;
+            newUserVote = 'up';
+            if (comment.userVote === 'down') { // Was downvoting
+              newScore++; // Undo previous downvote from score
+            }
+          }
+        } else { // vote === 'down'
+          if (comment.userVote === 'down') { // Un-downvoting
+            newScore++;
+            newUserVote = null;
+          } else { // Downvoting
+            newScore--;
+            newUserVote = 'down';
+            if (comment.userVote === 'up') { // Was upvoting
+              newScore--; // Undo previous upvote from score
+            }
           }
         }
-      } else { // vote === 'down'
-        if (comment.userVote === 'down') { // Un-downvoting
-          newScore++;
-          newUserVote = null;
-        } else { // Downvoting
-          newScore--;
-          newUserVote = 'down';
-          if (comment.userVote === 'up') { // Was upvoting
-            newScore--; // Undo previous upvote from score
-          }
-        }
-      }
 
-      return {
-        ...comment,
-        score: newScore,
-        userVote: newUserVote,
-      };
-    } else if (comment.replies && comment.replies.length > 0) {
-      // Recursively check replies
-      return {
-        ...comment,
-        replies: findAndUpdateCommentRecursive(comment.replies, targetCommentId, vote, userId),
-      };
-    }
-    return comment; // No change to this comment or its replies
-  });
-};
+        return {
+          ...comment,
+          score: newScore,
+          userVote: newUserVote,
+        };
+      } else if (comment.replies && comment.replies.length > 0) {
+        // Recursively check replies
+        return {
+          ...comment,
+          replies: findAndUpdateCommentRecursive(comment.replies, targetCommentId, vote, userId),
+        };
+      }
+      return comment; // No change to this comment or its replies
+    });
+  };
 
   const voteComment = async (
     postId: string,
@@ -805,7 +829,7 @@ const findAndUpdateCommentRecursive = (
         if (postIndex === -1) return prevPosts;
 
         const postToUpdate = { ...prevPosts[postIndex] }; // Deep copy the post
-        
+
         // Optimistically update the comment within the post's comments tree
         const updatedComments = findAndUpdateCommentRecursive(
           postToUpdate.comments,
@@ -1006,6 +1030,56 @@ const findAndUpdateCommentRecursive = (
     }
   };
 
+  const deletePost = async (postId: string) => {
+    const token = localStorage.getItem('token')
+    if (!token) return
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/posts/${postId}`, {
+        method: 'DELETE',
+        headers: {
+          'x-auth-token': token,
+        },
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to delete post')
+      }
+
+      setPosts((prev) => prev.filter((post) => post.id !== postId))
+    } catch (error) {
+      console.error('Error deleting post:', error)
+    }
+  }
+
+  const updatePost = async (postId: string, data: { title: string; content: string }) => {
+    const token = localStorage.getItem('token')
+    if (!token) return
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/posts/${postId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-auth-token': token,
+        },
+        body: JSON.stringify(data),
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to update post')
+      }
+
+      const updatedPost = await response.json()
+      const transformedPost = transformBackendPost(updatedPost)
+      setPosts((prev) =>
+        prev.map((post) => (post.id === postId ? transformedPost : post))
+      )
+    } catch (error) {
+      console.error('Error updating post:', error)
+    }
+  }
+
   return (
     <AppContext.Provider
       value={{
@@ -1023,6 +1097,8 @@ const findAndUpdateCommentRecursive = (
         logout,
         updateProfile,
         createPost,
+        deletePost,
+        updatePost,
         votePost,
         addComment,
         voteComment,
@@ -1032,6 +1108,8 @@ const findAndUpdateCommentRecursive = (
         getCoursesByCycle,
         theme,
         toggleTheme,
+        christmasTheme,
+        toggleChristmasTheme,
         toggleBookmark,
         reportPost,
         incrementViews,

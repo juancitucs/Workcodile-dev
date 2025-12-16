@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef } from 'react';
 import { motion } from 'motion/react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from './ui/dialog';
 import { Button } from './ui/button';
@@ -8,13 +8,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Badge } from './ui/badge';
 import { useApp } from './app-context';
 import { FileAttachment, createFileAttachment, formatFileSize, getFileIcon, validateFileType, validateFileSize } from './file-utils';
-import { PlusCircle, X, GraduationCap, Upload, FileText, Hash, Trash2, Bold, Italic, Strikethrough, Image, Paperclip, Link, Eye } from 'lucide-react';
+import { PlusCircle, X, GraduationCap, Upload, FileText, Hash, Trash2, Eye, Paperclip } from 'lucide-react';
 import MarkdownRenderer from './markdown-renderer';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from './ui/accordion';
 import { MentionsInput, Mention } from 'react-mentions';
 import mentionsInputStyle from './mentions-input-style';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
 import { useMediaQuery } from '../hooks/useMediaQuery';
+import { autoSpaceInsertion } from '../utils/text-utils';
 
 
 interface CreatePostModalProps {
@@ -29,7 +29,7 @@ const sanitizeFilename = (filename: string): string => {
 
   // Replace all invalid characters with a single underscore
   let sanitized = filenameBody.replace(/[^a-zA-Z0-9_-]+/g, '_');
-  
+
   // Remove leading and trailing underscores
   sanitized = sanitized.replace(/^_+|_+$/g, '');
 
@@ -86,7 +86,7 @@ const uploadFiles = async (files: File[]): Promise<(Omit<FileAttachment, 'id'> &
 export function CreatePostModal({ isOpen, onClose }: CreatePostModalProps) {
   const { createPost, courses, getCoursesByCycle } = useApp();
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const mentionsInputRef = useRef<any>(null); // Ref for MentionsInput
+  const mentionsInputRef = useRef<any>(null);
   const [formData, setFormData] = useState({
     title: '',
     content: '',
@@ -121,7 +121,7 @@ export function CreatePostModal({ isOpen, onClose }: CreatePostModalProps) {
         object_key: uploadedFile.object_key,
       }));
 
-      await createPost(formData.title, formData.content, formData.course, hashtags, newAttachments.map(a => ({...a, id: crypto.randomUUID() })));
+      await createPost(formData.title, formData.content, formData.course, hashtags, newAttachments.map(a => ({ ...a, id: crypto.randomUUID() })));
 
       // Reset form
       setFormData({
@@ -169,18 +169,34 @@ export function CreatePostModal({ isOpen, onClose }: CreatePostModalProps) {
   const selectedCourse = courses.find(c => c.id === formData.course);
 
   // File handling functions
+  const MAX_ATTACHMENTS = 5;
+
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files) return;
 
-    Array.from(files).forEach(file => {
+    // Check current attachment count
+    if (attachments.length >= MAX_ATTACHMENTS) {
+      alert(`Máximo ${MAX_ATTACHMENTS} archivos permitidos.`);
+      return;
+    }
+
+    // Calculate how many more files we can add
+    const remainingSlots = MAX_ATTACHMENTS - attachments.length;
+    const filesToAdd = Array.from(files).slice(0, remainingSlots);
+
+    if (files.length > remainingSlots) {
+      alert(`Solo puedes agregar ${remainingSlots} archivo(s) más. Máximo ${MAX_ATTACHMENTS} en total.`);
+    }
+
+    filesToAdd.forEach(file => {
       if (!validateFileType(file)) {
         alert(`Tipo de archivo no permitido: ${file.name}`);
         return;
       }
 
-      if (!validateFileSize(file, 10)) {
-        alert(`El archivo ${file.name} es demasiado grande. Máximo 10MB.`);
+      if (!validateFileSize(file, 30)) {
+        alert(`El archivo ${file.name} es demasiado grande. Máximo 30MB.`);
         return;
       }
 
@@ -201,8 +217,10 @@ export function CreatePostModal({ isOpen, onClose }: CreatePostModalProps) {
   // Hashtag handling functions
   const addHashtag = (tag: string) => {
     const cleanTag = tag.trim().replace(/^#/, '').toLowerCase();
-    if (cleanTag && !hashtags.includes(cleanTag) && hashtags.length < 10) {
-      setHashtags(prev => [...prev, cleanTag]);
+    // Limit each hashtag to 15 characters
+    const truncatedTag = cleanTag.substring(0, 15);
+    if (truncatedTag && !hashtags.includes(truncatedTag) && hashtags.length < 10) {
+      setHashtags(prev => [...prev, truncatedTag]);
     }
   };
 
@@ -219,7 +237,7 @@ export function CreatePostModal({ isOpen, onClose }: CreatePostModalProps) {
       }
     }
   };
-  
+
   const attachmentMentions = attachments.map(att => ({
     id: att.name,
     display: att.name,
@@ -258,12 +276,12 @@ export function CreatePostModal({ isOpen, onClose }: CreatePostModalProps) {
                       value={formData.cycle}
                       onValueChange={handleCycleChange}
                     >
-                      <SelectTrigger>
+                      <SelectTrigger className="cursor-pointer">
                         <SelectValue placeholder="Selecciona un ciclo" />
                       </SelectTrigger>
                       <SelectContent>
                         {cycles.map((cycle) => (
-                          <SelectItem key={cycle} value={cycle.toString()}>
+                          <SelectItem key={cycle} value={cycle.toString()} className="cursor-pointer">
                             <div className="flex items-center space-x-2">
                               <GraduationCap className="h-4 w-4 text-primary" />
                               <span>Ciclo {cycle}</span>
@@ -282,12 +300,12 @@ export function CreatePostModal({ isOpen, onClose }: CreatePostModalProps) {
                       onValueChange={(value) => setFormData(prev => ({ ...prev, course: value }))}
                       disabled={!formData.cycle}
                     >
-                      <SelectTrigger>
+                      <SelectTrigger className="cursor-pointer">
                         <SelectValue placeholder={formData.cycle ? "Selecciona un curso" : "Primero selecciona un ciclo"} />
                       </SelectTrigger>
                       <SelectContent>
                         {availableCourses.map((course) => (
-                          <SelectItem key={course.id} value={course.id}>
+                          <SelectItem key={course.id} value={course.id} className="cursor-pointer">
                             <div className="flex flex-col items-start">
                               <span className="font-medium">{course.id}</span>
                               <span className="text-xs text-muted-foreground max-w-[300px] truncate">
@@ -331,7 +349,10 @@ export function CreatePostModal({ isOpen, onClose }: CreatePostModalProps) {
                     id="title"
                     placeholder="Ej: Busco tutor para el curso, Ofrezco servicios de programación..."
                     value={formData.title}
-                    onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
+                    onChange={(e) => {
+                      const processedValue = autoSpaceInsertion(e.target.value, 20);
+                      setFormData(prev => ({ ...prev, title: processedValue }));
+                    }}
                     required
                     maxLength={150}
                     className="text-base"
@@ -341,7 +362,7 @@ export function CreatePostModal({ isOpen, onClose }: CreatePostModalProps) {
                 {/* Content */}
                 <div className="space-y-2">
                   <Label htmlFor="content">Descripción</Label>
-                  
+
                   {isMobile && showPreview ? (
                     <div className="min-h-[200px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm" onClick={() => setShowPreview(false)}>
                       {formData.content ? (
@@ -355,10 +376,18 @@ export function CreatePostModal({ isOpen, onClose }: CreatePostModalProps) {
                       inputRef={mentionsInputRef}
                       id="content"
                       value={formData.content}
-                      onChange={(e) => setFormData(prev => ({ ...prev, content: e.target.value }))}
+                      onChange={(e) => {
+                        // First, enforce the 700 character limit
+                        let limitedValue = e.target.value.substring(0, 700);
+                        // Limit consecutive line breaks to max 2 (one blank line)
+                        limitedValue = limitedValue.replace(/\n{3,}/g, '\n\n');
+                        // Then apply auto-space insertion
+                        const processedValue = autoSpaceInsertion(limitedValue, 20);
+                        setFormData(prev => ({ ...prev, content: processedValue }));
+                      }}
                       placeholder="Describe detalladamente tu publicación. Usa Markdown y menciona archivos con '@'."
                       style={mentionsInputStyle}
-                      maxLength={5000}
+                      maxLength={700}
                       className="min-h-[200px] resize-y"
                     >
                       <Mention
@@ -377,14 +406,14 @@ export function CreatePostModal({ isOpen, onClose }: CreatePostModalProps) {
                         {showPreview ? 'Ocultar' : 'Mostrar'} Vista Previa
                       </Button>
                     )}
-                    <span>{formData.content.length}/5000</span>
+                    <span>{formData.content.length}/700</span>
                   </div>
                 </div>
 
                 <Accordion type="multiple" className="w-full">
                   {/* Hashtags */}
                   <AccordionItem value="hashtags">
-                    <AccordionTrigger>
+                    <AccordionTrigger className="cursor-pointer">
                       <Label className="flex items-center space-x-2 cursor-pointer">
                         <Hash className="h-4 w-4 text-primary" />
                         <span>Hashtags ({hashtags.length}/10)</span>
@@ -405,10 +434,10 @@ export function CreatePostModal({ isOpen, onClose }: CreatePostModalProps) {
                               <Badge
                                 key={tag}
                                 variant="secondary"
-                                className="text-xs flex items-center space-x-1 bg-primary/10 text-primary border-primary/20"
+                                className="text-xs flex items-center space-x-1 bg-primary/10 text-primary border-primary/20 max-w-[150px]"
                               >
-                                <Hash className="h-3 w-3" />
-                                <span>{tag}</span>
+                                <Hash className="h-3 w-3 flex-shrink-0" />
+                                <span className="truncate">{tag}</span>
                                 <Button
                                   type="button"
                                   variant="ghost"
@@ -428,10 +457,10 @@ export function CreatePostModal({ isOpen, onClose }: CreatePostModalProps) {
                       </div>
                     </AccordionContent>
                   </AccordionItem>
-                  
+
                   {/* File Attachments */}
                   <AccordionItem value="attachments">
-                    <AccordionTrigger>
+                    <AccordionTrigger className="cursor-pointer">
                       <Label className="flex items-center space-x-2 cursor-pointer">
                         <Upload className="h-4 w-4 text-primary" />
                         <span>Archivos adjuntos ({attachments.length})</span>
@@ -458,7 +487,7 @@ export function CreatePostModal({ isOpen, onClose }: CreatePostModalProps) {
                           onChange={handleFileSelect}
                           className="hidden"
                         />
-                        
+
                         {attachments.length > 0 && (
                           <div className="space-y-2">
                             {attachments.map((attachment) => (
@@ -491,9 +520,9 @@ export function CreatePostModal({ isOpen, onClose }: CreatePostModalProps) {
                             ))}
                           </div>
                         )}
-                        
+
                         <p className="text-xs text-muted-foreground">
-                          Máximo 10MB por archivo
+                          Máximo 30MB por archivo
                         </p>
                       </div>
                     </AccordionContent>
@@ -524,7 +553,7 @@ export function CreatePostModal({ isOpen, onClose }: CreatePostModalProps) {
                       transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
                       className="mr-2"
                     >
-                    <PlusCircle className="h-4 w-4" />
+                      <PlusCircle className="h-4 w-4" />
                     </motion.div>
                   ) : (
                     <PlusCircle className="h-4 w-4 mr-2" />
@@ -544,10 +573,10 @@ export function CreatePostModal({ isOpen, onClose }: CreatePostModalProps) {
                   <span>Vista previa en tiempo real</span>
                 </h4>
               </div>
-              
+
               <div className="flex-1 overflow-y-auto p-6">
                 <div className="space-y-4">
-                  { (formData.title || formData.content || hashtags.length > 0 || attachments.length > 0 || selectedCourse) ? (
+                  {(formData.title || formData.content || hashtags.length > 0 || attachments.length > 0 || selectedCourse) ? (
                     <motion.div
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
@@ -561,35 +590,35 @@ export function CreatePostModal({ isOpen, onClose }: CreatePostModalProps) {
                           <span>Ciclo {selectedCourse.cycle}</span>
                         </div>
                       )}
-                      
+
                       {formData.title ? (
-                        <h3 className="font-semibold text-lg mb-3 leading-tight">{formData.title}</h3>
+                        <h3 className="font-semibold text-lg mb-3 leading-tight break-words">{formData.title}</h3>
                       ) : (
                         <div className="h-6 bg-muted/50 rounded mb-3 animate-pulse"></div>
                       )}
-                      
-                      <div className="prose prose-sm dark:prose-invert max-w-none mb-4 text-sm">
+
+                      <div className="prose prose-sm dark:prose-invert max-w-none mb-4 text-sm break-words">
                         <MarkdownRenderer attachments={attachments}>{formData.content || ""}</MarkdownRenderer>
                       </div>
-                      
+
                       {hashtags.length > 0 && (
                         <div className="flex flex-wrap gap-1 mb-4">
                           {hashtags.map((tag) => (
                             <Badge
                               key={tag}
                               variant="secondary"
-                              className="text-xs bg-primary/10 text-primary border-primary/20"
+                              className="text-xs bg-primary/10 text-primary border-primary/20 max-w-[120px]"
                             >
-                              #{tag}
+                              <span className="truncate">#{tag}</span>
                             </Badge>
                           ))}
                         </div>
                       )}
-                      
+
                       {attachments.length > 0 && (
                         <Accordion type="single" collapsible className="w-full">
                           <AccordionItem value="attachments-preview">
-                            <AccordionTrigger>
+                            <AccordionTrigger className="cursor-pointer">
                               <div className="flex items-center space-x-2 text-sm text-muted-foreground">
                                 <Paperclip className="h-4 w-4" />
                                 <span>{attachments.length} archivo{attachments.length > 1 ? 's' : ''} adjunto{attachments.length > 1 ? 's' : ''}</span>
@@ -616,7 +645,7 @@ export function CreatePostModal({ isOpen, onClose }: CreatePostModalProps) {
                           </AccordionItem>
                         </Accordion>
                       )}
-                      
+
                       <div className="flex items-center justify-between pt-3 mt-3 border-t border-border">
                         <div className="flex items-center space-x-4 text-xs text-muted-foreground">
                           <div className="flex items-center space-x-1"><span>⬆️</span><span>0</span></div>

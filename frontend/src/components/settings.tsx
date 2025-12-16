@@ -10,13 +10,13 @@ import { Separator } from './ui/separator';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from './ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from './ui/alert-dialog';
 import { useApp } from './app-context';
-import { 
-  Settings as SettingsIcon, 
-  X, 
-  Bell, 
-  Shield, 
-  Palette, 
-  Globe, 
+import {
+  Settings as SettingsIcon,
+  X,
+  Bell,
+  Shield,
+  Palette,
+  Globe,
   Database,
   Moon,
   Sun,
@@ -32,7 +32,8 @@ import {
   CheckCircle,
   FileDown,
   Lock,
-  Key
+  Key,
+  Snowflake
 } from 'lucide-react';
 import { toast } from 'sonner@2.0.3';
 
@@ -44,7 +45,7 @@ interface SettingsProps {
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
 export function Settings({ isOpen, onClose }: SettingsProps) {
-  const { user, logout, theme, toggleTheme, posts } = useApp();
+  const { user, logout, theme, toggleTheme, christmasTheme, toggleChristmasTheme, posts } = useApp();
   const [settings, setSettings] = useState(null);
 
   useEffect(() => {
@@ -110,7 +111,7 @@ export function Settings({ isOpen, onClose }: SettingsProps) {
       if (settings.display.theme !== theme) {
         toggleTheme();
       }
-      
+
       toast.success('Configuración guardada correctamente');
     } catch (error) {
       toast.error('Error al guardar la configuración');
@@ -126,7 +127,7 @@ export function Settings({ isOpen, onClose }: SettingsProps) {
     try {
       // Simulate processing time
       await new Promise(resolve => setTimeout(resolve, 2000));
-      
+
       if (!posts) {
         toast.error('No hay publicaciones para exportar');
         setIsExporting(false);
@@ -159,7 +160,7 @@ export function Settings({ isOpen, onClose }: SettingsProps) {
           hashtags: post.hashtags,
           commentsCount: post.comments.length
         })),
-        comments: userPosts.flatMap(post => 
+        comments: userPosts.flatMap(post =>
           post.comments.filter(comment => comment.author.id === user?.id)
         ),
         settings: {
@@ -225,34 +226,34 @@ export function Settings({ isOpen, onClose }: SettingsProps) {
     setDeleteConfirmationText('');
   };
 
-    if (!settings) {
-      return (
-        <div className="flex items-center justify-center p-8">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        </div>
-      );
-    }
-  
+  if (!settings) {
     return (
-      <Dialog open={isOpen} onOpenChange={onClose}>
-        <DialogContent className="sm:max-w-7xl w-[95vw] max-h-[90vh] p-0 overflow-hidden">
-          <div className="flex h-full max-h-[85vh] flex-col">
-            {/* Header */}
-            <div className="p-6 border-b border-border flex-shrink-0">
-              <DialogHeader>
-                <DialogTitle className="flex items-center space-x-2">
-                  <SettingsIcon className="h-5 w-5 text-primary" />
-                  <span>Configuración</span>
-                </DialogTitle>
-                <DialogDescription>
-                  Personaliza tu experiencia en WorkCodile, notificaciones, privacidad y más
-                </DialogDescription>
-              </DialogHeader>
-            </div>
-  
-            {/* Content */}
-            <div className="flex-1 overflow-y-auto p-6">
-              <div className="space-y-8">
+      <div className="flex items-center justify-center p-8">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-7xl w-[95vw] max-h-[90vh] p-0 overflow-hidden">
+        <div className="flex h-full max-h-[85vh] flex-col">
+          {/* Header */}
+          <div className="p-6 border-b border-border flex-shrink-0">
+            <DialogHeader>
+              <DialogTitle className="flex items-center space-x-2">
+                <SettingsIcon className="h-5 w-5 text-primary" />
+                <span>Configuración</span>
+              </DialogTitle>
+              <DialogDescription>
+                Personaliza tu experiencia en WorkCodile, notificaciones, privacidad y más
+              </DialogDescription>
+            </DialogHeader>
+          </div>
+
+          {/* Content */}
+          <div className="flex-1 overflow-y-auto p-6">
+            <div className="space-y-8">
               {/* Account Info */}
               <div>
                 <h3 className="text-lg font-semibold mb-4 flex items-center space-x-2">
@@ -282,9 +283,9 @@ export function Settings({ isOpen, onClose }: SettingsProps) {
                   Para cambiar tu información de cuenta, ve a "Mi Perfil" o contacta al soporte técnico.
                 </p>
               </div>
-  
+
               <Separator />
-  
+
               {/* Notifications */}
               <div>
                 <h3 className="text-lg font-semibold mb-4 flex items-center space-x-2">
@@ -307,7 +308,7 @@ export function Settings({ isOpen, onClose }: SettingsProps) {
                     />
                   </div>
                   */}
-  
+
                   {/* Notificaciones push */}
                   {/*
                   <div className="flex items-center justify-between">
@@ -323,7 +324,7 @@ export function Settings({ isOpen, onClose }: SettingsProps) {
                     />
                   </div>
                   */}
-  
+
                   {/* Comentarios en mis posts */}
                   {/*
                   <div className="flex items-center justify-between">
@@ -342,7 +343,7 @@ export function Settings({ isOpen, onClose }: SettingsProps) {
                     />
                   </div>
                   */}
-  
+
                   {/* Menciones */}
                   {/*
                   <div className="flex items-center justify-between">
@@ -361,7 +362,7 @@ export function Settings({ isOpen, onClose }: SettingsProps) {
                     />
                   </div>
                   */}
-  
+
                   {/* Votos en mis publicaciones */}
                   {/*
                   <div className="flex items-center justify-between">
@@ -382,9 +383,9 @@ export function Settings({ isOpen, onClose }: SettingsProps) {
                   */}
                 </div>
               </div>
-  
+
               <Separator />
-  
+
               {/* Privacy */}
               {/*
               <div>
@@ -456,9 +457,9 @@ export function Settings({ isOpen, onClose }: SettingsProps) {
                 </div>
               </div>
               */}
-  
+
               <Separator />
-  
+
               {/* Display */}
               <div>
                 <h3 className="text-lg font-semibold mb-4 flex items-center space-x-2">
@@ -496,7 +497,24 @@ export function Settings({ isOpen, onClose }: SettingsProps) {
                       </SelectContent>
                     </Select>
                   </div>
-  
+
+                  {/* Tema Navideño */}
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label className="text-base flex items-center space-x-2">
+                        <Snowflake className="h-4 w-4 text-red-500" />
+                        <span>Tema Navideño 🎄</span>
+                      </Label>
+                      <p className="text-sm text-muted-foreground">
+                        Activa colores festivos rojos y verdes para la temporada
+                      </p>
+                    </div>
+                    <Switch
+                      checked={christmasTheme}
+                      onCheckedChange={toggleChristmasTheme}
+                    />
+                  </div>
+
                   {/* Posts per page */}
                   {/*
                   <div className="flex items-center justify-between">
@@ -524,9 +542,9 @@ export function Settings({ isOpen, onClose }: SettingsProps) {
                   */}
                 </div>
               </div>
-  
+
               <Separator />
-  
+
               {/* Sound */}
               {/*
               <div>
@@ -564,9 +582,9 @@ export function Settings({ isOpen, onClose }: SettingsProps) {
                 </div>
               </div>
               */}
-  
+
               <Separator />
-  
+
               {/* Data Management */}
               <div>
                 <h3 className="text-lg font-semibold mb-4 flex items-center space-x-2">
@@ -611,7 +629,7 @@ export function Settings({ isOpen, onClose }: SettingsProps) {
                     </div>
                   </div>
                   */}
-  
+
                   {/* Delete Account */}
                   {/*
                   <div className="p-4 bg-destructive/10 border border-destructive/20 rounded-lg">
@@ -721,30 +739,31 @@ export function Settings({ isOpen, onClose }: SettingsProps) {
               </div>
             </div> {/* Closing tag for <div className="space-y-8"> */}
           </div> {/* Closing tag for <div className="flex-1 overflow-y-auto p-6"> */}
-  
 
-            <div className="p-6 border-t border-border bg-background flex-shrink-0">
-              <div className="flex justify-end space-x-3">
-                <Button variant="outline" onClick={onClose}>
-                  Cancelar
-                </Button>
-                <Button onClick={handleSave} disabled={isLoading}>
-                  {isLoading ? (
-                    <motion.div
-                      animate={{ rotate: 360 }}
-                      transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                      className="mr-2"
-                    >
-                      <SettingsIcon className="h-4 w-4" />
-                    </motion.div>
-                  ) : (
-                    <SettingsIcon className="h-4 w-4 mr-2" />
-                  )}
-                  {isLoading ? 'Guardando...' : 'Guardar configuración'}
-                </Button>
-              </div>
+
+          <div className="p-6 border-t border-border bg-background flex-shrink-0">
+            <div className="flex justify-end space-x-3">
+              <Button variant="outline" onClick={onClose}>
+                Cancelar
+              </Button>
+              <Button onClick={handleSave} disabled={isLoading}>
+                {isLoading ? (
+                  <motion.div
+                    animate={{ rotate: 360 }}
+                    transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                    className="mr-2"
+                  >
+                    <SettingsIcon className="h-4 w-4" />
+                  </motion.div>
+                ) : (
+                  <SettingsIcon className="h-4 w-4 mr-2" />
+                )}
+                {isLoading ? 'Guardando...' : 'Guardar configuración'}
+              </Button>
             </div>
           </div>
-        </DialogContent>
-      </Dialog>
-    );}
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}

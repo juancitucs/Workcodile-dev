@@ -28,6 +28,10 @@ const schema = {
 const MarkdownRenderer: React.FC<MarkdownRendererProps> = React.memo(({ children, attachments = [] }) => {
   const markdownSource = children;
 
+  // Track how many images have been rendered to limit to 2
+  let renderedImagesCount = 0;
+  const MAX_IMAGES = 2;
+
   const customComponents: Components = {
     p: ({ node, children, ...props }: ParagraphProps) => {
       const containsAttachments = node.children.some(child => (child as any).type === 'attachment');
@@ -44,13 +48,32 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = React.memo(({ children
     attachment({ node, ...props }: any) {
       const fileName = props.fileName;
       const attachment = attachments.find(att => att.name === fileName);
-      const key = attachment?.object_key || fileName; // Use object_key as key for stability
+      const key = attachment?.object_key || fileName;
+
+      // Check if this is an image attachment
+      const isImage = attachment?.type.startsWith('image/');
+
+      // If it's an image and we've already shown 2, show a friendly message
+      if (isImage && renderedImagesCount >= MAX_IMAGES) {
+        return (
+          <span className="inline-flex items-center space-x-2 text-xs text-muted-foreground bg-muted/50 rounded px-2 py-1 border border-dashed mx-1">
+            <span>🖼️</span>
+            <span>Límite de {MAX_IMAGES} imágenes alcanzado</span>
+          </span>
+        );
+      }
+
+      // Increment counter if it's an image
+      if (isImage) {
+        renderedImagesCount++;
+      }
+
       return <span><AttachmentEmbed key={key} fileName={fileName} attachments={attachments} /></span>;
     },
     em: ({ node, ...props }) => {
       const startOffset = node?.position?.start?.offset;
       const endOffset = node?.position?.end?.offset;
-      
+
       if (startOffset === undefined || endOffset === undefined) {
         return <em {...props} />;
       }
