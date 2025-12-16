@@ -1,17 +1,26 @@
 import MarkdownRenderer from './markdown-renderer';
-import { Link, useNavigate } from 'react-router-dom'
-import { useState, useEffect, useRef } from 'react'
-import { motion } from 'motion/react'
-import { Card, CardContent, CardHeader } from './ui/card'
-import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar'
-import { Button } from './ui/button'
-import { Badge } from './ui/badge'
-import { Textarea } from './ui/textarea'
-import { useApp } from './app-context'
-import { PostActions } from './post-actions'
-import { WorkCodileLogo } from './crocodile-icon'
-import { UserProfile } from './user-profile'
+import { Link, useNavigate } from 'react-router-dom';
+import { useState, useEffect, useRef } from 'react';
+import { motion } from 'motion/react';
+import { Card, CardContent, CardHeader } from './ui/card';
+import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
+import { Button } from './ui/button';
+import { Badge } from './ui/badge';
+import { useApp } from './app-context';
+import { PostActions } from './post-actions';
+import { WorkCodileLogo } from './crocodile-icon';
+import { UserProfile } from './user-profile';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from './ui/accordion';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from './ui/alert-dialog';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -22,8 +31,6 @@ import {
 import {
   ChevronUp,
   ChevronDown,
-  MessageCircle,
-  Share2,
   MoreHorizontal,
   Clock,
   GraduationCap,
@@ -36,37 +43,34 @@ import {
   Flag,
   Bookmark,
   Bell,
-} from 'lucide-react'
-import { formatDistanceToNow } from 'date-fns'
-import { es } from 'date-fns/locale'
-import { CommentTree } from './comment-tree'
-import { formatFileSize, getFileIcon, getAttachmentUrl } from './file-utils'
-import { CreateCommentForm } from './CreateCommentForm'; // NEW IMPORT
+} from 'lucide-react';
+import { formatDistanceToNow } from 'date-fns';
+import { es } from 'date-fns/locale';
+import { CommentTree } from './comment-tree';
+import { formatFileSize, getFileIcon, getAttachmentUrl } from './file-utils';
+import { CreateCommentForm } from './CreateCommentForm';
+import { EditPostModal } from './edit-post-modal';
+import { toast } from 'sonner';
 
 interface PostCardProps {
-  post: Post
-  startWithCommentsOpen?: boolean
-  highlightCommentId?: string
-  isDashboardView?: boolean // Add this line
+  post: Post;
+  startWithCommentsOpen?: boolean;
+  highlightCommentId?: string;
+  isDashboardView?: boolean;
 }
 
 const getCycleColor = (cycle: number) => {
-  // Returns CSS class for cycle background color
-  // Blue gradient scale: lighter for lower cycles, darker for higher cycles
   return `cycle-${cycle}-bg`;
 };
 
-// Get text color class for cycle badge based on cycle number
 const getCycleTextColor = (cycle: number) => {
   return `cycle-${cycle}-text`;
 };
 
-
-
 export function PostCard({ post, startWithCommentsOpen = false, highlightCommentId, isDashboardView }: PostCardProps) {
-  const navigate = useNavigate()
-  const contentRef = useRef<HTMLDivElement>(null); // Ref for content measurement
-  const [isContentTruncated, setIsContentTruncated] = useState(false); // State to control "Ver más" visibility
+  const navigate = useNavigate();
+  const contentRef = useRef<HTMLDivElement>(null);
+  const [isContentTruncated, setIsContentTruncated] = useState(false);
   const {
     votePost,
     addComment,
@@ -75,16 +79,16 @@ export function PostCard({ post, startWithCommentsOpen = false, highlightComment
     getCourseById,
     toggleBookmark,
     reportPost,
-    incrementViews,
-  } = useApp()
-  const [showComments, setShowComments] = useState(startWithCommentsOpen)
-
-  const [showProfile, setShowProfile] = useState(false)
-  const [selectedUserId, setSelectedUserId] = useState<string | null>(null)
+    deletePost,
+  } = useApp();
+  const [showComments, setShowComments] = useState(startWithCommentsOpen);
+  const [showProfile, setShowProfile] = useState(false);
+  const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
 
   useEffect(() => {
     if (isDashboardView && contentRef.current) {
-      // Use requestAnimationFrame to ensure DOM is fully rendered after potential updates
       const checkTruncation = () => {
         if (contentRef.current) {
           const { scrollHeight, clientHeight } = contentRef.current;
@@ -92,59 +96,63 @@ export function PostCard({ post, startWithCommentsOpen = false, highlightComment
         }
       };
 
-      // Run immediately and also on window resize (debounced)
       const resizeObserver = new ResizeObserver(checkTruncation);
       resizeObserver.observe(contentRef.current);
 
-      // Also run on mount/update for initial check
       checkTruncation();
 
       return () => {
         resizeObserver.disconnect();
       };
     }
-  }, [post.content, isDashboardView]); // Re-run if content or dashboard view changes
+  }, [post.content, isDashboardView]);
 
   const handleShowProfile = (userId: string) => {
-    setSelectedUserId(userId)
-    setShowProfile(true)
-  }
+    setSelectedUserId(userId);
+    setShowProfile(true);
+  };
 
   const handleNavigate = () => {
-    navigate(`/post/${post.id}`)
-  }
+    navigate(`/post/${post.id}`);
+  };
 
   const handleVote = (vote: 'up' | 'down') => {
-    votePost(post.id, vote)
-  }
+    votePost(post.id, vote);
+  };
 
   const handleCommentVote = (commentId: string, vote: 'up' | 'down') => {
-    voteComment(post.id, commentId, vote)
-  }
-
-
+    voteComment(post.id, commentId, vote);
+  };
 
   const handleBookmark = () => {
-    toggleBookmark(post.id)
-  }
+    toggleBookmark(post.id);
+  };
 
   const handleReport = () => {
-    reportPost(post.id)
-  }
+    reportPost(post.id);
+  };
+
+  const handleDelete = async () => {
+    try {
+      await deletePost(post.id);
+      toast.success('Post deleted successfully');
+    } catch (error) {
+      toast.error('Failed to delete post');
+    }
+  };
 
   const handleDownload = (e: React.MouseEvent, attachment: FileAttachment) => {
-    e.stopPropagation()
+    e.stopPropagation();
     const downloadUrl = getAttachmentUrl(attachment);
     if (downloadUrl) {
-      window.open(downloadUrl, '_blank')
+      window.open(downloadUrl, '_blank');
     } else {
       console.error('Could not get download URL for attachment:', attachment);
-      // Optionally, show a user-friendly error message
     }
-  }
+  };
 
-  const netScore = post.upvotes - post.downvotes
-  const course = getCourseById(post.course)
+  const netScore = post.upvotes - post.downvotes;
+  const course = getCourseById(post.course);
 
   return (
     <>
@@ -159,15 +167,12 @@ export function PostCard({ post, startWithCommentsOpen = false, highlightComment
               <div
                 className="flex items-center space-x-3"
                 onClick={(e) => {
-                  e.stopPropagation()
-                  handleShowProfile(post.author.id)
+                  e.stopPropagation();
+                  handleShowProfile(post.author.id);
                 }}
               >
                 <Avatar className="h-10 w-10">
-                  <AvatarImage
-                    src={post.author.avatar}
-                    alt={post.author.name}
-                  />
+                  <AvatarImage src={post.author.avatar} alt={post.author.name} />
                   <AvatarFallback className="bg-primary/10">
                     {post.author.avatar ? (
                       post.author.name.charAt(0).toUpperCase()
@@ -189,7 +194,9 @@ export function PostCard({ post, startWithCommentsOpen = false, highlightComment
                     {course && (
                       <Badge
                         variant="secondary"
-                        className={`${getCycleColor(course.cycle)} ${getCycleTextColor(course.cycle)} text-xs flex items-center space-x-1`}
+                        className={`${getCycleColor(course.cycle)} ${getCycleTextColor(
+                          course.cycle
+                        )} text-xs flex items-center space-x-1`}
                         onClick={(e) => e.stopPropagation()}
                       >
                         <GraduationCap className="h-3 w-3" />
@@ -199,7 +206,6 @@ export function PostCard({ post, startWithCommentsOpen = false, highlightComment
                   </div>
                 </div>
               </div>
-              {/* Post Options Menu - Different options for owner vs visitor */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
                   <Button variant="ghost" size="sm">
@@ -207,26 +213,18 @@ export function PostCard({ post, startWithCommentsOpen = false, highlightComment
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
-                  {/* Owner Options - When user is the post author */}
                   {user?.id === post.author.id ? (
                     <>
                       <DropdownMenuItem
                         className="cursor-pointer"
-                        onClick={() => {
-                          // TODO (Tux): Implement edit post modal
-                          console.log('Editar post:', post.id);
-                        }}
+                        onClick={() => setShowEditModal(true)}
                       >
                         <Pencil className="h-4 w-4 mr-2" />
                         Editar publicación
                       </DropdownMenuItem>
                       <DropdownMenuItem
                         className="cursor-pointer text-destructive focus:text-destructive"
-                        onClick={() => {
-                          // TODO (Tux): Implement delete post API call
-                          // DELETE /api/posts/:postId
-                          console.log('Eliminar post:', post.id);
-                        }}
+                        onClick={() => setShowDeleteDialog(true)}
                       >
                         <Trash2 className="h-4 w-4 mr-2" />
                         Eliminar
@@ -235,8 +233,6 @@ export function PostCard({ post, startWithCommentsOpen = false, highlightComment
                       <DropdownMenuItem
                         className="cursor-pointer"
                         onClick={() => {
-                          // TODO (Tux): Implement toggle comments API
-                          // PATCH /api/posts/:postId { commentsEnabled: false }
                           console.log('Desactivar comentarios:', post.id);
                         }}
                       >
@@ -245,22 +241,14 @@ export function PostCard({ post, startWithCommentsOpen = false, highlightComment
                       </DropdownMenuItem>
                     </>
                   ) : (
-                    /* Visitor Options - When user is NOT the post author */
                     <>
-                      <DropdownMenuItem
-                        className="cursor-pointer"
-                        onClick={() => {
-                          handleBookmark();
-                        }}
-                      >
+                      <DropdownMenuItem className="cursor-pointer" onClick={handleBookmark}>
                         <Bookmark className="h-4 w-4 mr-2" />
                         Guardar en favoritos
                       </DropdownMenuItem>
                       <DropdownMenuItem
                         className="cursor-pointer"
                         onClick={() => {
-                          // TODO (Tux): Implement post notifications API
-                          // POST /api/posts/:postId/subscribe
                           console.log('Activar notificaciones:', post.id);
                         }}
                       >
@@ -270,9 +258,7 @@ export function PostCard({ post, startWithCommentsOpen = false, highlightComment
                       <DropdownMenuSeparator />
                       <DropdownMenuItem
                         className="cursor-pointer text-destructive focus:text-destructive"
-                        onClick={() => {
-                          handleReport();
-                        }}
+                        onClick={handleReport}
                       >
                         <Flag className="h-4 w-4 mr-2" />
                         Reportar publicación
@@ -286,14 +272,13 @@ export function PostCard({ post, startWithCommentsOpen = false, highlightComment
 
           <CardContent className="pt-0">
             <div className="flex flex-row space-x-4">
-              {/* Vote buttons */}
-              <div className="flex flex-col items-center space-y-1"> {/* Changed items-center to items-start */}
+              <div className="flex flex-col items-center space-y-1">
                 <Button
                   variant={post.userVote === 'up' ? 'default' : 'ghost'}
                   size="sm"
                   onClick={(e) => {
-                    e.stopPropagation()
-                    handleVote('up')
+                    e.stopPropagation();
+                    handleVote('up');
                   }}
                   className="h-8 w-8 p-0"
                 >
@@ -301,12 +286,13 @@ export function PostCard({ post, startWithCommentsOpen = false, highlightComment
                 </Button>
 
                 <span
-                  className={`text-sm w-8 font-medium text-center ${netScore > 0
-                    ? 'text-primary'
-                    : netScore < 0
+                  className={`text-sm w-8 font-medium text-center ${
+                    netScore > 0
+                      ? 'text-primary'
+                      : netScore < 0
                       ? 'text-destructive'
                       : 'text-muted-foreground'
-                    }`}
+                  }`}
                 >
                   {netScore}
                 </span>
@@ -315,8 +301,8 @@ export function PostCard({ post, startWithCommentsOpen = false, highlightComment
                   variant={post.userVote === 'down' ? 'destructive' : 'ghost'}
                   size="sm"
                   onClick={(e) => {
-                    e.stopPropagation()
-                    handleVote('down')
+                    e.stopPropagation();
+                    handleVote('down');
                   }}
                   className="h-8 w-8 p-0"
                 >
@@ -325,7 +311,6 @@ export function PostCard({ post, startWithCommentsOpen = false, highlightComment
                 </Button>
               </div>
 
-              {/* Post content */}
               <div className="flex-1 min-w-[200px] sm:min-w-0">
                 {course && (
                   <div className="flex items-center space-x-2 text-xs text-primary mb-2">
@@ -335,15 +320,17 @@ export function PostCard({ post, startWithCommentsOpen = false, highlightComment
                     <span className="text-muted-foreground">{course.name}</span>
                   </div>
                 )}
-                <Link
-                  to={`/post/${post.id}`}
-                  onClick={(e) => e.stopPropagation()}
-                >
+                <Link to={`/post/${post.id}`} onClick={(e) => e.stopPropagation()}>
                   <h3 className="font-semibold text-lg mb-2 leading-tight hover:underline">
                     {post.title}
                   </h3>
                 </Link>
-                <div ref={contentRef} className={`prose prose-sm dark:prose-invert max-w-none mb-3 ${isDashboardView ? 'max-h-64 overflow-hidden relative' : ''}`}>
+                <div
+                  ref={contentRef}
+                  className={`prose prose-sm dark:prose-invert max-w-none mb-3 ${
+                    isDashboardView ? 'max-h-64 overflow-hidden relative' : ''
+                  }`}
+                >
                   <MarkdownRenderer attachments={post.attachments}>{post.content}</MarkdownRenderer>
                   {isDashboardView && (
                     <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-card to-transparent pointer-events-none"></div>
@@ -358,7 +345,6 @@ export function PostCard({ post, startWithCommentsOpen = false, highlightComment
                   </Link>
                 )}
 
-                {/* Hashtags */}
                 {post.hashtags.length > 0 && (
                   <div className="flex flex-wrap gap-1 mb-3">
                     {post.hashtags.map((tag) => (
@@ -375,7 +361,6 @@ export function PostCard({ post, startWithCommentsOpen = false, highlightComment
                   </div>
                 )}
 
-                {/* File Attachments */}
                 {post.attachments.length > 0 && (
                   <Accordion type="single" collapsible className="w-full mb-4">
                     <AccordionItem value="attachments">
@@ -394,9 +379,7 @@ export function PostCard({ post, startWithCommentsOpen = false, highlightComment
                           {post.attachments.map((attachment, index) => (
                             <div
                               key={`${index}-${attachment.name}`}
-                              onClick={(e) =>
-                                handleDownload(e, attachment)
-                              }
+                              onClick={(e) => handleDownload(e, attachment)}
                             >
                               <motion.div
                                 whileHover={{ scale: 1.02, y: -1 }}
@@ -433,7 +416,6 @@ export function PostCard({ post, startWithCommentsOpen = false, highlightComment
                   </Accordion>
                 )}
 
-                {/* Action buttons */}
                 <div className="mb-4" onClick={(e) => e.stopPropagation()}>
                   <PostActions
                     postId={post.id}
@@ -447,7 +429,6 @@ export function PostCard({ post, startWithCommentsOpen = false, highlightComment
                   />
                 </div>
 
-                {/* Comments section */}
                 {showComments && (
                   <motion.div
                     initial={{ opacity: 0, height: 0 }}
@@ -455,21 +436,15 @@ export function PostCard({ post, startWithCommentsOpen = false, highlightComment
                     exit={{ opacity: 0, height: 0 }}
                     className="mt-4 space-y-4"
                   >
-                    {/* Add comment form */}
                     {user && (
                       <CreateCommentForm
                         postId={post.id}
                         onCommentSubmitted={() => {
-                          // This callback can be used to refresh comments or update the UI
-                          // after a top-level comment has been successfully submitted.
-                          // For now, it just logs.
                           console.log('Top-level comment submitted');
-                          // A more advanced implementation might reset the main feed or fetch comments
                         }}
                       />
                     )}
 
-                    {/* Comments list */}
                     <CommentTree
                       comments={post.comments}
                       postId={post.id}
@@ -490,6 +465,28 @@ export function PostCard({ post, startWithCommentsOpen = false, highlightComment
           userId={selectedUserId!}
         />
       )}
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure you want to delete this post?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete your post and remove your
+              data from our servers.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete}>Continue</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+      {showEditModal && (
+        <EditPostModal
+          post={post}
+          isOpen={showEditModal}
+          onClose={() => setShowEditModal(false)}
+        />
+      )}
     </>
-  )
+  );
 }

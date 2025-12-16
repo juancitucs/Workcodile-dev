@@ -30,6 +30,8 @@ interface AppContextType {
     hashtags: string[],
     attachments: FileAttachment[]
   ) => Promise<void>
+  deletePost: (postId: string) => Promise<void>
+  updatePost: (postId: string, data: { title: string; content: string }) => Promise<void>
   votePost: (postId: string, vote: 'up' | 'down') => Promise<void>
   addComment: (
     postId: string,
@@ -1028,6 +1030,56 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const deletePost = async (postId: string) => {
+    const token = localStorage.getItem('token')
+    if (!token) return
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/posts/${postId}`, {
+        method: 'DELETE',
+        headers: {
+          'x-auth-token': token,
+        },
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to delete post')
+      }
+
+      setPosts((prev) => prev.filter((post) => post.id !== postId))
+    } catch (error) {
+      console.error('Error deleting post:', error)
+    }
+  }
+
+  const updatePost = async (postId: string, data: { title: string; content: string }) => {
+    const token = localStorage.getItem('token')
+    if (!token) return
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/posts/${postId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-auth-token': token,
+        },
+        body: JSON.stringify(data),
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to update post')
+      }
+
+      const updatedPost = await response.json()
+      const transformedPost = transformBackendPost(updatedPost)
+      setPosts((prev) =>
+        prev.map((post) => (post.id === postId ? transformedPost : post))
+      )
+    } catch (error) {
+      console.error('Error updating post:', error)
+    }
+  }
+
   return (
     <AppContext.Provider
       value={{
@@ -1045,6 +1097,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
         logout,
         updateProfile,
         createPost,
+        deletePost,
+        updatePost,
         votePost,
         addComment,
         voteComment,

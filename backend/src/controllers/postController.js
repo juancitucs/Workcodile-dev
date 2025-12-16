@@ -736,6 +736,82 @@ const getCommentReplies = async (req, res) => {
   }
 };
 
+const updatePost = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { title, content } = req.body;
+    const userId = new ObjectId(req.user.id);
+
+    const post = await mongoose.connection.db.collection('posts').findOne({ _id: new ObjectId(id) });
+
+    if (!post) {
+      return res.status(404).json({ message: 'Post not found' });
+    }
+
+    if (post.author.toString() !== userId.toString()) {
+      return res.status(403).json({ message: 'User not authorized to update this post' });
+    }
+
+    const updatedPost = await mongoose.connection.db.collection('posts').findOneAndUpdate(
+      { _id: new ObjectId(id) },
+      { $set: { title, content, updatedAt: new Date() } },
+      { returnDocument: 'after' }
+    );
+
+    const postAgg = await mongoose.connection.db.collection('posts').aggregate([
+      { $match: { _id: new ObjectId(id) } },
+      ...postAggregationPipeline
+    ]).toArray();
+
+    if (!postAgg.length) {
+      return res.status(404).json({ message: 'Post not found' });
+    }
+
+    const finalPost = postAgg[0];
+    if (finalPost.author && finalPost.author.avatar_key) {
+      finalPost.author.avatar = getFileUrl(finalPost.author.avatar_key);
+    }
+    if (finalPost.attachments) {
+      finalPost.attachments.forEach(att => {
+        if (att.object_key) att.url = getFileUrl(att.object_key);
+      });
+    }
+    if (finalPost.comments && finalPost.comments.length > 0) {
+      await populateCommentAuthors(finalPost.comments);
+    }
+    addUserVoteStatus(finalPost, req.user ? req.user.id : null);
+
+    res.status(200).json(finalPost);
+  } catch (error) {
+    console.error('Error updating post:', error);
+    res.status(500).json({ message: 'Error updating post' });
+  }
+};
+
+const deletePost = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = new ObjectId(req.user.id);
+
+    const post = await mongoose.connection.db.collection('posts').findOne({ _id: new ObjectId(id) });
+
+    if (!post) {
+      return res.status(404).json({ message: 'Post not found' });
+    }
+
+    if (post.author.toString() !== userId.toString()) {
+      return res.status(403).json({ message: 'User not authorized to delete this post' });
+    }
+
+    await mongoose.connection.db.collection('posts').findOneAndDelete({ _id: new ObjectId(id) });
+
+    res.status(200).json({ message: 'Post deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting post:', error);
+    res.status(500).json({ message: 'Error deleting post' });
+  }
+};
+
 
 module.exports = {
   getAllPosts,
@@ -749,5 +825,6 @@ module.exports = {
   bookmarkPost,
   reportPost,
   incrementView,
-
+  updatePost,
+  deletePost,
 }
