@@ -10,6 +10,8 @@ export default {
     control: {
       fontFamily: 'sans-serif',
       minHeight: 200,
+      maxHeight: 300,
+      overflow: 'auto',
     },
     highlighter: {
       padding: 12,
@@ -53,7 +55,7 @@ export default {
       color: 'hsl(var(--foreground))', // Ensure text color adapts
 
       '&focused': {
-        backgroundColor: 'hsl(142, 76%, 36%)', // Green color for feedback
+        backgroundColor: '#22c55e', // Green color for feedback
         color: '#ffffff', // White text for contrast
       },
     },
