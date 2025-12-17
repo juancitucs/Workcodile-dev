@@ -267,7 +267,7 @@ export function CreatePostModal({ isOpen, onClose }: CreatePostModalProps) {
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {/* Cycle Selection */}
-                  <div className="space-y-2">
+                  <div className="space-y-2 sidebar-item rounded-lg p-3 transition-all">
                     <Label className="flex items-center space-x-2">
                       <GraduationCap className="h-4 w-4 text-primary" />
                       <span>Ciclo</span>
@@ -293,7 +293,7 @@ export function CreatePostModal({ isOpen, onClose }: CreatePostModalProps) {
                   </div>
 
                   {/* Course Selection */}
-                  <div className="space-y-2">
+                  <div className="space-y-2 sidebar-item rounded-lg p-3 transition-all">
                     <Label>Curso</Label>
                     <Select
                       value={formData.course}
@@ -338,7 +338,7 @@ export function CreatePostModal({ isOpen, onClose }: CreatePostModalProps) {
                 )}
 
                 {/* Title */}
-                <div className="space-y-2">
+                <div className="space-y-2 sidebar-item rounded-lg p-3 transition-all">
                   <div className="flex justify-between items-center">
                     <Label htmlFor="title">Título</Label>
                     <span className="text-xs text-muted-foreground">
@@ -360,7 +360,7 @@ export function CreatePostModal({ isOpen, onClose }: CreatePostModalProps) {
                 </div>
 
                 {/* Content */}
-                <div className="space-y-2">
+                <div className="space-y-2 sidebar-item rounded-lg p-3 transition-all">
                   <Label htmlFor="content">Descripción</Label>
 
                   {isMobile && showPreview ? (
@@ -412,7 +412,7 @@ export function CreatePostModal({ isOpen, onClose }: CreatePostModalProps) {
 
                 <Accordion type="multiple" className="w-full">
                   {/* Hashtags */}
-                  <AccordionItem value="hashtags">
+                  <AccordionItem value="hashtags" className="sidebar-item rounded-lg transition-all">
                     <AccordionTrigger className="cursor-pointer">
                       <Label className="flex items-center space-x-2 cursor-pointer">
                         <Hash className="h-4 w-4 text-primary" />
@@ -459,7 +459,7 @@ export function CreatePostModal({ isOpen, onClose }: CreatePostModalProps) {
                   </AccordionItem>
 
                   {/* File Attachments */}
-                  <AccordionItem value="attachments">
+                  <AccordionItem value="attachments" className="sidebar-item rounded-lg transition-all">
                     <AccordionTrigger className="cursor-pointer">
                       <Label className="flex items-center space-x-2 cursor-pointer">
                         <Upload className="h-4 w-4 text-primary" />

@@ -241,13 +241,13 @@ export function PostCard({ post, startWithCommentsOpen = false, highlightComment
             <div className="flex flex-row space-x-4">
               <div className="flex flex-col items-center space-y-1">
                 <Button
-                  variant={post.userVote === 'up' ? 'default' : 'ghost'}
+                  variant={post.userVote === 'up' ? 'ghost' : 'ghost'}
                   size="sm"
                   onClick={(e) => {
                     e.stopPropagation();
                     handleVote('up');
                   }}
-                  className="h-8 w-8 p-0"
+                  className={`h-8 w-8 p-0 ${post.userVote === 'up' ? 'bg-green-500 hover:bg-green-600 text-white' : ''}`}
                 >
                   <ChevronUp className="h-4 w-4" />
                 </Button>

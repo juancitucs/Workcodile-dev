@@ -3,6 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Card, CardContent } from './ui/card';
 import { Calendar, MapPin, Clock, Users, GraduationCap, Trophy, BookOpen, Briefcase } from 'lucide-react';
 import { Badge } from './ui/badge';
+import { useApp } from './app-context';
 
 interface EventsModalProps {
     trigger: ReactNode;
@@ -144,13 +145,15 @@ const getEventTypeLabel = (type: string) => {
 };
 
 export const EventsModal = memo(function EventsModal({ trigger }: EventsModalProps) {
+    const { christmasTheme } = useApp();
+
     return (
         <Dialog>
             <DialogTrigger asChild>{trigger}</DialogTrigger>
             <DialogContent className="sm:max-w-7xl w-[95vw] max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                     <DialogTitle className="flex items-center gap-3 text-xl">
-                        <Calendar className="h-6 w-6 text-green-500" />
+                        <Calendar className={`h-6 w-6 ${christmasTheme ? 'text-red-500' : 'text-green-500'}`} />
                         Eventos UNAM Moquegua
                     </DialogTitle>
                     <p className="text-sm text-muted-foreground mt-1">

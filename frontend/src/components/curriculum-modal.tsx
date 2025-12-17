@@ -449,7 +449,7 @@ export const CurriculumModal = memo(function CurriculumModal({ trigger }: Curric
             <DialogContent className="sm:max-w-7xl w-[95vw] h-full max-h-[90vh] flex flex-col p-0">
                 <DialogHeader className="p-6 pb-3">
                     <DialogTitle className="flex items-center gap-2">
-                        <GraduationCap className="h-6 w-6" />
+                        <GraduationCap className="h-6 w-6 text-primary" />
                         Malla Curricular - Ingeniería de Sistemas
                     </DialogTitle>
                 </DialogHeader>

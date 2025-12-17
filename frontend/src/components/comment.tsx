@@ -23,13 +23,8 @@ interface CommentProps {
   depth?: number;
 }
 
-const lineColors = [
-  'border-blue-500/50 dark:border-blue-400/50',
-  'border-green-500/50 dark:border-green-400/50',
-  'border-purple-500/50 dark:border-purple-400/50',
-  'border-yellow-500/50 dark:border-yellow-400/50',
-  'border-red-500/50 dark:border-red-400/50',
-];
+// Maximum depth for comment replies (0-indexed: 0=post comment, 1=reply, 2=reply to reply)
+const MAX_COMMENT_DEPTH = 2;
 
 export function Comment({ comment, postId, onCommentVote, highlightCommentId, depth = 0 }: CommentProps) {
   const { user, fetchCommentReplies } = useApp();
@@ -103,19 +98,17 @@ export function Comment({ comment, postId, onCommentVote, highlightCommentId, de
     setIsLoadingReplies(false);
   };
 
-  const lineColor = lineColors[depth % lineColors.length];
-
   return (
     <motion.div
       ref={commentRef}
       id={`comment-${comment.id}`}
       initial={{ opacity: 0, x: -20 }}
       animate={{ opacity: 1, x: 0 }}
-      className="relative pl-4"
+      className="relative"
     >
-      <div className={`absolute left-0 top-0 bottom-0 w-px bg-gray-200 dark:bg-gray-700`}></div>
-      <div className="flex items-start space-x-3">
-        <Avatar className="h-8 w-8 z-10 mt-1">
+      <div className="flex items-start gap-3">
+        {/* Avatar */}
+        <Avatar className="h-8 w-8 flex-shrink-0">
           <AvatarImage src={comment.author.avatar} alt={comment.author.name} />
           <AvatarFallback className="bg-primary/10">
             {comment.author.avatar ? (
@@ -223,14 +216,17 @@ export function Comment({ comment, postId, onCommentVote, highlightCommentId, de
               </Button>
             </div>
 
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setShowReplyForm(!showReplyForm)}
-              className="h-6 px-2 text-xs"
-            >
-              Responder
-            </Button>
+            {/* Only show Reply button if not at max depth */}
+            {depth < MAX_COMMENT_DEPTH && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowReplyForm(!showReplyForm)}
+                className="h-6 px-2 text-xs"
+              >
+                Responder
+              </Button>
+            )}
             {comment.replies && comment.replies.length > 0 && (
               <Button
                 variant="ghost"
@@ -263,7 +259,13 @@ export function Comment({ comment, postId, onCommentVote, highlightCommentId, de
           )}
 
           {areRepliesVisible && replies.length > 0 && (
-            <div className={`pl-4 border-l-2 ${lineColor} mt-3`}>
+            <div
+              className="comment-replies mt-4 pl-4 ml-2 hover:border-opacity-100 transition-all cursor-pointer"
+              style={{
+                borderLeft: '2px solid #9ca3af',
+                paddingLeft: '16px',
+              }}
+            >
               <CommentTree comments={replies} postId={postId} onCommentVote={onCommentVote} highlightCommentId={highlightCommentId} depth={depth + 1} />
             </div>
           )}

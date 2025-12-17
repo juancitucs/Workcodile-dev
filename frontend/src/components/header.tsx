@@ -71,8 +71,8 @@ export const Header = memo(function Header({ onCreatePost, onSearch, onToggleMob
       transition={{ duration: 0.5, ease: [0.4, 0, 0.2, 1] }}
       className="sticky top-0 z-50 transition-shadow duration-300"
       style={{
-        backgroundColor: theme === 'dark' ? '#0f0f0f' : '#ffffff',
-        borderBottom: '2px solid #d1d5db',
+        backgroundColor: theme === 'dark' ? '#1a1a1a' : '#ffffff',
+        borderBottom: theme === 'dark' ? '2px solid #4b5563' : '2px solid #d1d5db',
         boxShadow: isScrolled
           ? `${christmasTheme ? 'inset 0 0 40px rgba(239, 68, 68, 0.25)' : 'inset 0 0 40px rgba(34, 197, 94, 0.25)'}, 0 4px 12px rgba(0, 0, 0, 0.15)`
           : christmasTheme
