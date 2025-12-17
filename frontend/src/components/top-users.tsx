@@ -116,7 +116,7 @@ export const TopUsersCard = memo(function TopUsersCard() {
             </Card>
         );
     }
-    
+
     const top3Users = topUsers.slice(0, 3);
 
     return (
@@ -135,10 +135,10 @@ export const TopUsersCard = memo(function TopUsersCard() {
                             Ver Top 10 Usuarios
                         </Button>
                     </DialogTrigger>
-                    <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
+                    <DialogContent className="sm:max-w-7xl w-[95vw] max-h-[90vh] overflow-y-auto">
                         <DialogHeader>
                             <DialogTitle className="flex items-center gap-2">
-                                <Trophy className="h-5 w-5 text-yellow-500" />
+                                <Trophy className="h-5 w-5 text-primary" />
                                 Top 10 Usuarios
                             </DialogTitle>
                         </DialogHeader>

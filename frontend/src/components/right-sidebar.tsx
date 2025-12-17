@@ -57,7 +57,7 @@ export const RightSidebar = memo(function RightSidebar() {
         <AccordionItem value="top-users" className="border-none glass-card gradient-border shadow-sm rounded-lg section-divider">
           <AccordionTrigger className="hover:no-underline cursor-pointer px-4 py-4 hover:bg-transparent transition-all">
             <div className="flex items-center space-x-3">
-              <div className={christmasTheme ? "bg-red-500 p-2 rounded-lg" : "bg-primary p-2 rounded-lg"}>
+              <div className="bg-primary p-2 rounded-lg">
                 <Trophy className="h-5 w-5 text-primary-foreground" />
               </div>
               <span className="text-base font-semibold">Top Usuarios</span>

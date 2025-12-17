@@ -65,7 +65,7 @@ export function MainLayout() {
         </SheetContent>
       </Sheet>
 
-      <main className="container max-w-[1800px] mx-auto px-4 py-2">
+      <main className="container max-w-[1900px] mx-auto px-4 py-2">
         <div className="flex gap-4">
           {/* Left Sidebar */}
           <motion.aside

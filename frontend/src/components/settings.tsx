@@ -237,7 +237,7 @@ export function Settings({ isOpen, onClose }: SettingsProps) {
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-7xl w-[95vw] max-h-[90vh] p-0 overflow-hidden">
-        <div className="flex h-full max-h-[85vh] flex-col">
+        <div className="flex h-full max-h-[90vh] flex-col">
           {/* Header */}
           <div className="p-6 border-b border-border flex-shrink-0">
             <DialogHeader>

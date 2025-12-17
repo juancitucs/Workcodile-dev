@@ -1,4 +1,4 @@
-import { useState, memo } from 'react';
+import { useState, memo, useEffect } from 'react';
 import { motion } from 'motion/react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
@@ -42,6 +42,17 @@ export const Header = memo(function Header({ onCreatePost, onSearch, onToggleMob
   const [searchQuery, setSearchQuery] = useState('');
   const [showProfile, setShowProfile] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
+
+  // Scroll detection for sticky header shadow effect
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 50);
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -58,12 +69,15 @@ export const Header = memo(function Header({ onCreatePost, onSearch, onToggleMob
       initial={{ y: -80 }}
       animate={{ y: 0 }}
       transition={{ duration: 0.5, ease: [0.4, 0, 0.2, 1] }}
-      className="sticky top-0 z-50 bg-white dark:bg-[#0f0f0f]"
+      className="sticky top-0 z-50 transition-shadow duration-300"
       style={{
+        backgroundColor: theme === 'dark' ? '#0f0f0f' : '#ffffff',
         borderBottom: '2px solid #d1d5db',
-        boxShadow: christmasTheme
-          ? 'inset 0 0 40px rgba(239, 68, 68, 0.25)'  // Red for Christmas
-          : 'inset 0 0 40px rgba(34, 197, 94, 0.25)'  // Green normally
+        boxShadow: isScrolled
+          ? `${christmasTheme ? 'inset 0 0 40px rgba(239, 68, 68, 0.25)' : 'inset 0 0 40px rgba(34, 197, 94, 0.25)'}, 0 4px 12px rgba(0, 0, 0, 0.15)`
+          : christmasTheme
+            ? 'inset 0 0 40px rgba(239, 68, 68, 0.25)'
+            : 'inset 0 0 40px rgba(34, 197, 94, 0.25)'
       }}
     >
       <div className="container max-w-[1800px] mx-auto px-4 py-3">

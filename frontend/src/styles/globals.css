@@ -787,6 +787,37 @@ textarea,
   background: hsl(142 76% 36% / 0.6) !important;
 }
 
+/* Christmas theme red scrollbars */
+.christmas .sidebar-scroll:hover {
+  scrollbar-color: hsl(0 72% 51% / 0.35) transparent !important;
+  /* Firefox - red */
+}
+
+.christmas .sidebar-scroll:hover::-webkit-scrollbar-thumb {
+  background: hsl(0 72% 51% / 0.35) !important;
+  /* Webkit - red */
+}
+
+.christmas .sidebar-scroll:hover::-webkit-scrollbar-thumb:hover {
+  background: hsl(0 72% 51% / 0.6) !important;
+  /* Webkit hover - red */
+}
+
+/* Christmas theme - main browser scrollbar (red) */
+html.christmas::-webkit-scrollbar-thumb,
+.christmas::-webkit-scrollbar-thumb {
+  background-color: hsl(0 72% 51% / 0.4) !important;
+}
+
+html.christmas::-webkit-scrollbar-thumb:hover,
+.christmas::-webkit-scrollbar-thumb:hover {
+  background-color: hsl(0 72% 51% / 0.7) !important;
+}
+
+html.christmas {
+  scrollbar-color: hsl(0 72% 51% / 0.4) transparent !important;
+}
+
 /* Move scrollbar to left side */
 .sidebar-scroll-left {
   direction: rtl !important;

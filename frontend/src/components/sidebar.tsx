@@ -74,8 +74,8 @@ export function Sidebar({ selectedCourse, onCourseSelect, sortBy, onSortChange }
               <div className="bg-primary p-2 rounded-lg">
                 <Users className="h-5 w-5 text-primary-foreground" />
               </div>
-              <div>
-                <h3 className="font-semibold">¡Hola, {user?.name?.split(' ')[0]}!</h3>
+              <div className="min-w-0 flex-1">
+                <h3 className="font-semibold truncate">¡Hola, {user?.name?.split(' ')[0]}!</h3>
                 <p className="text-sm text-muted-foreground">Bienvenido a WorkCodile</p>
               </div>
             </div>

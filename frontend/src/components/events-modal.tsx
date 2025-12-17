@@ -147,7 +147,7 @@ export const EventsModal = memo(function EventsModal({ trigger }: EventsModalPro
     return (
         <Dialog>
             <DialogTrigger asChild>{trigger}</DialogTrigger>
-            <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+            <DialogContent className="sm:max-w-7xl w-[95vw] max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                     <DialogTitle className="flex items-center gap-3 text-xl">
                         <Calendar className="h-6 w-6 text-green-500" />

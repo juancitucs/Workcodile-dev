@@ -213,6 +213,27 @@ export function UserProfile({ isOpen, onClose, userId }: UserProfileProps) {
   };
 
   const handleSave = async () => {
+    const trimmedName = editedProfile.name.trim();
+
+    // Validate name is not empty
+    if (!trimmedName) {
+      toast.error('El nombre no puede estar vacío');
+      return;
+    }
+
+    // Validate minimum length
+    if (trimmedName.length < 2) {
+      toast.error('El nombre debe tener al menos 2 caracteres');
+      return;
+    }
+
+    // Block dangerous special characters
+    const blockedChars = /[<>{}[\]\\/|@#$%^&*=+~`]/;
+    if (blockedChars.test(trimmedName)) {
+      toast.error('El nombre contiene caracteres no permitidos');
+      return;
+    }
+
     try {
       const token = localStorage.getItem('token');
       const response = await fetch(`${API_BASE_URL}/api/auth/me`, {
@@ -296,7 +317,7 @@ export function UserProfile({ isOpen, onClose, userId }: UserProfileProps) {
   return (
     <Dialog open={isOpen} onOpenChange={handleDialogClose}>
       <DialogContent className="sm:max-w-7xl w-[95vw] max-h-[90vh] p-0 overflow-hidden">
-        <div className="flex h-full max-h-[85vh] flex-col">
+        <div className="flex h-full max-h-[90vh] flex-col">
           <div className="p-6 border-b border-border flex-shrink-0">
             <DialogHeader>
               <div className="flex items-center justify-between">
@@ -398,7 +419,7 @@ export function UserProfile({ isOpen, onClose, userId }: UserProfileProps) {
                         <div className="flex justify-between items-center">
                           <Label htmlFor="name">Nombre</Label>
                           <span className="text-xs text-muted-foreground">
-                            {editedProfile.name.length}/50
+                            {editedProfile.name.length}/40
                           </span>
                         </div>
                         <Input
@@ -406,7 +427,8 @@ export function UserProfile({ isOpen, onClose, userId }: UserProfileProps) {
                           value={editedProfile.name}
                           onChange={(e) => setEditedProfile(prev => ({ ...prev, name: e.target.value }))}
                           placeholder="Ingresa tu nombre"
-                          maxLength={30}
+                          maxLength={40}
+                          required
                           className="mt-1"
                         />
                       </div>

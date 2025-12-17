@@ -197,7 +197,7 @@ export const CurriculumModal = memo(function CurriculumModal({ trigger }: Curric
                     throw new Error('Failed to fetch all courses');
                 }
                 const data: Course[] = await response.json();
-                setAllCourses(data.map(c => ({...c, code: c._id, type: 'basic'}))); // Add default type and code
+                setAllCourses(data.map(c => ({ ...c, code: c._id, type: 'basic' }))); // Add default type and code
             } catch (err: any) {
                 setError(err.message);
             } finally {
@@ -412,7 +412,7 @@ export const CurriculumModal = memo(function CurriculumModal({ trigger }: Curric
         return (
             <Dialog open={isOpen} onOpenChange={setIsOpen}>
                 <DialogTrigger asChild>{trigger}</DialogTrigger>
-                <DialogContent className="max-w-[95vw] max-h-[90vh] flex flex-col p-0">
+                <DialogContent className="sm:max-w-7xl w-[95vw] h-full max-h-[90vh] flex flex-col p-0">
                     <DialogHeader className="p-6 pb-3">
                         <DialogTitle className="flex items-center gap-2">
                             <GraduationCap className="h-6 w-6" />
@@ -429,7 +429,7 @@ export const CurriculumModal = memo(function CurriculumModal({ trigger }: Curric
         return (
             <Dialog open={isOpen} onOpenChange={setIsOpen}>
                 <DialogTrigger asChild>{trigger}</DialogTrigger>
-                <DialogContent className="max-w-[95vw] max-h-[90vh] flex flex-col p-0">
+                <DialogContent className="sm:max-w-7xl w-[95vw] h-full max-h-[90vh] flex flex-col p-0">
                     <DialogHeader className="p-6 pb-3">
                         <DialogTitle className="flex items-center gap-2">
                             <GraduationCap className="h-6 w-6" />
@@ -446,7 +446,7 @@ export const CurriculumModal = memo(function CurriculumModal({ trigger }: Curric
     return (
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
             <DialogTrigger asChild>{trigger}</DialogTrigger>
-            <DialogContent className="max-w-[95vw] max-h-[90vh] flex flex-col p-0">
+            <DialogContent className="sm:max-w-7xl w-[95vw] h-full max-h-[90vh] flex flex-col p-0">
                 <DialogHeader className="p-6 pb-3">
                     <DialogTitle className="flex items-center gap-2">
                         <GraduationCap className="h-6 w-6" />

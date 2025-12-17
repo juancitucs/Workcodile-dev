@@ -245,8 +245,8 @@ export function CreatePostModal({ isOpen, onClose }: CreatePostModalProps) {
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-7xl w-[95vw] max-h-[90vh] p-0 overflow-hidden">
-        <div className="flex h-full max-h-[85vh]">
+      <DialogContent className="sm:max-w-7xl w-[95vw] h-full max-h-[90vh] p-0 overflow-hidden">
+        <div className="flex h-full max-h-[90vh]">
           {/* Left side - Form */}
           <div className="flex-1 flex flex-col border-r border-border">
             <div className="p-6 border-b border-border">
