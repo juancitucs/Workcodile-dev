@@ -161,7 +161,7 @@ export function PostCard({ post, startWithCommentsOpen = false, highlightComment
         className={`cursor-pointer ${isDashboardView ? '' : 'max-w-3xl mx-auto'}`}
         onClick={handleNavigate}
       >
-        <Card className="glass-card gradient-border shadow-modern hover:shadow-modern-lg transition-all duration-300 ease-out">
+        <Card className="glass-card gradient-border shadow-modern hover:shadow-modern-lg">
           <CardHeader className="pb-3">
             <div className="flex items-start justify-between">
               <div
@@ -253,13 +253,12 @@ export function PostCard({ post, startWithCommentsOpen = false, highlightComment
                 </Button>
 
                 <span
-                  className={`text-sm w-8 font-medium text-center ${
-                    netScore > 0
-                      ? 'text-primary'
-                      : netScore < 0
+                  className={`text-sm w-8 font-medium text-center ${netScore > 0
+                    ? 'text-primary'
+                    : netScore < 0
                       ? 'text-destructive'
                       : 'text-muted-foreground'
-                  }`}
+                    }`}
                 >
                   {netScore}
                 </span>
@@ -294,9 +293,8 @@ export function PostCard({ post, startWithCommentsOpen = false, highlightComment
                 </Link>
                 <div
                   ref={contentRef}
-                  className={`prose prose-sm dark:prose-invert max-w-none mb-3 ${
-                    isDashboardView ? 'max-h-64 overflow-hidden relative' : ''
-                  }`}
+                  className={`prose prose-sm dark:prose-invert max-w-none mb-3 ${isDashboardView ? 'max-h-64 overflow-hidden relative' : ''
+                    }`}
                 >
                   <MarkdownRenderer attachments={post.attachments}>{post.content}</MarkdownRenderer>
                   {isDashboardView && (
@@ -348,13 +346,8 @@ export function PostCard({ post, startWithCommentsOpen = false, highlightComment
                               key={`${index}-${attachment.name}`}
                               onClick={(e) => handleDownload(e, attachment)}
                             >
-                              <motion.div
-                                whileHover={{ scale: 1.02, y: -1 }}
-                                transition={{
-                                  duration: 0.2,
-                                  ease: [0.4, 0, 0.2, 1],
-                                }}
-                                className="flex items-center space-x-2 p-3 bg-gradient-to-r from-workcodile-gray-light/50 to-workcodile-gray-subtle/30 border border-workcodile-border-light rounded-md hover:from-workcodile-green-subtle/30 hover:to-workcodile-gray-subtle/50 cursor-pointer transition-all duration-300 shadow-sm hover:shadow-md"
+                              <div
+                                className="flex items-center space-x-2 p-3 bg-gradient-to-r from-workcodile-gray-light/50 to-workcodile-gray-subtle/30 border border-workcodile-border-light rounded-md hover:from-workcodile-green-subtle/30 hover:to-workcodile-gray-subtle/50 cursor-pointer shadow-sm hover:shadow-md"
                               >
                                 <span className="text-sm">
                                   {getFileIcon(attachment.type)}
@@ -374,7 +367,7 @@ export function PostCard({ post, startWithCommentsOpen = false, highlightComment
                                 >
                                   <Download className="h-3 w-3" />
                                 </Button>
-                              </motion.div>
+                              </div>
                             </div>
                           ))}
                         </div>
@@ -391,6 +384,7 @@ export function PostCard({ post, startWithCommentsOpen = false, highlightComment
                     viewsCount={post.views}
                     isBookmarked={post.isBookmarked}
                     onToggleComments={() => setShowComments(!showComments)}
+                    onNavigate={isDashboardView ? handleNavigate : undefined}
                     onBookmark={handleBookmark}
                     onReport={handleReport}
                   />

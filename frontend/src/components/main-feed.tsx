@@ -128,12 +128,13 @@ export function MainFeed() {
 
       {filteredAndSortedPosts.length > 0 ? (
         <Virtuoso
-          style={{ height: '100vh' }}
+          useWindowScroll
           data={filteredAndSortedPosts}
           endReached={loadMore}
           itemContent={(index, post) => (
-            <div style={{ paddingBottom: '1rem' }}>
+            <div className="pb-4">
               <PostCard post={post} isDashboardView={true} />
+              <hr className="post-divider" />
             </div>
           )}
           visibleItemsChanged={handleVisibleItemsChange}

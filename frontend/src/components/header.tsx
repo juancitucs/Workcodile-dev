@@ -58,7 +58,13 @@ export const Header = memo(function Header({ onCreatePost, onSearch, onToggleMob
       initial={{ y: -80 }}
       animate={{ y: 0 }}
       transition={{ duration: 0.5, ease: [0.4, 0, 0.2, 1] }}
-      className="sticky top-0 z-50 glass-card border-b border-workcodile-border-light shadow-modern"
+      className="sticky top-0 z-50 bg-white dark:bg-[#0f0f0f]"
+      style={{
+        borderBottom: '2px solid #d1d5db',
+        boxShadow: christmasTheme
+          ? 'inset 0 0 40px rgba(239, 68, 68, 0.25)'  // Red for Christmas
+          : 'inset 0 0 40px rgba(34, 197, 94, 0.25)'  // Green normally
+      }}
     >
       <div className="container max-w-[1800px] mx-auto px-4 py-3">
         <div className="flex items-center justify-between gap-4">

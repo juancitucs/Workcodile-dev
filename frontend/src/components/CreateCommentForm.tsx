@@ -2,12 +2,11 @@ import { useState, useRef } from 'react';
 import { Button } from './ui/button';
 import { useApp } from './app-context';
 import { FileAttachment, createFileAttachment, validateFileType, validateFileSize } from './file-utils';
-import { Paperclip, Eye } from 'lucide-react';
+import { Paperclip, X, File as FileIcon } from 'lucide-react';
 import { MentionsInput, Mention } from 'react-mentions';
 import mentionsInputStyle from './mentions-input-style';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
 import { Card } from './ui/card';
-import MarkdownRenderer from './markdown-renderer';
 import { autoSpaceInsertion } from '../utils/text-utils';
 
 // ADAPTED FROM create-post-modal.tsx FOR COMMENTS
@@ -18,33 +17,22 @@ interface CreateCommentFormProps {
   onCommentSubmitted: () => void; // Callback to handle UI changes after submission
 }
 
-// This function implements the user's requested logic for "smart" attachment uploads.
-const uploadReferencedFiles = async (
-  attachments: FileAttachment[],
-  commentText: string
+// Upload ALL attached files (not just mentioned ones)
+const uploadAllFiles = async (
+  attachments: FileAttachment[]
 ): Promise<(Omit<FileAttachment, 'id'> & { object_key: string })[]> => {
-  // 1. Parse commentText to find all "@filename" references.
-  const mentionedFilePattern = /@"([^"]+)"/g;
-  const mentionedFilenames = new Set<string>();
-  let match;
-  while ((match = mentionedFilePattern.exec(commentText)) !== null) {
-    mentionedFilenames.add(match[1]);
+  if (attachments.length === 0) {
+    return [];
   }
 
-  if (mentionedFilenames.size === 0) {
-    return []; // No files mentioned, no uploads needed.
-  }
-
-  // 2. Filter the `FileAttachment` array to only include files that were referenced.
   const filesToUpload = attachments
     .map(att => att.file)
-    .filter(file => file && mentionedFilenames.has(file.name)) as File[];
+    .filter((file): file is File => file !== undefined);
 
   if (filesToUpload.length === 0) {
     return [];
   }
 
-  // 3. Upload only the referenced files.
   return await uploadFiles(filesToUpload);
 };
 
@@ -106,7 +94,6 @@ export function CreateCommentForm({ postId, parentId, onCommentSubmitted }: Crea
   const [content, setContent] = useState('');
   const [attachments, setAttachments] = useState<FileAttachment[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [showPreview, setShowPreview] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -115,11 +102,10 @@ export function CreateCommentForm({ postId, parentId, onCommentSubmitted }: Crea
     }
     setIsSubmitting(true);
     try {
-      const uploadedAttachmentsData = await uploadReferencedFiles(attachments, content);
+      const uploadedAttachmentsData = await uploadAllFiles(attachments);
       await addComment(postId, content, parentId, uploadedAttachmentsData);
       setContent('');
       setAttachments([]);
-      setShowPreview(false);
       onCommentSubmitted();
     } catch (error) {
       console.error("Failed to create comment:", error);
@@ -128,10 +114,21 @@ export function CreateCommentForm({ postId, parentId, onCommentSubmitted }: Crea
     }
   };
 
+  const MAX_FILES = 4;
+
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files) return;
-    Array.from(files).forEach(file => {
+
+    const remainingSlots = MAX_FILES - attachments.length;
+    if (remainingSlots <= 0) {
+      alert(`Máximo ${MAX_FILES} archivos por comentario.`);
+      return;
+    }
+
+    const filesToAdd = Array.from(files).slice(0, remainingSlots);
+
+    filesToAdd.forEach(file => {
       if (!validateFileType(file)) {
         alert(`Tipo de archivo no permitido: ${file.name}`);
         return;
@@ -143,6 +140,7 @@ export function CreateCommentForm({ postId, parentId, onCommentSubmitted }: Crea
       const newAttachment = createFileAttachment(file);
       setAttachments(prev => [...prev, newAttachment]);
     });
+
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
@@ -154,41 +152,97 @@ export function CreateCommentForm({ postId, parentId, onCommentSubmitted }: Crea
   }));
 
   return (
-    <Card className="p-4">
+    <Card className="p-3">
       <form onSubmit={handleSubmit} className="space-y-2">
-        <div className="space-y-2">
-          {showPreview ? (
-            <div
-              className="min-h-[120px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-              onClick={() => setShowPreview(false)}
-            >
-              {content ? (
-                <MarkdownRenderer attachments={attachments}>{content}</MarkdownRenderer>
-              ) : (
-                <p className="text-muted-foreground">Escribe algo para ver la vista previa...</p>
-              )}
-            </div>
-          ) : (
-            <MentionsInput
-              inputRef={mentionsInputRef}
-              id="content"
-              value={content}
-              onChange={(e) => {
-                const processedValue = autoSpaceInsertion(e.target.value, 20);
-                setContent(processedValue);
-              }}
-              placeholder="Escribe un comentario. Usa Markdown y menciona archivos con '@'."
-              style={mentionsInputStyle}
-              className="min-h-[120px] resize-y"
-            >
-              <Mention
-                trigger="@"
-                data={attachmentMentions}
-                markup={`@"__display__"`}
-                displayTransform={(id, display) => `@${display}`}
-              />
-            </MentionsInput>
-          )}
+        {/* Live preview area - shows how comment will look */}
+        <div className="border rounded-md p-3 min-h-[60px] bg-background">
+          {/* Inline images preview */}
+          {attachments.length > 0 && (() => {
+            const images = attachments.filter(a => a.type.startsWith('image/'));
+            const otherFiles = attachments.filter(a => !a.type.startsWith('image/'));
+            const firstImage = images[0];
+            const restImages = images.slice(1);
+
+            return (
+              <div className="flex flex-wrap gap-2 mb-2">
+                {/* First image - will be visible inline */}
+                {firstImage && (
+                  <div className="relative group">
+                    <div className="ring-2 ring-primary ring-offset-2 rounded">
+                      <img src={firstImage.url} alt={firstImage.name} className="max-h-32 max-w-[200px] object-contain rounded" />
+                    </div>
+                    <span className="absolute -top-2 -left-2 bg-primary text-primary-foreground text-[10px] px-1.5 py-0.5 rounded-full">Visible</span>
+                    <button
+                      type="button"
+                      onClick={() => setAttachments(prev => prev.filter(a => a.name !== firstImage.name))}
+                      className="absolute -top-1 -right-1 h-5 w-5 bg-destructive text-destructive-foreground rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </div>
+                )}
+
+                {/* Other images (will be in attachments) - show as file name only */}
+                {restImages.map((att, idx) => (
+                  <div key={`img-${idx}`} className="relative group">
+                    <div className="h-12 px-3 flex items-center gap-2 bg-muted/50 rounded border border-dashed">
+                      <FileIcon className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-xs truncate max-w-[120px]">{att.name}</span>
+                      <span className="text-[10px] text-muted-foreground">(adjunto)</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setAttachments(prev => prev.filter(a => a.name !== att.name))}
+                      className="absolute -top-1 -right-1 h-5 w-5 bg-destructive text-destructive-foreground rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </div>
+                ))}
+
+                {/* Other files */}
+                {otherFiles.map((att, idx) => (
+                  <div key={`file-${idx}`} className="relative group">
+                    <div className="h-12 px-3 flex items-center gap-2 bg-muted rounded">
+                      <FileIcon className="h-4 w-4" />
+                      <span className="text-xs">{att.name}</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setAttachments(prev => prev.filter(a => a.name !== att.name))}
+                      className="absolute -top-1 -right-1 h-5 w-5 bg-destructive text-destructive-foreground rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            );
+          })()}
+
+          {/* Text input */}
+          <MentionsInput
+            inputRef={mentionsInputRef}
+            id="content"
+            value={content}
+            onChange={(e) => {
+              const processedValue = autoSpaceInsertion(e.target.value, 20);
+              setContent(processedValue);
+            }}
+            placeholder="Escribe un comentario..."
+            style={{
+              ...mentionsInputStyle,
+              control: { ...mentionsInputStyle.control, border: 'none' },
+              '&multiLine': { ...mentionsInputStyle['&multiLine'], control: { ...mentionsInputStyle['&multiLine'].control, minHeight: 40 } }
+            }}
+          >
+            <Mention
+              trigger="@"
+              data={attachmentMentions}
+              markup={`@"__display__"`}
+              displayTransform={(id, display) => `@${display}`}
+            />
+          </MentionsInput>
         </div>
 
         <div className="flex justify-between items-center">
@@ -208,22 +262,6 @@ export function CreateCommentForm({ postId, parentId, onCommentSubmitted }: Crea
                 </TooltipTrigger>
                 <TooltipContent>
                   <p>Adjuntar archivo</p>
-                </TooltipContent>
-              </Tooltip>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => setShowPreview(!showPreview)}
-                    className="text-muted-foreground"
-                  >
-                    <Eye className="h-5 w-5" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>{showPreview ? 'Ocultar' : 'Mostrar'} vista previa</p>
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>

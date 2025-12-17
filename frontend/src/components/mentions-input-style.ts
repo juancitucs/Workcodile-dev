@@ -9,7 +9,7 @@ export default {
   '&multiLine': {
     control: {
       fontFamily: 'sans-serif',
-      minHeight: 200,
+      minHeight: 60,
       maxHeight: 300,
       overflow: 'auto',
     },

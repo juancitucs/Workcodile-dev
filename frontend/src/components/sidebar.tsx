@@ -12,6 +12,7 @@ import {
   SelectValue
 } from './ui/select';
 import { useApp } from './app-context';
+import { ChristmasTree } from './ChristmasTree';
 import {
   Users,
   BookOpen,
@@ -65,6 +66,7 @@ export function Sidebar({ selectedCourse, onCourseSelect, sortBy, onSortChange }
         initial={{ opacity: 0, x: -20 }}
         animate={{ opacity: 1, x: 0 }}
         transition={{ delay: 0.1 }}
+        className="section-divider"
       >
         <Card className="glass-card gradient-border shadow-modern fade-in-up">
           <CardContent className="p-4">
@@ -110,6 +112,7 @@ export function Sidebar({ selectedCourse, onCourseSelect, sortBy, onSortChange }
         initial={{ opacity: 0, x: -20 }}
         animate={{ opacity: 1, x: 0 }}
         transition={{ delay: 0.15 }}
+        className="section-divider"
       >
         <Card className="glass-card gradient-border shadow-modern">
           <CardHeader className="pb-0 pt-3 px-4">
@@ -163,6 +166,7 @@ export function Sidebar({ selectedCourse, onCourseSelect, sortBy, onSortChange }
         initial={{ opacity: 0, x: -20 }}
         animate={{ opacity: 1, x: 0 }}
         transition={{ delay: 0.2 }}
+        className="section-divider"
       >
         <Card className="glass-card gradient-border shadow-modern">
           <CardHeader className="pb-2 pt-3 px-4">
@@ -272,6 +276,8 @@ export function Sidebar({ selectedCourse, onCourseSelect, sortBy, onSortChange }
         </Card>
       </motion.div>
 
+      {/* Christmas Tree */}
+      <ChristmasTree />
 
     </div>
   );

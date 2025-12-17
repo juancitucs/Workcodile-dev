@@ -18,7 +18,7 @@
 
   --background: #ffffff;
   --foreground: var(--workcodile-black);
-  --card: #ffffff;
+  --card: transparent;
   --card-foreground: var(--workcodile-black);
   --popover: #ffffff;
   --popover-foreground: var(--workcodile-black);
@@ -58,7 +58,7 @@
 .dark {
   --background: var(--workcodile-black);
   --foreground: #ffffff;
-  --card: #1f1f1f;
+  --card: transparent;
   --card-foreground: #ffffff;
   --popover: #1f1f1f;
   --popover-foreground: #ffffff;
@@ -90,6 +90,83 @@
   --sidebar-accent-foreground: #ffffff;
   --sidebar-border: rgba(107, 114, 128, 0.3);
   --sidebar-ring: var(--workcodile-green);
+}
+
+/* ==================== SECTION DIVIDERS - MAXIMUM PRIORITY ==================== */
+.section-divider {
+  position: relative !important;
+  padding-bottom: 0 !important;
+  margin-bottom: 1.5rem !important;
+  /* Total space between cards */
+}
+
+.section-divider:not(:last-child)::after {
+  content: '' !important;
+  display: block !important;
+  position: absolute !important;
+  bottom: -0.75rem !important;
+  /* Center: half of margin-bottom (1.5rem / 2) */
+  left: 0 !important;
+  right: 0 !important;
+  width: 100% !important;
+  height: 2px !important;
+  background-color: #d1d5db !important;
+}
+
+.dark .section-divider:not(:last-child)::after {
+  background-color: #6b7280 !important;
+}
+
+/* Post divider - horizontal line between posts in feed */
+.post-divider {
+  margin-top: 1.5rem;
+  border: none;
+  border-top: 2px solid #d1d5db;
+  width: 100%;
+}
+
+.dark .post-divider {
+  border-top: 2px solid #6b7280;
+}
+
+/* Sidebar vertical borders - extending to top bar */
+.sidebar-border-right {
+  position: relative;
+}
+
+.sidebar-border-right::after {
+  content: '';
+  position: absolute;
+  top: 0px;
+  /* Extend upward to reach top bar (96px sticky offset - 72px header height) */
+  right: -8px;
+  /* Keep original horizontal position in the gap */
+  width: 2px;
+  height: calc(100% + 24px);
+  /* Original height plus the 24px extension upward */
+  background-color: #d1d5db;
+}
+
+.sidebar-border-left {
+  position: relative;
+}
+
+.sidebar-border-left::after {
+  content: '';
+  position: absolute;
+  top: 0px;
+  /* Extend upward to reach top bar (96px sticky offset - 72px header height) */
+  left: -8px;
+  /* Keep original horizontal position in the gap */
+  width: 2px;
+  height: calc(100% + 24px);
+  /* Original height plus the 24px extension upward */
+  background-color: #d1d5db;
+}
+
+.dark .sidebar-border-right::after,
+.dark .sidebar-border-left::after {
+  background-color: #6b7280;
 }
 
 @theme inline {
@@ -344,66 +421,119 @@ html {
   }
 }
 
-/* Modern glassmorphism effects */
+/* Flat integrated design - borders always same size */
 .glass-card {
-  background: rgba(255, 255, 255, 0.25);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  background: transparent;
+  backdrop-filter: none;
+  border: 1px solid transparent !important;
+  box-shadow: 0 4px 12px 0 rgba(0, 0, 0, 0) !important;
+  transition: none !important;
+  transform: none !important;
 }
 
-.glass-card:hover {
-  background: rgba(255, 255, 255, 0.35);
-  box-shadow: 0 12px 40px 0 rgba(31, 38, 135, 0.45);
-  transform: translateY(-2px);
+.glass-card:hover,
+.glass-card:has(:hover),
+.glass-card:has([data-state="open"]) {
+  background: rgba(34, 197, 94, 0.05) !important;
+  border: 1px solid rgba(34, 197, 94, 0.3) !important;
+  box-shadow: 0 4px 12px 0 rgba(34, 197, 94, 0.1) !important;
+  transition: none !important;
+  transform: none !important;
 }
 
 .dark .glass-card {
-  background: rgba(15, 15, 15, 0.25);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+  background: transparent;
+  border: 1px solid transparent;
+  box-shadow: none;
 }
 
-.dark .glass-card:hover {
-  background: rgba(15, 15, 15, 0.35);
-  box-shadow: 0 12px 40px 0 rgba(0, 0, 0, 0.4);
+.dark .glass-card:hover,
+.dark .glass-card:has(:hover),
+.dark .glass-card:has([data-state="open"]) {
+  background: rgba(34, 197, 94, 0.08) !important;
+  border: 1px solid rgba(34, 197, 94, 0.35) !important;
+  box-shadow: 0 4px 12px 0 rgba(34, 197, 94, 0.15) !important;
 }
 
 /* Enhanced hover effects */
 .hover-lift {
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: none !important;
+  transform: none !important;
 }
 
 .hover-lift:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 12px 20px -5px rgba(34, 197, 94, 0.15);
+  transition: none !important;
+  transform: none !important;
 }
 
-/* Gradient borders */
+/* Christmas mode - Red hover effects */
+.christmas .glass-card:hover,
+.christmas .glass-card:has(:hover),
+.christmas .glass-card:has([data-state="open"]) {
+  background: rgba(239, 68, 68, 0.05) !important;
+  border: 1px solid rgba(239, 68, 68, 0.35) !important;
+  box-shadow: 0 4px 12px 0 rgba(239, 68, 68, 0.15) !important;
+}
+
+.christmas.dark .glass-card:hover,
+.christmas .dark .glass-card:hover,
+.christmas.dark .glass-card:has(:hover),
+.christmas .dark .glass-card:has(:hover),
+.christmas.dark .glass-card:has([data-state="open"]),
+.christmas .dark .glass-card:has([data-state="open"]) {
+  background: rgba(239, 68, 68, 0.08) !important;
+  border: 1px solid rgba(239, 68, 68, 0.4) !important;
+  box-shadow: 0 4px 12px 0 rgba(239, 68, 68, 0.2) !important;
+}
+
+.christmas .hover-lift:hover {
+  box-shadow: 0 8px 16px -5px rgba(239, 68, 68, 0.2) !important;
+}
+
+/* Flat design - no borders */
 .gradient-border {
   position: relative;
-  background: linear-gradient(white, white) padding-box,
-    linear-gradient(135deg, rgba(34, 197, 94, 0.3), rgba(107, 114, 128, 0.3)) border-box;
-  border: 1px solid transparent;
+  background: transparent;
+  border: none;
+}
+
+.gradient-border:hover {
+  background: rgba(34, 197, 94, 0.05) !important;
+  border: 1px solid rgba(34, 197, 94, 0.3) !important;
 }
 
 .dark .gradient-border {
-  background: linear-gradient(#1f1f1f, #1f1f1f) padding-box,
-    linear-gradient(135deg, rgba(34, 197, 94, 0.4), rgba(107, 114, 128, 0.4)) border-box;
+  background: transparent;
+  border: none;
 }
 
-/* Modern shadows */
+
+
+.dark .gradient-border:hover {
+  background: rgba(34, 197, 94, 0.08) !important;
+  border: 1px solid rgba(34, 197, 94, 0.35) !important;
+}
+
+/* Christmas mode - Red gradient border on hover */
+.christmas .gradient-border:hover {
+  background: rgba(239, 68, 68, 0.05);
+  border: 1px solid rgba(239, 68, 68, 0.35);
+}
+
+.christmas.dark .gradient-border:hover,
+.christmas .dark .gradient-border:hover {
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.4);
+}
+
+/* Flat design - no shadows */
 .shadow-modern {
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1),
-    0 2px 4px -1px rgba(0, 0, 0, 0.06),
-    0 0 0 1px rgba(255, 255, 255, 0.05);
+  box-shadow: none;
 }
 
 .shadow-modern-lg {
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
-    0 4px 6px -2px rgba(0, 0, 0, 0.05),
-    0 0 0 1px rgba(255, 255, 255, 0.05);
+  box-shadow: none;
 }
 
 /* Subtle animations */
@@ -466,7 +596,6 @@ html {
 }
 
 .btn-modern:hover {
-  transform: translateY(-1px);
   box-shadow: 0 10px 20px rgba(34, 197, 94, 0.3);
 }
 
@@ -598,43 +727,56 @@ textarea,
   scrollbar-color: hsl(142 76% 36% / 0.3) transparent !important;
 }
 
-/* Chromium browsers (Brave, Chrome, Edge) - Auto-hide scrollbars */
-::-webkit-scrollbar {
-  width: 6px !important;
-  height: 6px !important;
+/* Chromium browsers (Brave, Chrome, Edge) - Custom scrollbar for non-body elements */
+/* Body/html uses native browser scrollbar */
+*:not(body):not(html)::-webkit-scrollbar {
+  width: 0px !important;
+  height: 0px !important;
 }
 
-::-webkit-scrollbar-track {
+*:not(body):not(html)::-webkit-scrollbar-track {
   background: transparent !important;
   border-radius: 10px !important;
 }
 
 /* INVISIBLE by default */
-::-webkit-scrollbar-thumb {
+*:not(body):not(html)::-webkit-scrollbar-thumb {
   background: transparent !important;
   border-radius: 10px !important;
-  transition: background-color 0.2s ease !important;
 }
 
-/* VISIBLE only when hovering over scrollable area */
-*:hover::-webkit-scrollbar-thumb {
-  background: hsl(142 76% 36% / 0.3) !important;
+/* Sidebar specific - thin scrollbar, always reserve space, visible on hover */
+.sidebar-scroll {
+  scrollbar-width: thin !important;
+  /* Firefox */
+  scrollbar-color: transparent transparent !important;
+  /* Firefox - invisible by default */
+  scrollbar-gutter: stable !important;
+  /* Reserve space to prevent content shift */
 }
 
-/* More visible when hovering directly on scrollbar */
-*:hover::-webkit-scrollbar-thumb:hover {
-  background: hsl(142 76% 36% / 0.5) !important;
+.sidebar-scroll:hover {
+  scrollbar-color: hsl(142 76% 36% / 0.35) transparent !important;
+  /* Firefox - show on hover */
 }
 
-/* Sidebar specific - slightly more visible on hover */
 .sidebar-scroll::-webkit-scrollbar {
-  width: 6px !important;
+  width: 4px !important;
+  /* Thin scrollbar - always reserve this space */
+}
+
+.sidebar-scroll::-webkit-scrollbar-track {
+  background: transparent !important;
+}
+
+.sidebar-scroll:hover::-webkit-scrollbar {
+  width: 4px !important;
 }
 
 .sidebar-scroll::-webkit-scrollbar-thumb {
   background: transparent !important;
-  border-radius: 10px !important;
-  transition: all 0.2s ease !important;
+  /* Invisible by default */
+  border-radius: 4px !important;
 }
 
 .sidebar-scroll:hover::-webkit-scrollbar-thumb {
@@ -643,6 +785,15 @@ textarea,
 
 .sidebar-scroll:hover::-webkit-scrollbar-thumb:hover {
   background: hsl(142 76% 36% / 0.6) !important;
+}
+
+/* Move scrollbar to left side */
+.sidebar-scroll-left {
+  direction: rtl !important;
+}
+
+.sidebar-scroll-left>* {
+  direction: ltr !important;
 }
 
 [data-slot="select-trigger"]:hover svg {
@@ -1223,7 +1374,7 @@ textarea,
   background-size: contain;
   background-repeat: no-repeat;
   z-index: 50;
-  transform: rotate(-15deg);
+  transform: rotate(-25deg);
   filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.3));
   pointer-events: none;
 }
@@ -1419,4 +1570,228 @@ textarea,
 
 .christmas .glass-card:hover {
   box-shadow: 0 4px 20px rgba(196, 30, 58, 0.15), 0 0 30px rgba(255, 215, 0, 0.1);
+}
+
+/* ============================================================================
+   EFECTOS NAVIDEÑOS AVANZADOS
+   ============================================================================ */
+
+/* --- NIEVE ACUMULADA EN LA PARTE INFERIOR --- */
+.christmas body::after {
+  content: "";
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 50px;
+  background: linear-gradient(to top,
+      rgba(255, 255, 255, 0.8) 0%,
+      rgba(255, 255, 255, 0.4) 50%,
+      transparent 100%);
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* --- NIEVE EN EL TOPBAR/HEADER --- */
+.christmas header::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 100%;
+  height: 10px;
+  background: linear-gradient(to bottom,
+      rgba(255, 255, 255, 0.6) 0%,
+      rgba(255, 255, 255, 0.3) 50%,
+      transparent 100%);
+  pointer-events: none;
+  z-index: 100;
+}
+
+/* --- EFECTO ESCARCHA EN BORDES --- */
+@keyframes frost-shimmer {
+
+  0%,
+  100% {
+    box-shadow:
+      0 0 10px rgba(200, 220, 255, 0.3),
+      0 0 20px rgba(200, 220, 255, 0.2),
+      inset 0 0 10px rgba(255, 255, 255, 0.1);
+  }
+
+  50% {
+    box-shadow:
+      0 0 15px rgba(200, 220, 255, 0.5),
+      0 0 30px rgba(200, 220, 255, 0.3),
+      inset 0 0 15px rgba(255, 255, 255, 0.2);
+  }
+}
+
+.christmas .glass-card {
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  animation: frost-shimmer 4s ease-in-out infinite;
+  backdrop-filter: blur(10px) brightness(1.05);
+}
+
+/* --- ÁRBOL DE NAVIDAD --- */
+.christmas-tree {
+  position: relative;
+  width: 120px;
+  height: 150px;
+  margin: 0 auto;
+}
+
+.tree-star {
+  position: absolute;
+  top: -15px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 24px;
+  z-index: 10;
+  filter: drop-shadow(0 0 8px rgba(255, 215, 0, 0.8));
+}
+
+.tree-layer {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 30px solid transparent;
+  border-right: 30px solid transparent;
+  border-bottom: 40px solid #2d5016;
+}
+
+.tree-layer-1 {
+  top: 10px;
+  border-left-width: 25px;
+  border-right-width: 25px;
+  border-bottom-width: 35px;
+}
+
+.tree-layer-2 {
+  top: 35px;
+  border-left-width: 35px;
+  border-right-width: 35px;
+  border-bottom-width: 45px;
+}
+
+.tree-layer-3 {
+  top: 65px;
+  border-left-width: 45px;
+  border-right-width: 45px;
+  border-bottom-width: 50px;
+}
+
+.tree-trunk {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 18px;
+  height: 25px;
+  background-color: #5c3317;
+  border-radius: 2px;
+}
+
+/* Luces del árbol */
+.tree-light {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  z-index: 5;
+}
+
+.tree-light-1 {
+  top: 20px;
+  left: 35%;
+  background-color: #ff0000;
+}
+
+.tree-light-2 {
+  top: 25px;
+  right: 35%;
+  background-color: #ffd700;
+}
+
+.tree-light-3 {
+  top: 40px;
+  left: 25%;
+  background-color: #00ff00;
+}
+
+.tree-light-4 {
+  top: 45px;
+  right: 25%;
+  background-color: #ff0000;
+}
+
+.tree-light-5 {
+  top: 50px;
+  left: 50%;
+  background-color: #0000ff;
+}
+
+.tree-light-6 {
+  top: 65px;
+  left: 20%;
+  background-color: #ffd700;
+}
+
+.tree-light-7 {
+  top: 70px;
+  right: 20%;
+  background-color: #00ff00;
+}
+
+.tree-light-8 {
+  top: 80px;
+  left: 50%;
+  background-color: #ff0000;
+}
+
+.tree-light-9 {
+  top: 85px;
+  left: 15%;
+  background-color: #0000ff;
+}
+
+.tree-light-10 {
+  top: 90px;
+  right: 15%;
+  background-color: #ffd700;
+}
+
+.tree-light-11 {
+  top: 100px;
+  left: 30%;
+  background-color: #00ff00;
+}
+
+.tree-light-12 {
+  top: 105px;
+  right: 30%;
+  background-color: #ff0000;
+}
+
+/* --- FONDO MEJORADO CON COPOS DE NIEVE --- */
+.christmas .workcodile-bg::before {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image:
+    radial-gradient(2px 2px at 20% 30%, rgba(255, 255, 255, 0.15), transparent),
+    radial-gradient(2px 2px at 60% 70%, rgba(255, 255, 255, 0.15), transparent),
+    radial-gradient(1px 1px at 50% 50%, rgba(255, 255, 255, 0.1), transparent),
+    radial-gradient(1px 1px at 80% 10%, rgba(255, 255, 255, 0.1), transparent),
+    radial-gradient(2px 2px at 90% 60%, rgba(255, 255, 255, 0.15), transparent);
+  background-size: 200px 200px, 300px 300px, 150px 150px, 250px 250px, 180px 180px;
+  background-position: 0 0, 40px 60px, 130px 270px, 70px 100px, 150px 50px;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.4;
 }

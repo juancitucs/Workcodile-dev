@@ -522,7 +522,7 @@ export function CreatePostModal({ isOpen, onClose }: CreatePostModalProps) {
                         )}
 
                         <p className="text-xs text-muted-foreground">
-                          Máximo 30MB por archivo
+                          Máximo 30MB por archivo - 5 archivos por post
                         </p>
                       </div>
                     </AccordionContent>

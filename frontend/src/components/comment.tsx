@@ -141,42 +141,66 @@ export function Comment({ comment, postId, onCommentVote, highlightCommentId, de
             <MarkdownRenderer attachments={comment.attachments || []}>{comment.content}</MarkdownRenderer>
           </div>
 
-          {comment.attachments && comment.attachments.length > 0 && (
-            <Accordion type="single" collapsible className="w-full mb-3">
-              <AccordionItem value="attachments">
-                <AccordionTrigger className="text-xs py-1">
-                  <div className="flex items-center space-x-2 text-muted-foreground">
-                    <Paperclip className="h-3 w-3" />
-                    <span>
-                      {comment.attachments.length} archivo{comment.attachments.length > 1 ? 's' : ''} adjunto{comment.attachments.length > 1 ? 's' : ''}
-                    </span>
-                  </div>
-                </AccordionTrigger>
-                <AccordionContent>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-2">
-                    {comment.attachments.map((attachment, index) => (
-                      <div key={`${index}-${attachment.name}`} onClick={(e) => handleDownload(e, attachment)}>
-                        <motion.div
-                          whileHover={{ scale: 1.02, y: -1 }}
-                          transition={{ duration: 0.2, ease: [0.4, 0, 0.2, 1] }}
-                          className="flex items-center space-x-2 p-2 bg-background-alt rounded-md hover:bg-accent cursor-pointer transition-colors shadow-sm"
-                        >
-                          <span className="text-sm">{getFileIcon(attachment.type)}</span>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-xs font-medium truncate">{attachment.name}</p>
-                            <p className="text-xs text-muted-foreground">{formatFileSize(attachment.size)}</p>
-                          </div>
-                          <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
-                            <Download className="h-3 w-3" />
-                          </Button>
-                        </motion.div>
-                      </div>
-                    ))}
-                  </div>
-                </AccordionContent>
-              </AccordionItem>
-            </Accordion>
-          )}
+          {/* Inline image - only first image */}
+          {comment.attachments && (() => {
+            const firstImage = comment.attachments.find(a => a.type.startsWith('image/'));
+            if (!firstImage) return null;
+            const url = getAttachmentUrl(firstImage);
+            return url ? (
+              <div className="mb-2">
+                <img
+                  src={url}
+                  alt={firstImage.name}
+                  className="max-h-48 max-w-full rounded-lg border cursor-pointer hover:opacity-90 transition-opacity"
+                  onClick={(e) => handleDownload(e, firstImage)}
+                />
+              </div>
+            ) : null;
+          })()}
+
+          {/* Other attachments accordion (all except first image) */}
+          {comment.attachments && (() => {
+            const firstImage = comment.attachments.find(a => a.type.startsWith('image/'));
+            const otherAttachments = comment.attachments.filter(a => a !== firstImage);
+            if (otherAttachments.length === 0) return null;
+
+            return (
+              <Accordion type="single" collapsible className="w-full mb-3">
+                <AccordionItem value="attachments">
+                  <AccordionTrigger className="text-xs py-1">
+                    <div className="flex items-center space-x-2 text-muted-foreground">
+                      <Paperclip className="h-3 w-3" />
+                      <span>
+                        {otherAttachments.length} archivo{otherAttachments.length > 1 ? 's' : ''} adjunto{otherAttachments.length > 1 ? 's' : ''}
+                      </span>
+                    </div>
+                  </AccordionTrigger>
+                  <AccordionContent>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-2">
+                      {otherAttachments.map((attachment, index) => (
+                        <div key={`${index}-${attachment.name}`} onClick={(e) => handleDownload(e, attachment)}>
+                          <motion.div
+                            whileHover={{ scale: 1.02, y: -1 }}
+                            transition={{ duration: 0.2, ease: [0.4, 0, 0.2, 1] }}
+                            className="flex items-center space-x-2 p-2 bg-background-alt rounded-md hover:bg-accent cursor-pointer transition-colors shadow-sm"
+                          >
+                            <span className="text-sm">{getFileIcon(attachment.type)}</span>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-xs font-medium truncate">{attachment.name}</p>
+                              <p className="text-xs text-muted-foreground">{formatFileSize(attachment.size)}</p>
+                            </div>
+                            <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+                              <Download className="h-3 w-3" />
+                            </Button>
+                          </motion.div>
+                        </div>
+                      ))}
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+              </Accordion>
+            );
+          })()}
 
           <div className="flex items-center space-x-1">
             <div className="flex items-center space-x-1">

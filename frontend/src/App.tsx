@@ -5,6 +5,7 @@ import { Toaster } from './components/ui/sonner'
 import { SinglePostView } from './components/single-post-view'
 import { MainLayout } from './components/MainLayout'
 import { Snowflakes } from './components/snowflakes'
+import { ChristmasMusicPlayer } from './components/ChristmasMusicPlayer'
 import { Loader2 } from 'lucide-react'
 import { Routes, Route } from 'react-router-dom'
 
@@ -38,6 +39,7 @@ export default function App() {
     <AppProvider>
       <AppContent />
       <Snowflakes /> {/* 🎄 Copos de nieve navideños */}
+      <ChristmasMusicPlayer /> {/* 🎵 Música navideña */}
       <Toaster />
     </AppProvider>
   )
