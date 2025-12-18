@@ -925,6 +925,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   }
 
+  // TODO BACKEND: El endpoint POST /api/posts/:id/bookmark debe:
+  // 1. Alternar el estado de bookmark del post para el usuario autenticado
+  // 2. Guardar la relación user_id + post_id en la base de datos
+  // 3. Devolver { bookmarked: true/false } indicando el nuevo estado
   const toggleBookmark = async (postId: string) => {
     if (!user) return
     const token = localStorage.getItem('token')
@@ -960,6 +964,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   }
 
+  // TODO BACKEND: El endpoint POST /api/posts/:id/report debe:
+  // 1. Guardar el reporte con: postId, reporterId (usuario que reporta), reason, timestamp
+  // 2. Notificar a los moderadores/admins sobre el nuevo reporte
+  // 3. Evitar reportes duplicados del mismo usuario al mismo post
   const reportPost = async (postId: string, reason: string = 'No reason provided') => {
     if (!user) return
     const token = localStorage.getItem('token')
@@ -985,6 +993,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   }
 
+  // TODO BACKEND: El endpoint PUT /api/posts/:id/toggle-comments debe:
+  // 1. Alternar el estado de commentsDisabled del post
+  // 2. Solo el autor del post puede ejecutar esta acción
+  // 3. Devolver el nuevo estado { commentsDisabled: true/false }
   const toggleComments = async (postId: string) => {
     // Optimistic update
     setPosts((prevPosts) =>
@@ -1000,8 +1012,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
     if (!token) return
 
     try {
-      // Mock endpoint call - we assume the backend would handle this
-      /*
       const response = await fetch(`${API_BASE_URL}/api/posts/${postId}/toggle-comments`, {
         method: 'PUT',
         headers: {
@@ -1012,7 +1022,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
       if (!response.ok) {
         throw new Error('Failed to toggle comments')
       }
-      */
       console.log(`Comments toggled for post ${postId}`)
     } catch (error) {
       console.error('Error toggling comments:', error)
@@ -1098,6 +1107,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   }
 
+  // TODO BACKEND: El endpoint PUT /api/posts/:id debe:
+  // 1. Aceptar 'hashtags' (string[]) en el body además de title y content
+  // 2. Devolver 'editedAt' (timestamp) cuando el post es actualizado
+  // 3. Guardar editedAt en la base de datos para mostrar "(editado)" en el frontend
   const updatePost = async (postId: string, data: { title: string; content: string; hashtags?: string[] }) => {
     const token = localStorage.getItem('token')
     if (!token) return

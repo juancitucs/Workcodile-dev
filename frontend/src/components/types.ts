@@ -27,6 +27,10 @@ export interface FileAttachment {
   object_key?: string
 }
 
+// TODO BACKEND: El modelo Post en la base de datos debe incluir estos campos:
+// - editedAt: Date (opcional, se actualiza cuando el post es editado)
+// - isBookmarked: se calcula dinámicamente según el usuario que consulta
+// - commentsDisabled: boolean para permitir al autor desactivar comentarios
 export interface Post {
   id: string
   title: string

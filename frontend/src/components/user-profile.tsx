@@ -256,6 +256,10 @@ export function UserProfile({ isOpen, onClose, userId }: UserProfileProps) {
       return;
     }
 
+    // TODO BACKEND: El endpoint PUT /api/auth/me debe:
+    // 1. Aceptar 'interests' (string[], máx 6 items, máx 20 chars cada uno)
+    // 2. Aceptar 'socialLinks' (array de { name: string, url: string })
+    // 3. Guardar y devolver los datos actualizados del usuario
     try {
       const token = localStorage.getItem('token');
       const response = await fetch(`${API_BASE_URL}/api/auth/me`, {
