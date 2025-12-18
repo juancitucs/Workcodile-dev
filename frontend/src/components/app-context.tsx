@@ -61,6 +61,7 @@ interface AppContextType {
   fetchMorePosts: () => void
   hasMorePosts: boolean
   isFetchingPosts: boolean
+  toggleComments: (postId: string) => Promise<void>
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined)
@@ -186,6 +187,7 @@ const transformBackendComment = (comment: any): Comment => {
       avatar: comment.author?.avatar_key ? comment.author.avatar : undefined,
       university: 'UNAM',
       email: comment.author?.email || '',
+      level: comment.author?.level || 1, // Nivel del usuario para el badge
     },
     attachments: comment.attachments ? comment.attachments.map((att: any) => ({
       ...att,
@@ -206,6 +208,7 @@ const transformBackendPost = (post: any): Post => ({
     avatar: post.author?.avatar_key ? post.author.avatar : undefined,
     university: 'UNAM',
     email: post.author?.email || '',
+    level: post.author?.level || 1, // Nivel del usuario para el badge
   },
   createdAt: new Date(post.createdAt),
   course: post.course_id || '',
@@ -982,6 +985,49 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   }
 
+  const toggleComments = async (postId: string) => {
+    // Optimistic update
+    setPosts((prevPosts) =>
+      prevPosts.map((post) => {
+        if (post.id === postId) {
+          return { ...post, commentsDisabled: !post.commentsDisabled }
+        }
+        return post
+      })
+    )
+
+    const token = localStorage.getItem('token')
+    if (!token) return
+
+    try {
+      // Mock endpoint call - we assume the backend would handle this
+      /*
+      const response = await fetch(`${API_BASE_URL}/api/posts/${postId}/toggle-comments`, {
+        method: 'PUT',
+        headers: {
+          'x-auth-token': token,
+        },
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to toggle comments')
+      }
+      */
+      console.log(`Comments toggled for post ${postId}`)
+    } catch (error) {
+      console.error('Error toggling comments:', error)
+      // Revert optimistic update on error
+      setPosts((prevPosts) =>
+        prevPosts.map((post) => {
+          if (post.id === postId) {
+            return { ...post, commentsDisabled: !post.commentsDisabled }
+          }
+          return post
+        })
+      )
+    }
+  }
+
   const incrementViews = (postId: string) => {
     // This function is now a no-op on the network level, only updates local state.
     // The batch processing will handle backend updates.
@@ -1052,7 +1098,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   }
 
-  const updatePost = async (postId: string, data: { title: string; content: string }) => {
+  const updatePost = async (postId: string, data: { title: string; content: string; hashtags?: string[] }) => {
     const token = localStorage.getItem('token')
     if (!token) return
 
@@ -1119,6 +1165,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         fetchMorePosts,
         hasMorePosts,
         isFetchingPosts,
+        toggleComments,
       }}
     >
       {children}

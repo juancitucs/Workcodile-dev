@@ -51,6 +51,7 @@ import { formatFileSize, getFileIcon, getAttachmentUrl } from './file-utils';
 import { CreateCommentForm } from './CreateCommentForm';
 import { EditPostModal } from './edit-post-modal';
 import { toast } from 'sonner';
+import { LevelBadge } from './level-badge';
 
 interface PostCardProps {
   post: Post;
@@ -80,6 +81,7 @@ export function PostCard({ post, startWithCommentsOpen = false, highlightComment
     toggleBookmark,
     reportPost,
     deletePost,
+    toggleComments,
   } = useApp();
   const [showComments, setShowComments] = useState(startWithCommentsOpen);
   const [showProfile, setShowProfile] = useState(false);
@@ -171,16 +173,23 @@ export function PostCard({ post, startWithCommentsOpen = false, highlightComment
                   handleShowProfile(post.author.id);
                 }}
               >
-                <Avatar className="h-10 w-10">
-                  <AvatarImage src={post.author.avatar} alt={post.author.name} />
-                  <AvatarFallback className="bg-primary/10">
-                    {post.author.avatar ? (
-                      post.author.name.charAt(0).toUpperCase()
-                    ) : (
-                      <WorkCodileLogo className="h-6 w-6" />
-                    )}
-                  </AvatarFallback>
-                </Avatar>
+                {/* Avatar con medalla de nivel en esquina inferior derecha */}
+                <div className="relative">
+                  <Avatar className="h-10 w-10">
+                    <AvatarImage src={post.author.avatar} alt={post.author.name} />
+                    <AvatarFallback className="bg-primary/10">
+                      {post.author.avatar ? (
+                        post.author.name.charAt(0).toUpperCase()
+                      ) : (
+                        <WorkCodileLogo className="h-6 w-6" />
+                      )}
+                    </AvatarFallback>
+                  </Avatar>
+                  {/* Medalla de nivel - posición controlada por CSS (ver globals.css) */}
+                  <div className="level-badge-overlay absolute z-[60]">
+                    <LevelBadge level={post.author.level || 1} customSize={38} />
+                  </div>
+                </div>
                 <div>
                   <p className="font-medium text-sm">{post.author.name}</p>
                   <div className="flex items-center space-x-2 text-xs text-muted-foreground">
@@ -191,6 +200,9 @@ export function PostCard({ post, startWithCommentsOpen = false, highlightComment
                         locale: es,
                       })}
                     </span>
+                    {post.editedAt && (
+                      <span className="text-muted-foreground/70 italic">(editado)</span>
+                    )}
                     {course && (
                       <Badge
                         variant="secondary"
@@ -213,25 +225,61 @@ export function PostCard({ post, startWithCommentsOpen = false, highlightComment
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
+                  {/* Opciones para el autor del post */}
                   {user?.id === post.author.id && (
                     <>
                       <DropdownMenuItem
-                        className="cursor-pointer"
+                        className="cursor-pointer group"
                         onClick={() => setShowEditModal(true)}
                       >
-                        <Pencil className="h-4 w-4 mr-2" />
+                        <Pencil className="h-4 w-4 mr-2 group-focus:text-white" />
                         Editar publicación
                       </DropdownMenuItem>
                       <DropdownMenuItem
-                        className="cursor-pointer text-destructive focus:text-destructive"
+                        className="cursor-pointer group"
+                        onClick={() => toggleComments(post.id)}
+                      >
+                        {post.commentsDisabled ? (
+                          <>
+                            <MessageSquareOff className="h-4 w-4 mr-2 group-focus:text-white" />
+                            Activar comentarios
+                          </>
+                        ) : (
+                          <>
+                            <MessageSquareOff className="h-4 w-4 mr-2 group-focus:text-white" />
+                            Desactivar comentarios
+                          </>
+                        )}
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        className="cursor-pointer text-destructive focus:text-white group"
                         onClick={() => setShowDeleteDialog(true)}
                       >
-                        <Trash2 className="h-4 w-4 mr-2" />
+                        <Trash2 className="h-4 w-4 mr-2 group-focus:text-white" />
                         Eliminar
                       </DropdownMenuItem>
                     </>
                   )}
-                  {/* User-facing options for non-authors are hidden as per request */}
+                  {/* Opciones para visitantes (no autores) */}
+                  {user?.id !== post.author.id && (
+                    <>
+                      <DropdownMenuItem
+                        className="cursor-pointer group"
+                        onClick={handleBookmark}
+                      >
+                        <Bookmark className={`h-4 w-4 mr-2 group-focus:text-white ${post.isBookmarked ? 'fill-current' : ''}`} />
+                        {post.isBookmarked ? 'Quitar de marcadores' : 'Guardar en marcadores'}
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem
+                        className="cursor-pointer text-destructive focus:text-white group"
+                        onClick={handleReport}
+                      >
+                        <Flag className="h-4 w-4 mr-2 group-focus:text-white" />
+                        Reportar publicación
+                      </DropdownMenuItem>
+                    </>
+                  )}
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>

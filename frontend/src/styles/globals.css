@@ -19,13 +19,13 @@
      ===================================================================== */
   --divider-thickness: 2px;
   /* GROSOR DE TODAS LAS LÍNEAS - Cambia a 2px, 4px, etc */
-  --divider-color-light: #d2dbd1a5;
+  --divider-color-light: #acaaaac3;
   /* COLOR DE LÍNEAS EN TEMA CLARO - Prueba #d1d5db (gris), #22c55e (verde), #3b82f6 (azul) */
   --divider-color-dark: #4b5563;
   /* COLOR DE LÍNEAS EN TEMA OSCURO */
   --sidebar-border-thickness: 2px;
   /* GROSOR DE BORDES VERTICALES DEL SIDEBAR */
-  --sidebar-border-color-light: #dbd1d4a5;
+  --sidebar-border-color-light: #acaaaac3;
   /* COLOR DEL BORDE VERTICAL SIDEBAR CLARO */
   --sidebar-border-color-dark: #4b5563;
   /* COLOR DEL BORDE VERTICAL SIDEBAR OSCURO */
@@ -33,7 +33,7 @@
   /* VERDE CLARO - Para acentos y hovers. Un tono más claro del verde principal */
   --workcodile-green-dark: #16a34a;
   /* VERDE OSCURO - Para textos o bordes sobre fondos verdes */
-  --workcodile-green-subtle: #dcfce7;
+  --workcodile-green-subtle: #ecdcfc;
   /* VERDE SUTIL - Color de fondo muy suave, apenas perceptible */
   --workcodile-black: #0f0f0f;
   /* NEGRO - Color del texto principal, casi negro puro */
@@ -362,33 +362,34 @@
   }
 }
 
-.workcodile-bg {
-  /* FONDO TEMA CLARO - Gradiente con brillo verde sutil más visible */
+/*.workcodile-bg { FONDO ANIMADO MOVIMIENTO
+  
   background:
     radial-gradient(circle at 20% 30%, rgba(34, 197, 94, 0.08) 0%, transparent 45%),
-    /* Brillo verde arriba-izquierda */
+    
     radial-gradient(circle at 85% 75%, rgba(34, 197, 94, 0.12) 0%, transparent 40%),
-    /* Brillo verde abajo-derecha */
+    
     radial-gradient(circle at 50% 50%, rgba(34, 197, 94, 0.03) 0%, transparent 70%),
-    /* Brillo central muy sutil */
+    
     linear-gradient(145deg, #fafafa 0%, #f0f0f0 50%, #fafafa 100%);
-  /* Fondo gris muy claro con degradado */
+  
   background-size: 400% 400%, 350% 350%, 500% 500%, 100% 100%;
   animation: subtleMove 20s ease-in-out infinite;
-}
+} */
 
-.workcodile-bg.dark {
-  /* FONDO TEMA OSCURO - Gradiente con brillo verde más visible */
+/*
+  .workcodile-bg.dark { FONDO ANIMADO MOVIMIENTO
+
   background:
     radial-gradient(circle at 20% 30%, rgba(34, 197, 94, 0.15) 0%, transparent 45%),
-    /* Brillo verde arriba-izquierda */
+    
     radial-gradient(circle at 85% 75%, rgba(34, 197, 94, 0.12) 0%, transparent 40%),
-    /* Brillo verde abajo-derecha */
+
     radial-gradient(circle at 50% 50%, rgba(34, 197, 94, 0.05) 0%, transparent 70%),
-    /* Brillo central sutil */
+
     linear-gradient(145deg, #121212 0%, #1a1a1a 50%, #121212 100%);
-  /* Fondo oscuro con degradado */
-}
+  }
+*/
 
 @keyframes float {
 
@@ -567,10 +568,11 @@ html {
 .dark .glass-card:hover,
 .dark .glass-card:has(:hover),
 .dark .glass-card:has([data-state="open"]) {
-  background: rgba(34, 197, 94, 0.08) !important;
+  background: rgba(34, 197, 94, 0.05) !important;
   border: 1px solid rgba(34, 197, 94, 0.35) !important;
   box-shadow: 0 8px 24px -4px rgba(34, 197, 94, 0.2) !important;
 }
+
 
 /* Efectos hover mejorados con animación suave */
 .hover-lift {
@@ -651,7 +653,7 @@ select,
 .christmas .dark .glass-card:has(:hover),
 .christmas.dark .glass-card:has([data-state="open"]),
 .christmas .dark .glass-card:has([data-state="open"]) {
-  background: rgba(239, 68, 68, 0.08) !important;
+  background: rgba(222, 180, 180, 0.049) !important;
   border: 1px solid rgba(239, 68, 68, 0.4) !important;
   box-shadow: 0 4px 12px 0 rgba(239, 68, 68, 0.2) !important;
 }
@@ -703,6 +705,22 @@ select,
 
 .shadow-modern-lg {
   box-shadow: none;
+}
+
+/* =====================================================================
+   DROPDOWN MENU - Iconos y texto blancos en hover/focus
+   ===================================================================== */
+[role="menuitem"]:focus svg,
+[role="menuitem"]:hover svg,
+[data-highlighted] svg {
+  color: white !important;
+}
+
+/* Texto destructivo (rojo) también blanco en hover */
+[role="menuitem"].text-destructive:focus,
+[role="menuitem"].text-destructive:hover,
+[role="menuitem"].text-destructive[data-highlighted] {
+  color: white !important;
 }
 
 /* Animaciones sutiles */
@@ -1089,7 +1107,7 @@ button[data-slot="button"]:hover .text-muted-foreground,
 
 /* Cycle 1 - Lightest */
 .cycle-1-bg {
-  background-color: #E8EAF6 !important;
+  background-color: #a4acdfb0 !important;
 }
 
 .cycle-1-text {
@@ -1098,7 +1116,7 @@ button[data-slot="button"]:hover .text-muted-foreground,
 
 /* Cycle 2 */
 .cycle-2-bg {
-  background-color: #C5CBE9 !important;
+  background-color: #a4acdfb0 !important;
 }
 
 .cycle-2-text {
@@ -1107,7 +1125,7 @@ button[data-slot="button"]:hover .text-muted-foreground,
 
 /* Cycle 3 */
 .cycle-3-bg {
-  background-color: #9FA8DA !important;
+  background-color: #a4acdfb0 !important;
 }
 
 .cycle-3-text {
@@ -1116,65 +1134,65 @@ button[data-slot="button"]:hover .text-muted-foreground,
 
 /* Cycle 4 */
 .cycle-4-bg {
-  background-color: #7986CB !important;
+  background-color: #a4acdfb0 !important;
 }
 
 .cycle-4-text {
-  color: #ffffff !important;
+  color: #1a1a2e !important;
 }
 
 /* Cycle 5 */
 .cycle-5-bg {
-  background-color: #5C6BC0 !important;
+  background-color: #a4acdfb0 !important;
 }
 
 .cycle-5-text {
-  color: #ffffff !important;
+  color: #1a1a2e !important;
 }
 
 /* Cycle 6 */
 .cycle-6-bg {
-  background-color: #3F51B5 !important;
+  background-color: #a4acdfb0 !important;
 }
 
 .cycle-6-text {
-  color: #ffffff !important;
+  color: #1a1a2e !important;
 }
 
 /* Cycle 7 */
 .cycle-7-bg {
-  background-color: #394AAE !important;
+  background-color: #a4acdfb0 !important;
 }
 
 .cycle-7-text {
-  color: #ffffff !important;
+  color: #1a1a2e !important;
 }
 
 /* Cycle 8 */
 .cycle-8-bg {
-  background-color: #3140A5 !important;
+  background-color: #a4acdfb0 !important;
 }
 
 .cycle-8-text {
-  color: #ffffff !important;
+  color: #1a1a2e !important;
 }
 
 /* Cycle 9 */
 .cycle-9-bg {
-  background-color: #29379D !important;
+  background-color: #a4acdfb0 !important;
 }
 
 .cycle-9-text {
-  color: #ffffff !important;
+  color: #1a1a2e !important;
 }
 
 /* Cycle 10 - Darkest */
 .cycle-10-bg {
-  background-color: #1B278D !important;
+  background-color: #a4acdfb0 !important;
 }
 
 .cycle-10-text {
-  color: #ffffff !important;
+  color: #1a1a2e !important;
 }
 
 /* =====================================================
@@ -1185,8 +1203,8 @@ button[data-slot="button"]:hover .text-muted-foreground,
 .dark [data-slot="select-trigger"],
 .dark button[data-slot="select-trigger"],
 .dark [role="combobox"] {
-  background-color: var(--workcodile-gray-dark) !important;
-  border-color: rgba(107, 114, 128, 0.3) !important;
+  background-color: rgba(107, 114, 128, 0.21) !important;
+  border-color: rgba(107, 114, 128, 0.21) !important;
   color: #ffffff !important;
 }
 
@@ -1629,6 +1647,8 @@ button[data-slot="button"]:hover .text-muted-foreground,
   animation-name: snowfall-sway;
 }
 
+
+
 /* ============================================================================
    DISEÑO NAVIDEÑO ADICIONAL
    ============================================================================ */
@@ -1682,7 +1702,8 @@ button[data-slot="button"]:hover .text-muted-foreground,
 }
 
 /* --- FONDO CON PATRÓN SUTIL DE NAVIDAD --- */
-.christmas body::before {
+/* Efecto de luces rojo/verde/dorado desactivado */
+/* .christmas body::before {
   content: "";
   position: fixed;
   top: 0;
@@ -1695,7 +1716,7 @@ button[data-slot="button"]:hover .text-muted-foreground,
     radial-gradient(circle at 50% 50%, rgba(255, 215, 0, 0.02) 0%, transparent 30%);
   pointer-events: none;
   z-index: -1;
-}
+} */
 
 /* Patrón de árboles muy sutil */
 .christmas .workcodile-bg::after {
@@ -1709,38 +1730,6 @@ button[data-slot="button"]:hover .text-muted-foreground,
   z-index: 0;
 }
 
-/* --- BORDES DE BASTÓN DE CARAMELO --- */
-@keyframes candy-cane-move {
-  0% {
-    background-position: 0 0;
-  }
-
-  100% {
-    background-position: 40px 0;
-  }
-}
-
-.christmas .candy-cane-border {
-  position: relative;
-  overflow: hidden;
-}
-
-.christmas .candy-cane-border::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 4px;
-  background: repeating-linear-gradient(90deg,
-      #c41e3a 0px,
-      #c41e3a 10px,
-      #fff 10px,
-      #fff 20px);
-  animation: candy-cane-move 2s linear infinite;
-}
-
-/* Candy cane borders removed from glass-card for cleaner look */
 
 /* --- ESTRELLA BRILLANTE ANIMADA --- */
 @keyframes twinkle {
@@ -1795,25 +1784,7 @@ button[data-slot="button"]:hover .text-muted-foreground,
 }
 
 /* --- LUCES DE NAVIDAD EFECTO EN HEADER --- */
-.christmas header::after {
-  content: "";
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 2px;
-  background: linear-gradient(90deg,
-      transparent,
-      #c41e3a,
-      #ffd700,
-      #228b22,
-      #c41e3a,
-      #ffd700,
-      #228b22,
-      transparent);
-  background-size: 200% 100%;
-  animation: lights-flow 4s linear infinite;
-}
+/* Removed - requested by user */
 
 @keyframes lights-flow {
   0% {
@@ -1838,35 +1809,61 @@ button[data-slot="button"]:hover .text-muted-foreground,
    EFECTOS NAVIDEÑOS AVANZADOS
    ============================================================================ */
 
-/* --- NIEVE ACUMULADA EN LA PARTE INFERIOR --- */
-/* Removed - snow accumulation effect disabled */
 
-/* --- NIEVE EN EL TOPBAR/HEADER --- */
-/* Removed - this was overriding the Christmas lights effect from lines 1648-1666 */
-
-/* --- EFECTO ESCARCHA EN BORDES --- */
-@keyframes frost-shimmer {
-
-  0%,
-  100% {
-    box-shadow:
-      0 0 10px rgba(200, 220, 255, 0.3),
-      0 0 20px rgba(200, 220, 255, 0.2),
-      inset 0 0 10px rgba(255, 255, 255, 0.1);
-  }
-
-  50% {
-    box-shadow:
-      0 0 15px rgba(200, 220, 255, 0.5),
-      0 0 30px rgba(200, 220, 255, 0.3),
-      inset 0 0 15px rgba(255, 255, 255, 0.2);
-  }
-}
 
 .christmas .glass-card {
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  animation: frost-shimmer 4s ease-in-out infinite;
-  backdrop-filter: blur(10px) brightness(1.05);
+  /* IDÉNTICO AL TEMA VERDE - Sin efectos de flotación */
+  background: transparent !important;
+  border: 1px solid transparent !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  animation: none !important;
+}
+
+/* Tema navideño oscuro - también idéntico al tema oscuro verde */
+.christmas.dark .glass-card,
+.christmas .dark .glass-card {
+  background: transparent !important;
+  border: 1px solid transparent !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  animation: none !important;
+}
+
+/* ============================================================================
+   MEDALLA DE NIVEL EN POSTS - Posición ajustable por tema
+   ============================================================================ */
+
+/* TEMA NORMAL (Verde) - Ajusta estos valores para posición y tamaño */
+.level-badge-overlay {
+  bottom: -30px;
+  /* Posición vertical (negativo = más abajo del avatar) */
+  right: 0px;
+  /* Posición horizontal (0 = alineado a la derecha) */
+}
+
+/* TEMA NAVIDEÑO - Ajusta estos valores independientemente */
+.christmas .level-badge-overlay {
+  bottom: -25px;
+  /* Más abajo para evitar el gorro de Santa */
+  right: 0px;
+  /* Ajuste horizontal para navidad */
+}
+
+/* Mejora visual de las medallas - MODO CLARO (más contraste con sombra oscura) */
+/* Aplica a TODAS las medallas en cualquier lugar (posts, top usuarios, perfil, etc) */
+.level-badge-img {
+  filter: brightness(1.25) saturate(1.4) contrast(1.1) drop-shadow(0 2px 6px rgba(0, 0, 0, 0.4));
+  /* brightness = brillo (1.25 = 25% más brillante) */
+  /* saturate = saturación de color (1.4 = 40% más vivo) */
+  /* contrast = más contraste para resaltar */
+  /* drop-shadow = sombra oscura para contrastar con fondo claro */
+}
+
+/* Mejora visual de las medallas - MODO OSCURO (resplandor dorado) */
+.dark .level-badge-img {
+  filter: brightness(1.2) saturate(1.3) drop-shadow(0 0 6px rgba(255, 215, 0, 0.6));
+  /* drop-shadow = resplandor dorado que resalta en fondo oscuro */
 }
 
 /* --- ÁRBOL DE NAVIDAD --- */
@@ -1948,7 +1945,7 @@ button[data-slot="button"]:hover .text-muted-foreground,
 .tree-light-2 {
   top: 25px;
   right: 35%;
-  background-color: #ffd700;
+  background-color: #decf00;
 }
 
 .tree-light-3 {
@@ -2011,7 +2008,7 @@ button[data-slot="button"]:hover .text-muted-foreground,
   background-color: #ff0000;
 }
 
-/* --- FONDO MEJORADO CON COPOS DE NIEVE --- */
+/* --- FONDO MEJORADO CON COPOS DE NIEVE --- 
 .christmas .workcodile-bg::before {
   content: "";
   position: fixed;
@@ -2031,7 +2028,7 @@ button[data-slot="button"]:hover .text-muted-foreground,
   z-index: 0;
   opacity: 0.4;
 }
-
+*/
 /* ============================================================================
    COMMENT THREAD LINES - Discord-style left border threading
    ============================================================================ */
@@ -2066,4 +2063,20 @@ button[data-slot="button"]:hover .text-muted-foreground,
 
 .christmas .comment-replies:hover {
   border-color: rgba(239, 68, 68, 0.8) !important;
+}
+
+.dark *:hover {
+  --tw-bg-opacity: 1 !important;
+}
+
+.dark .glass-card:hover,
+.dark .glass-card:has(:hover),
+.dark .gradient-border:hover,
+.dark .sidebar-item:hover,
+.dark .hover\:bg-primary\/10:hover,
+.dark .hover\:bg-primary\/5:hover,
+.dark .hover\:bg-primary\/20:hover,
+.dark [class*="hover:bg-primary"]:hover {
+  background: rgba(184, 222, 180, 0.049) !important;
+  background-color: rgba(180, 222, 181, 0.049) !important;
 }

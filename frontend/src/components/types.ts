@@ -7,6 +7,8 @@ export interface User {
   university: string
   theme?: string
   bookmarked_posts?: string[]
+  level?: number  // Nivel del usuario para mostrar badge
+  xp?: number     // Experiencia del usuario
 }
 
 export interface Course {
@@ -31,6 +33,7 @@ export interface Post {
   content: string
   author: User
   createdAt: Date
+  editedAt?: Date  // Fecha de última edición
   course: string // Course ID
   upvotes: number
   downvotes: number
@@ -41,6 +44,7 @@ export interface Post {
   // Additional fields
   views: number
   isBookmarked?: boolean
+  commentsDisabled?: boolean
 }
 
 export interface Comment {

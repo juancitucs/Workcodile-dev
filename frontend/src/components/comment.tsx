@@ -14,6 +14,7 @@ import MarkdownRenderer from './markdown-renderer';
 import { CreateCommentForm } from './CreateCommentForm';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from './ui/accordion'; // Agregar Accordion
 import { formatFileSize, getFileIcon, getAttachmentUrl } from './file-utils'; // Agregar utilidades de archivos
+import { LevelBadge } from './level-badge';
 
 interface CommentProps {
   comment: CommentType;
@@ -106,7 +107,7 @@ export function Comment({ comment, postId, onCommentVote, highlightCommentId, de
       animate={{ opacity: 1, x: 0 }}
       className="relative"
     >
-      <div className="flex items-start gap-3">
+      <div className="flex items-start gap-4">
         {/* Avatar */}
         <Avatar className="h-8 w-8 flex-shrink-0">
           <AvatarImage src={comment.author.avatar} alt={comment.author.name} />
@@ -121,7 +122,10 @@ export function Comment({ comment, postId, onCommentVote, highlightCommentId, de
 
         <div className="flex-1 min-w-0">
           <div className="flex items-center space-x-2 mb-1">
-            <p className="font-medium text-sm">{comment.author.name}</p>
+            <p className="font-medium text-sm flex items-center gap-1">
+              {comment.author.name}
+              <LevelBadge level={comment.author.level || 1} customSize={24} />
+            </p>
             <span className="text-xs text-muted-foreground">
               {formatDistanceToNow(new Date(comment.createdAt), {
                 addSuffix: true,
