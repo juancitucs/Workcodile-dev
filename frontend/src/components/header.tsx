@@ -44,7 +44,7 @@ export const Header = memo(function Header({ onCreatePost, onSearch, onToggleMob
   const [showSettings, setShowSettings] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
 
-  // Scroll detection for sticky header shadow effect
+  // Detección de scroll para efecto de sombra del header sticky
   useEffect(() => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 50);

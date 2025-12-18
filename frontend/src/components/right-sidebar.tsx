@@ -75,7 +75,7 @@ export const RightSidebar = memo(function RightSidebar() {
               <div className="bg-primary p-2 rounded-lg">
                 <BookOpen className="h-5 w-5 text-primary-foreground" />
               </div>
-              <span className="text-base font-semibold">Guía para Cachimbos</span>
+              <span className="text-base font-semibold">Guía Estudiantes</span>
             </div>
           </AccordionTrigger>
           <AccordionContent className="pt-3 px-4 pb-4">

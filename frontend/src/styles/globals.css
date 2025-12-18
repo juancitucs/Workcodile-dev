@@ -2,79 +2,169 @@
 
 :root {
   --font-size: 16px;
-  /* WorkCodile Enhanced Color Scheme - Verde, Negro, Blanco, Plomo */
+  /* TAMAÑO DE FUENTE BASE - Cambia a 14px para texto más pequeño o 18px para más grande */
+
+  /* =====================================================================
+     PALETA DE COLORES DE WORKCODILE - TEMA CLARO
+     Estos son los colores principales de la marca. Si cambias estos,
+     cambiarás el look de toda la aplicación.
+     ===================================================================== */
+
   --workcodile-green: #22c55e;
-  --workcodile-green-light: #4ade80;
+  /* COLOR PRIMARIO VERDE - El verde principal de WorkCodile. Cámbialo a #3b82f6 para azul, #ef4444 para rojo */
+
+  /* =====================================================================
+     LÍNEAS DIVISORAS - CONFIGURACIÓN CENTRALIZADA
+     Cambia estos valores UNA VEZ y se actualizarán TODAS las líneas divisoras
+     ===================================================================== */
+  --divider-thickness: 2px;
+  /* GROSOR DE TODAS LAS LÍNEAS - Cambia a 2px, 4px, etc */
+  --divider-color-light: #d2dbd1a5;
+  /* COLOR DE LÍNEAS EN TEMA CLARO - Prueba #d1d5db (gris), #22c55e (verde), #3b82f6 (azul) */
+  --divider-color-dark: #4b5563;
+  /* COLOR DE LÍNEAS EN TEMA OSCURO */
+  --sidebar-border-thickness: 2px;
+  /* GROSOR DE BORDES VERTICALES DEL SIDEBAR */
+  --sidebar-border-color-light: #dbd1d4a5;
+  /* COLOR DEL BORDE VERTICAL SIDEBAR CLARO */
+  --sidebar-border-color-dark: #4b5563;
+  /* COLOR DEL BORDE VERTICAL SIDEBAR OSCURO */
+  --workcodile-green-light: #47ce93;
+  /* VERDE CLARO - Para acentos y hovers. Un tono más claro del verde principal */
   --workcodile-green-dark: #16a34a;
+  /* VERDE OSCURO - Para textos o bordes sobre fondos verdes */
   --workcodile-green-subtle: #dcfce7;
+  /* VERDE SUTIL - Color de fondo muy suave, apenas perceptible */
   --workcodile-black: #0f0f0f;
+  /* NEGRO - Color del texto principal, casi negro puro */
   --workcodile-gray: #6b7280;
+  /* GRIS MEDIO - Para texto secundario, subtítulos, texto menos importante */
   --workcodile-gray-light: #f8fafc;
+  /* GRIS MUY CLARO - Para fondos de inputs, cards en tema claro */
   --workcodile-gray-dark: #374151;
+  /* GRIS OSCURO - Para fondos en modo oscuro */
   --workcodile-gray-subtle: #f1f5f9;
+  /* GRIS SUTIL - Fondos alternos muy sutiles */
   --workcodile-white: #ffffff;
+  /* BLANCO PURO */
   --workcodile-border-light: rgba(203, 213, 225, 0.3);
+  /* BORDE TEMA CLARO - Bordes sutiles, casi invisibles */
   --workcodile-border-dark: rgba(71, 85, 105, 0.3);
+  /* BORDE TEMA OSCURO */
+
+  /* =====================================================================
+     COLORES DE INTERFAZ - TEMA CLARO
+     Estos se aplican a elementos específicos de la UI
+     ===================================================================== */
 
   --background: #ffffff;
+  /* FONDO DE LA PÁGINA - El color de fondo principal. Cámbialo a #f5f5f5 para un gris muy claro */
   --foreground: var(--workcodile-black);
+  /* COLOR DEL TEXTO PRINCIPAL */
   --card: transparent;
+  /* FONDO DE CARDS/TARJETAS - transparent para que se integren con el fondo */
   --card-foreground: var(--workcodile-black);
+  /* COLOR DEL TEXTO EN CARDS */
   --popover: #ffffff;
+  /* FONDO DE POPOVERS/MENÚS DESPLEGABLES */
   --popover-foreground: var(--workcodile-black);
+  /* TEXTO EN POPOVERS */
   --primary: var(--workcodile-green);
+  /* COLOR PRIMARIO - Botones principales, links, elementos destacados */
   --primary-foreground: #ffffff;
+  /* TEXTO SOBRE COLOR PRIMARIO - Generalmente blanco */
   --secondary: var(--workcodile-gray-light);
+  /* COLOR SECUNDARIO - Botones secundarios */
   --secondary-foreground: var(--workcodile-black);
+  /* TEXTO SOBRE SECUNDARIO */
   --muted: var(--workcodile-gray-light);
+  /* ELEMENTOS ATENUADOS - Fondos de inputs, áreas secundarias */
   --muted-foreground: var(--workcodile-gray);
+  /* TEXTO ATENUADO - Subtítulos, texto de ayuda, placeholders */
   --accent: var(--workcodile-green-light);
+  /* COLOR DE ACENTO - Para hovers, elementos interactivos */
   --accent-foreground: #ffffff;
+  /* TEXTO SOBRE ACENTO */
   --destructive: #ef4444;
+  /* COLOR DE PELIGRO/ERROR - Botones de eliminar, errores. Rojo por defecto */
   --destructive-foreground: #ffffff;
+  /* TEXTO SOBRE DESTRUCTIVO */
   --border: rgba(107, 114, 128, 0.2);
+  /* COLOR DE BORDES GENERALES - Líneas divisorias sutiles */
   --input: transparent;
+  /* FONDO DE INPUTS */
   --input-background: var(--workcodile-gray-light);
+  /* FONDO DE CAMPOS DE TEXTO */
   --switch-background: var(--workcodile-gray);
+  /* FONDO DE SWITCHES CUANDO ESTÁN OFF */
   --font-weight-medium: 500;
+  /* PESO DE FUENTE MEDIO - Para títulos */
   --font-weight-normal: 400;
+  /* PESO DE FUENTE NORMAL - Para texto regular */
   --ring: var(--workcodile-green);
+  /* COLOR DEL ANILLO DE FOCUS - El borde cuando haces click en un input */
   --chart-1: var(--workcodile-green);
+  /* COLORES PARA GRÁFICOS */
   --chart-2: var(--workcodile-green-light);
   --chart-3: var(--workcodile-gray);
   --chart-4: var(--workcodile-gray-dark);
   --chart-5: var(--workcodile-black);
   --radius: 0.375rem;
+  /* RADIO DE BORDES - Qué tan redondeadas son las esquinas. 0 = cuadrado, 1rem = muy redondeado */
   --sidebar: #ffffff;
+  /* FONDO DEL SIDEBAR */
   --sidebar-foreground: var(--workcodile-black);
+  /* TEXTO DEL SIDEBAR */
   --sidebar-primary: var(--workcodile-green);
+  /* COLOR PRIMARIO EN SIDEBAR */
   --sidebar-primary-foreground: #ffffff;
   --sidebar-accent: var(--workcodile-gray-light);
+  /* FONDO DE ITEMS HOVER EN SIDEBAR */
   --sidebar-accent-foreground: var(--workcodile-black);
   --sidebar-border: rgba(107, 114, 128, 0.2);
+  /* BORDES DEL SIDEBAR */
   --sidebar-ring: var(--workcodile-green);
 }
 
+/* =====================================================================
+   TEMA OSCURO - DARK MODE
+   Cuando el usuario activa el modo oscuro, estos valores reemplazan a los de :root
+   Para cambiar el fondo oscuro, modifica --background aquí.
+   ===================================================================== */
 .dark {
   --background: #1a1a1a;
+  /* FONDO OSCURO - El color de fondo del modo oscuro. Cámbialo a #0f0f0f para negro más oscuro, #2d2d2d para gris más claro */
   --foreground: #ffffff;
+  /* TEXTO EN MODO OSCURO - Blanco por defecto */
   --card: transparent;
+  /* FONDO DE CARDS EN OSCURO */
   --card-foreground: #ffffff;
+  /* TEXTO EN CARDS */
   --popover: #242424;
+  /* FONDO DE POPOVERS EN OSCURO - Un poco más claro que el fondo */
   --popover-foreground: #ffffff;
   --primary: var(--workcodile-green);
+  /* COLOR PRIMARIO - Mismo verde que en tema claro */
   --primary-foreground: #ffffff;
   --secondary: var(--workcodile-gray-dark);
+  /* SECUNDARIO EN OSCURO */
   --secondary-foreground: #ffffff;
   --muted: var(--workcodile-gray-dark);
+  /* ELEMENTOS ATENUADOS */
   --muted-foreground: var(--workcodile-gray);
+  /* TEXTO GRIS ATENUADO */
   --accent: var(--workcodile-green-dark);
+  /* VERDE OSCURO PARA ACENTOS */
   --accent-foreground: #ffffff;
   --destructive: #ef4444;
+  /* ROJO PARA ERRORES/ELIMINAR */
   --destructive-foreground: #ffffff;
   --border: rgba(107, 114, 128, 0.3);
+  /* BORDES - Un poco más visibles que en tema claro */
   --input: var(--workcodile-gray-dark);
+  /* FONDO DE INPUTS */
   --ring: var(--workcodile-green);
+  /* ANILLO DE FOCUS */
   --font-weight-medium: 500;
   --font-weight-normal: 400;
   --chart-1: var(--workcodile-green);
@@ -83,53 +173,70 @@
   --chart-4: var(--workcodile-gray-dark);
   --chart-5: #ffffff;
   --sidebar: #242424;
+  /* FONDO DEL SIDEBAR EN OSCURO - Cámbialo a #1a1a1a para igualar al fondo */
   --sidebar-foreground: #ffffff;
   --sidebar-primary: var(--workcodile-green);
   --sidebar-primary-foreground: #ffffff;
   --sidebar-accent: var(--workcodile-gray-dark);
+  /* HOVER EN ITEMS DEL SIDEBAR */
   --sidebar-accent-foreground: #ffffff;
   --sidebar-border: rgba(107, 114, 128, 0.3);
+  /* BORDES DEL SIDEBAR */
   --sidebar-ring: var(--workcodile-green);
 }
 
-/* ==================== SECTION DIVIDERS - MAXIMUM PRIORITY ==================== */
+/* =====================================================================
+   DIVISORES DE SECCIÓN - Líneas que separan las cards/publicaciones
+   Estas son las líneas horizontales que ves entre cada post en el feed.
+   ===================================================================== */
 .section-divider {
   position: relative !important;
   padding-bottom: 0 !important;
-  margin-bottom: 1.5rem !important;
-  /* Total space between cards */
+  margin-bottom: 0.75rem !important;
+  /* ESPACIO ENTRE CARDS - Aumenta a 2rem para más espacio, reduce a 0.5rem para menos */
 }
 
 .section-divider:not(:last-child)::after {
   content: '' !important;
   display: block !important;
   position: absolute !important;
-  bottom: -0.75rem !important;
-  /* Center: half of margin-bottom (1.5rem / 2) */
+  bottom: -0.5rem !important;
   left: 0 !important;
   right: 0 !important;
   width: 100% !important;
-  height: 2px !important;
-  background-color: #d1d5db !important;
+  height: var(--divider-thickness) !important;
+  /* USA LA VARIABLE CENTRALIZADA */
+  background-color: var(--divider-color-light) !important;
+  /* USA LA VARIABLE CENTRALIZADA */
 }
 
+/* LÍNEA DIVISORA EN MODO OSCURO */
 .dark .section-divider:not(:last-child)::after {
-  background-color: #4b5563 !important;
+  background-color: var(--divider-color-dark) !important;
+  /* USA LA VARIABLE CENTRALIZADA */
 }
 
-/* Post divider - horizontal line between posts in feed */
+/* =====================================================================
+   DIVISOR DE POST - Línea horizontal entre posts en el feed
+   Similar al section-divider pero con margen superior
+   ===================================================================== */
 .post-divider {
   margin-top: 1.5rem;
   border: none;
-  border-top: 2px solid #d1d5db;
+  border-top: var(--divider-thickness) solid var(--divider-color-light);
+  /* USA LAS VARIABLES CENTRALIZADAS */
   width: 100%;
 }
 
 .dark .post-divider {
-  border-top: 2px solid #4b5563;
+  border-top: var(--divider-thickness) solid var(--divider-color-dark);
+  /* USA LAS VARIABLES CENTRALIZADAS */
 }
 
-/* Sidebar vertical borders - extending to top bar */
+/* =====================================================================
+   BORDES VERTICALES DEL SIDEBAR
+   Las líneas verticales que separan el sidebar del contenido principal
+   ===================================================================== */
 .sidebar-border-right {
   position: relative;
 }
@@ -138,13 +245,12 @@
   content: '';
   position: absolute;
   top: 0px;
-  /* Extend upward to reach top bar (96px sticky offset - 72px header height) */
   right: -8px;
-  /* Keep original horizontal position in the gap */
-  width: 2px;
+  width: var(--sidebar-border-thickness);
+  /* USA LA VARIABLE CENTRALIZADA */
   height: calc(100% + 24px);
-  /* Original height plus the 24px extension upward */
-  background-color: #d1d5db;
+  background-color: var(--sidebar-border-color-light);
+  /* USA LA VARIABLE CENTRALIZADA */
 }
 
 .sidebar-border-left {
@@ -155,18 +261,18 @@
   content: '';
   position: absolute;
   top: 0px;
-  /* Extend upward to reach top bar (96px sticky offset - 72px header height) */
   left: -8px;
-  /* Keep original horizontal position in the gap */
-  width: 2px;
+  width: var(--sidebar-border-thickness);
+  /* USA LA VARIABLE CENTRALIZADA */
   height: calc(100% + 24px);
-  /* Original height plus the 24px extension upward */
-  background-color: #d1d5db;
+  background-color: var(--sidebar-border-color-light);
+  /* USA LA VARIABLE CENTRALIZADA */
 }
 
 .dark .sidebar-border-right::after,
 .dark .sidebar-border-left::after {
-  background-color: #4b5563;
+  background-color: var(--sidebar-border-color-dark);
+  /* USA LA VARIABLE CENTRALIZADA */
 }
 
 @theme inline {
@@ -221,7 +327,7 @@
   }
 }
 
-/* Enhanced animated background for WorkCodile */
+/* Fondo animado mejorado para WorkCodile */
 @keyframes gradient {
   0% {
     background-position: 0% 50%;
@@ -257,19 +363,31 @@
 }
 
 .workcodile-bg {
-  background: radial-gradient(circle at 20% 30%, rgba(34, 197, 94, 0.03) 0%, transparent 50%),
-    radial-gradient(circle at 80% 70%, rgba(34, 197, 94, 0.05) 0%, transparent 50%),
-    radial-gradient(circle at 40% 80%, rgba(107, 114, 128, 0.02) 0%, transparent 50%),
-    linear-gradient(135deg, #ffffff 0%, rgba(243, 244, 246, 0.8) 50%, #ffffff 100%);
+  /* FONDO TEMA CLARO - Gradiente con brillo verde sutil más visible */
+  background:
+    radial-gradient(circle at 20% 30%, rgba(34, 197, 94, 0.08) 0%, transparent 45%),
+    /* Brillo verde arriba-izquierda */
+    radial-gradient(circle at 85% 75%, rgba(34, 197, 94, 0.12) 0%, transparent 40%),
+    /* Brillo verde abajo-derecha */
+    radial-gradient(circle at 50% 50%, rgba(34, 197, 94, 0.03) 0%, transparent 70%),
+    /* Brillo central muy sutil */
+    linear-gradient(145deg, #fafafa 0%, #f0f0f0 50%, #fafafa 100%);
+  /* Fondo gris muy claro con degradado */
   background-size: 400% 400%, 350% 350%, 500% 500%, 100% 100%;
   animation: subtleMove 20s ease-in-out infinite;
 }
 
 .workcodile-bg.dark {
-  background: radial-gradient(circle at 20% 30%, rgba(34, 197, 94, 0.08) 0%, transparent 50%),
-    radial-gradient(circle at 80% 70%, rgba(34, 197, 94, 0.06) 0%, transparent 50%),
-    radial-gradient(circle at 40% 80%, rgba(107, 114, 128, 0.1) 0%, transparent 50%),
-    linear-gradient(135deg, #0f0f0f 0%, rgba(31, 31, 31, 0.9) 50%, #0f0f0f 100%);
+  /* FONDO TEMA OSCURO - Gradiente con brillo verde más visible */
+  background:
+    radial-gradient(circle at 20% 30%, rgba(34, 197, 94, 0.15) 0%, transparent 45%),
+    /* Brillo verde arriba-izquierda */
+    radial-gradient(circle at 85% 75%, rgba(34, 197, 94, 0.12) 0%, transparent 40%),
+    /* Brillo verde abajo-derecha */
+    radial-gradient(circle at 50% 50%, rgba(34, 197, 94, 0.05) 0%, transparent 70%),
+    /* Brillo central sutil */
+    linear-gradient(145deg, #121212 0%, #1a1a1a 50%, #121212 100%);
+  /* Fondo oscuro con degradado */
 }
 
 @keyframes float {
@@ -309,7 +427,7 @@
  */
 @layer base {
 
-  /* Headings styles moved outside the :where selector for consistent application */
+  /* Estilos de encabezados movidos fuera del selector :where para aplicación consistente */
   h1 {
     font-size: var(--text-2xl);
     font-weight: var(--font-weight-medium);
@@ -365,7 +483,7 @@ html {
   font-size: var(--font-size);
 }
 
-/* Utility classes */
+/* Clases de utilidad */
 .line-clamp-1 {
   overflow: hidden;
   display: -webkit-box;
@@ -380,12 +498,12 @@ html {
   -webkit-line-clamp: 2;
 }
 
-/* Smooth scroll behavior */
+/* Comportamiento de scroll suave */
 html {
   scroll-behavior: smooth;
 }
 
-/* Highlight animation for targeted posts */
+/* Animación de resaltado para posts seleccionados */
 .post-highlight {
   animation: highlight 2s ease-in-out;
 }
@@ -407,7 +525,7 @@ html {
   }
 }
 
-/* Responsive improvements for WorkCodile */
+/* Mejoras responsive para WorkCodile */
 @media (max-width: 1024px) {
   .workcodile-bg {
     background-size: 200% 200%;
@@ -421,7 +539,7 @@ html {
   }
 }
 
-/* Premium animated design - smooth transitions and subtle microinteractions */
+/* Diseño premium animado - transiciones suaves y microinteracciones sutiles */
 .glass-card {
   background: transparent;
   backdrop-filter: none;
@@ -454,7 +572,7 @@ html {
   box-shadow: 0 8px 24px -4px rgba(34, 197, 94, 0.2) !important;
 }
 
-/* Enhanced hover effects with smooth animation */
+/* Efectos hover mejorados con animación suave */
 .hover-lift {
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
   transform: translateY(0);
@@ -469,32 +587,32 @@ html {
    BUTTON MICROINTERACTIONS - Smooth, subtle feedback
    ============================================================================ */
 
-/* All buttons get smooth transitions */
+/* Todos los botones tienen transiciones suaves */
 button,
 [role="button"],
 .btn {
   transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* Scale down slightly when clicked for tactile feedback */
+/* Escala ligeramente cuando se hace clic para feedback táctil */
 button:active:not(:disabled),
 [role="button"]:active:not(:disabled),
 .btn:active:not(:disabled) {
   transform: scale(0.97);
 }
 
-/* Primary buttons - enhanced glow on hover */
+/* Botones primarios - brillo mejorado en hover */
 button[data-variant="default"]:hover,
 .btn-primary:hover {
   box-shadow: 0 4px 12px -2px rgba(34, 197, 94, 0.4);
 }
 
-/* Ghost buttons - subtle background on hover */
+/* Botones ghost - fondo sutil en hover */
 button[data-variant="ghost"]:hover {
   background-color: rgba(34, 197, 94, 0.08);
 }
 
-/* Icon buttons - subtle rotation hint on hover */
+/* Botones de icono - indicador de rotación sutil en hover */
 button[data-size="icon"]:hover svg {
   transition: transform 0.2s ease;
 }
@@ -503,7 +621,7 @@ button[data-size="icon"]:hover svg {
    GENERAL UI TRANSITIONS
    ============================================================================ */
 
-/* Smooth transitions for common interactive elements */
+/* Transiciones suaves para elementos interactivos comunes */
 a,
 input,
 textarea,
@@ -512,13 +630,13 @@ select,
   transition: all 0.15s ease;
 }
 
-/* Accordion content smooth expand/collapse */
+/* Contenido de acordeón - expandir/colapsar suave */
 [data-state="open"],
 [data-state="closed"] {
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* Christmas mode - Red hover effects */
+/* Modo Navidad - Efectos hover rojos */
 .christmas .glass-card:hover,
 .christmas .glass-card:has(:hover),
 .christmas .glass-card:has([data-state="open"]) {
@@ -542,7 +660,7 @@ select,
   box-shadow: 0 8px 16px -5px rgba(239, 68, 68, 0.2) !important;
 }
 
-/* Flat design - no borders */
+/* Diseño plano - sin bordes */
 .gradient-border {
   position: relative;
   background: transparent;
@@ -566,7 +684,7 @@ select,
   border: 1px solid rgba(34, 197, 94, 0.35) !important;
 }
 
-/* Christmas mode - Red gradient border on hover */
+/* Modo Navidad - Borde degradado rojo en hover */
 .christmas .gradient-border:hover {
   background: rgba(239, 68, 68, 0.05);
   border: 1px solid rgba(239, 68, 68, 0.35);
@@ -578,7 +696,7 @@ select,
   border: 1px solid rgba(239, 68, 68, 0.4);
 }
 
-/* Flat design - no shadows */
+/* Diseño plano - sin sombras */
 .shadow-modern {
   box-shadow: none;
 }
@@ -587,7 +705,7 @@ select,
   box-shadow: none;
 }
 
-/* Subtle animations */
+/* Animaciones sutiles */
 @keyframes fadeInUp {
   from {
     opacity: 0;
@@ -620,7 +738,7 @@ select,
   animation: shimmer 2s infinite;
 }
 
-/* Enhanced button styles */
+/* Estilos de botón mejorados */
 .btn-modern {
   background: linear-gradient(135deg, var(--workcodile-green), var(--workcodile-green-light));
   border: none;
@@ -709,13 +827,13 @@ select,
   }
 }
 
-/* Custom Auth Tabs Color Override */
+/* Personalización de color de Tabs de autenticación */
 div[role="tablist"]>button[data-state="active"] {
   background-color: var(--workcodile-green) !important;
   color: #ffffff !important;
 }
 
-/* Force word-break in MentionsInput to prevent horizontal overflow */
+/* Forzar word-break en MentionsInput para prevenir desbordamiento horizontal */
 textarea,
 [data-mentions-input] textarea,
 .mentions__input,
@@ -726,13 +844,13 @@ textarea,
   overflow-x: hidden !important;
 }
 
-/* Prevent DialogContent from expanding horizontally */
+/* Prevenir que DialogContent se expanda horizontalmente */
 [role="dialog"] {
   max-width: 100vw !important;
   overflow-x: hidden !important;
 }
 
-/* Custom Select Trigger Styling - Make it look like an outline button */
+/* Estilos personalizados de Select Trigger - Hacerlo parecer un botón outline */
 [data-slot="select-trigger"] {
   align-items: center !important;
   justify-content: center !important;
@@ -755,7 +873,7 @@ textarea,
   border-color: var(--workcodile-green) !important;
 }
 
-/* Glassmorphism Effects */
+/* Efectos de Glassmorphism */
 .glass-effect {
   background-color: hsl(var(--background) / 0.3);
   backdrop-filter: blur(12px);
@@ -770,16 +888,16 @@ textarea,
   border: 1px solid hsl(var(--border) / 0.2);
 }
 
-/* Modern Scrollbar Styles - Auto-hide on hover */
+/* Estilos modernos de barra de desplazamiento - Ocultar automáticamente en hover */
 
-/* Firefox fallback */
+/* Fallback de Firefox */
 * {
   scrollbar-width: thin !important;
   scrollbar-color: hsl(142 76% 36% / 0.3) transparent !important;
 }
 
-/* Chromium browsers (Brave, Chrome, Edge) - Custom scrollbar for non-body elements */
-/* Body/html uses native browser scrollbar */
+/* Navegadores Chromium (Brave, Chrome, Edge) - Scrollbar personalizado para elementos no-body */
+/* Body/html usa la barra de desplazamiento nativa del navegador */
 *:not(body):not(html)::-webkit-scrollbar {
   width: 0px !important;
   height: 0px !important;
@@ -790,30 +908,30 @@ textarea,
   border-radius: 10px !important;
 }
 
-/* INVISIBLE by default */
+/* INVISIBLE por defecto */
 *:not(body):not(html)::-webkit-scrollbar-thumb {
   background: transparent !important;
   border-radius: 10px !important;
 }
 
-/* Sidebar specific - thin scrollbar, always reserve space, visible on hover */
+/* Sidebar específico - scrollbar delgado, siempre reservar espacio, visible en hover */
 .sidebar-scroll {
   scrollbar-width: thin !important;
   /* Firefox */
   scrollbar-color: transparent transparent !important;
-  /* Firefox - invisible by default */
+  /* Firefox - invisible por defecto */
   scrollbar-gutter: stable !important;
-  /* Reserve space to prevent content shift */
+  /* Reservar espacio para prevenir desplazamiento de contenido */
 }
 
 .sidebar-scroll:hover {
   scrollbar-color: hsl(142 76% 36% / 0.35) transparent !important;
-  /* Firefox - show on hover */
+  /* Firefox - mostrar en hover */
 }
 
 .sidebar-scroll::-webkit-scrollbar {
   width: 4px !important;
-  /* Thin scrollbar - always reserve this space */
+  /* Scrollbar delgado - siempre reservar este espacio */
 }
 
 .sidebar-scroll::-webkit-scrollbar-track {
@@ -826,7 +944,7 @@ textarea,
 
 .sidebar-scroll::-webkit-scrollbar-thumb {
   background: transparent !important;
-  /* Invisible by default */
+  /* Invisible por defecto */
   border-radius: 4px !important;
 }
 
@@ -838,7 +956,7 @@ textarea,
   background: hsl(142 76% 36% / 0.6) !important;
 }
 
-/* Christmas theme red scrollbars */
+/* Scrollbars rojos del tema Navidad */
 .christmas .sidebar-scroll:hover {
   scrollbar-color: hsl(0 72% 51% / 0.35) transparent !important;
   /* Firefox - red */

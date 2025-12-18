@@ -9,11 +9,11 @@ import { ChevronUp, ChevronDown, MessageSquare, Paperclip, Download } from 'luci
 import { formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { CommentTree } from './comment-tree';
-import { Comment as CommentType, FileAttachment } from './types'; // Add FileAttachment
+import { Comment as CommentType, FileAttachment } from './types'; // Agregar FileAttachment
 import MarkdownRenderer from './markdown-renderer';
 import { CreateCommentForm } from './CreateCommentForm';
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from './ui/accordion'; // Add Accordion
-import { formatFileSize, getFileIcon, getAttachmentUrl } from './file-utils'; // Add file utils
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from './ui/accordion'; // Agregar Accordion
+import { formatFileSize, getFileIcon, getAttachmentUrl } from './file-utils'; // Agregar utilidades de archivos
 
 interface CommentProps {
   comment: CommentType;
@@ -23,7 +23,7 @@ interface CommentProps {
   depth?: number;
 }
 
-// Maximum depth for comment replies (0-indexed: 0=post comment, 1=reply, 2=reply to reply)
+// Profundidad máxima para respuestas de comentarios (indexado desde 0: 0=comentario de post, 1=respuesta, 2=respuesta a respuesta)
 const MAX_COMMENT_DEPTH = 2;
 
 export function Comment({ comment, postId, onCommentVote, highlightCommentId, depth = 0 }: CommentProps) {

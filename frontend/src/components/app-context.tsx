@@ -368,7 +368,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       const data = await response.json();
       const transformedPost = transformBackendPost(data);
 
-      // Optionally, update the global posts state
+      // Opcionalmente, actualizar el estado global de posts
       setPosts(prevPosts => {
         const postExists = prevPosts.some(p => p.id === transformedPost.id);
         if (postExists) {
@@ -402,7 +402,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
           }
 
           const userData = await response.json()
-          // Backend now returns the full avatar URL directly
+          // El backend ahora retorna la URL completa del avatar directamente
           // if (userData.avatar_key) {
           //   userData.avatar = `${API_BASE_URL}/workcodile-files/${userData.avatar_key}`;
           // }
@@ -480,7 +480,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const token = localStorage.getItem('token')
     if (!token) return
 
-    // Optimistically update the UI
+    // Actualizar la UI optimistamente
     const originalNotifications = notifications;
     setNotifications(prev => prev.map(n => ({ ...n, read: true })));
 
@@ -493,13 +493,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
       })
 
       if (!response.ok) {
-        // Rollback on error
+        // Revertir en caso de error
         setNotifications(originalNotifications);
         throw new Error('Failed to mark all notifications as read')
       }
     } catch (error) {
       console.error('Error marking all notifications as read:', error)
-      // Rollback on error
+      // Revertir en caso de error
       setNotifications(originalNotifications);
     }
   }
@@ -525,7 +525,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
     const { token, user: userData } = await response.json()
     localStorage.setItem('token', token)
-    // Backend now returns the full avatar URL directly
+    // El backend ahora retorna la URL completa del avatar directamente
     // if (userData.avatar_key) {
     //   userData.avatar = `${API_BASE_URL}/workcodile-files/${userData.avatar_key}`;
     // }
@@ -551,7 +551,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       throw new Error(responseData.msg || 'Error al enviar el código de verificación')
     }
 
-    return responseData; // Returns { msg: 'Verification code sent...' }
+    return responseData; // Retorna { msg: 'Código de verificación enviado...' }
   }
 
   const verifyAndRegister = async (email: string, password: string, verificationCode: string) => {
@@ -569,10 +569,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
       throw new Error(responseData.msg || 'Error al verificar el código o registrar el usuario')
     }
 
-    // On successful verification and registration, log in the user directly
+    // En verificación y registro exitosos, iniciar sesión del usuario directamente
     const { token, user: userData } = responseData;
     localStorage.setItem('token', token);
-    // Backend now returns the full avatar URL directly
+    // El backend ahora retorna la URL completa del avatar directamente
     // if (userData.avatar_key) {
     //   userData.avatar = `${API_BASE_URL}/workcodile-files/${userData.avatar_key}`;
     // }
@@ -581,7 +581,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       setTheme(userData.theme);
     }
     setAuthStatus('authenticated');
-    return responseData; // Returns { token, user }
+    return responseData; // Retorna { token, user }
   }
 
   const logout = () => {
@@ -639,39 +639,39 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const token = localStorage.getItem('token')
     if (!token) return
 
-    // Store the original posts state for rollback in case of error
+    // Guardar el estado original de posts para revertir en caso de error
     let originalPosts: Post[] = [];
 
     try {
       setPosts((prev) => {
-        originalPosts = prev; // Store the state before optimistic update
+        originalPosts = prev; // Guardar el estado antes de actualización optimista
         const postIndex = prev.findIndex(p => p.id === postId);
-        if (postIndex === -1) return prev; // Post not found
+        if (postIndex === -1) return prev; // Post no encontrado
 
         const originalPost = prev[postIndex];
         let newUpvotes = originalPost.upvotes;
         let newDownvotes = originalPost.downvotes;
         let newUserVote = originalPost.userVote;
 
-        // Determine new vote counts and userVote status
+        // Determinar nuevos conteos de votos y estado de userVote
         if (vote === 'up') {
-          if (originalPost.userVote === 'up') { // User is un-upvoting
+          if (originalPost.userVote === 'up') { // Usuario está quitando su upvote
             newUpvotes--;
             newUserVote = null;
-          } else { // User is upvoting
+          } else { // Usuario está dando upvote
             newUpvotes++;
-            if (originalPost.userVote === 'down') { // User was downvoting, remove downvote
+            if (originalPost.userVote === 'down') { // Usuario tenía downvote, quitar downvote
               newDownvotes--;
             }
             newUserVote = 'up';
           }
         } else { // vote === 'down'
-          if (originalPost.userVote === 'down') { // User is un-downvoting
+          if (originalPost.userVote === 'down') { // Usuario está quitando su downvote
             newDownvotes--;
             newUserVote = null;
-          } else { // User is downvoting
+          } else { // Usuario está dando downvote
             newDownvotes++;
-            if (originalPost.userVote === 'up') { // User was upvoting, remove upvote
+            if (originalPost.userVote === 'up') { // Usuario tenía upvote, quitar upvote
               newUpvotes--;
             }
             newUserVote = 'down';

@@ -23,16 +23,68 @@ interface UserRank {
 }
 
 const getLevelBadge = (level: number) => {
+    // Definimos las medallas. Por ahora mantienen el icono como fallback, 
+    // pero añadimos el campo 'image' que usaremos cuando las subas.
     if (level >= 17) {
-        return { icon: Trophy, iconColor: '#9932CC', bgColor: 'bg-purple-900/20', borderColor: 'border-purple-500/50', label: 'Leyenda', animate: true, scale: 'scale-100', glow: true };
+        return {
+            icon: Trophy,
+            image: null, // Aquí irá la ruta tipo '/badges/leyenda.png'
+            iconColor: '#9932CC',
+            bgColor: 'bg-purple-900/20',
+            borderColor: 'border-purple-500/50',
+            label: 'Leyenda',
+            animate: true,
+            scale: 'scale-100',
+            glow: true
+        };
     } else if (level >= 13) {
-        return { icon: Shield, iconColor: '#00BFFF', bgColor: 'bg-cyan-500/20', borderColor: 'border-cyan-500/50', label: 'Diamante', animate: false, scale: 'scale-110', glow: false };
+        return {
+            icon: Shield,
+            image: null,
+            iconColor: '#00BFFF',
+            bgColor: 'bg-cyan-500/20',
+            borderColor: 'border-cyan-500/50',
+            label: 'Diamante',
+            animate: false,
+            scale: 'scale-110',
+            glow: false
+        };
     } else if (level >= 9) {
-        return { icon: Shield, iconColor: '#FFD700', bgColor: 'bg-yellow-500/20', borderColor: 'border-yellow-500/50', label: 'Oro', animate: false, scale: 'scale-100', glow: true };
+        return {
+            icon: Shield,
+            image: null,
+            iconColor: '#FFD700',
+            bgColor: 'bg-yellow-500/20',
+            borderColor: 'border-yellow-500/50',
+            label: 'Oro',
+            animate: false,
+            scale: 'scale-100',
+            glow: true
+        };
     } else if (level >= 5) {
-        return { icon: Shield, iconColor: '#E0E0E0', bgColor: 'bg-gray-400/20', borderColor: 'border-gray-400', label: 'Plata', animate: false, scale: 'scale-100', glow: false };
+        return {
+            icon: Shield,
+            image: null,
+            iconColor: '#E0E0E0',
+            bgColor: 'bg-gray-400/20',
+            borderColor: 'border-gray-400',
+            label: 'Plata',
+            animate: false,
+            scale: 'scale-100',
+            glow: false
+        };
     } else {
-        return { icon: Shield, iconColor: '#A1887F', bgColor: 'bg-amber-900/20', borderColor: 'border-amber-800/50', label: 'Madera', animate: false, scale: 'scale-100', glow: false };
+        return {
+            icon: Shield,
+            image: null,
+            iconColor: '#A1887F',
+            bgColor: 'bg-amber-900/20',
+            borderColor: 'border-amber-800/50',
+            label: 'Madera',
+            animate: false,
+            scale: 'scale-100',
+            glow: false
+        };
     }
 };
 
@@ -60,12 +112,21 @@ const UserRow = memo(function UserRow({ user, index }: { user: UserRank; index: 
             <div className="flex-shrink-0">
                 <Badge
                     variant="outline"
-                    className={`${badge.bgColor} ${badge.borderColor} flex items-center space-x-0.5 px-1.5 py-0.5 ${badge.animate ? 'animate-pulse' : ''}`}
+                    className={`${badge.bgColor} ${badge.borderColor} flex items-center space-x-1 px-1.5 py-0.5 ${badge.animate ? 'animate-pulse' : ''} min-w-[45px] justify-center`}
                 >
-                    <BadgeIcon
-                        className={`h-2.5 w-2.5 ${badge.scale}`}
-                        style={{ color: badge.iconColor, filter: badge.glow ? 'drop-shadow(0 0 2px currentColor)' : 'none' }}
-                    />
+                    {badge.image ? (
+                        <img
+                            src={badge.image}
+                            alt={badge.label}
+                            className={`h-4 w-4 object-contain ${badge.scale}`}
+                            style={{ filter: badge.glow ? `drop-shadow(0 0 4px ${badge.iconColor}80)` : 'none' }}
+                        />
+                    ) : (
+                        <BadgeIcon
+                            className={`h-2.5 w-2.5 ${badge.scale}`}
+                            style={{ color: badge.iconColor, filter: badge.glow ? 'drop-shadow(0 0 2px currentColor)' : 'none' }}
+                        />
+                    )}
                     <span className="font-bold text-[10px]" style={{ color: badge.iconColor }}>
                         {user.level}
                     </span>

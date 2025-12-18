@@ -116,7 +116,7 @@ const UNAM_EVENTS = [
 const getEventTypeColor = (type: string) => {
     switch (type) {
         case 'academic':
-            return 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400';
+            return 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-white';
         case 'workshop':
             return 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400';
         case 'event':
