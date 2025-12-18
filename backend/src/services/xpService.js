@@ -9,13 +9,13 @@ const User = require('../models/User');
 function calculateLevel(xp) {
   let level = 1;
   let xpForNextLevel = 100;
-  
+
   while (xp >= xpForNextLevel && level < 20) {
     xp -= xpForNextLevel;
     level++;
     xpForNextLevel *= 2;
   }
-  
+
   return level;
 }
 

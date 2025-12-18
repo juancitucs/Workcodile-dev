@@ -47,6 +47,7 @@ const postAggregationPipeline = [
         _id: '$author._id',
         name: '$author.name',
         avatar_key: '$author.avatar_key',
+        level: '$author.level', // Nivel del usuario para mostrar badge
       },
       comments: 1,
     },
@@ -73,6 +74,7 @@ const populateCommentAuthors = async (comments) => {
           name: author.name,
           avatar_key: author.avatar_key,
           avatar: author.avatar_key ? getFileUrl(author.avatar_key) : undefined,
+          level: author.level || 1, // Nivel del usuario para mostrar badge
         };
       } else {
         comment.author = {
@@ -90,12 +92,12 @@ const populateCommentAuthors = async (comments) => {
         avatar: undefined,
       };
     }
-    
+
     // Add attachment URLs for comments
     if (comment.attachments) {
-        comment.attachments.forEach(att => {
-            if (att.object_key && !att.url) att.url = getFileUrl(att.object_key);
-        });
+      comment.attachments.forEach(att => {
+        if (att.object_key && !att.url) att.url = getFileUrl(att.object_key);
+      });
     }
     if (comment.replies && comment.replies.length > 0) {
       await populateCommentAuthors(comment.replies);
@@ -149,22 +151,22 @@ const getAllPosts = async (req, res) => {
       .toArray()
 
     for (const post of posts) {
-        // Add author avatar URL
-        if (post.author && post.author.avatar_key) {
-            post.author.avatar = getFileUrl(post.author.avatar_key);
-        }
-        // Add attachment URLs
-        if (post.attachments) {
-            post.attachments.forEach(att => {
-                if (att.object_key) att.url = getFileUrl(att.object_key);
-            });
-        }
-        if (post.comments && post.comments.length > 0) {
-            await populateCommentAuthors(post.comments);
-        }
-        addUserVoteStatus(post, req.user ? req.user.id : null);
+      // Add author avatar URL
+      if (post.author && post.author.avatar_key) {
+        post.author.avatar = getFileUrl(post.author.avatar_key);
+      }
+      // Add attachment URLs
+      if (post.attachments) {
+        post.attachments.forEach(att => {
+          if (att.object_key) att.url = getFileUrl(att.object_key);
+        });
+      }
+      if (post.comments && post.comments.length > 0) {
+        await populateCommentAuthors(post.comments);
+      }
+      addUserVoteStatus(post, req.user ? req.user.id : null);
     }
-    
+
     const totalPages = Math.ceil(totalPosts / limit);
 
     res.status(200).json({
@@ -272,7 +274,7 @@ const votePost = async (req, res) => {
         ...postAggregationPipeline,
       ])
       .toArray()
-    
+
     addUserVoteStatus(updatedPost[0], req.user ? req.user.id : null);
     res.status(200).json(updatedPost[0])
   } catch (error) {
@@ -355,25 +357,25 @@ const addCommentToPost = async (req, res) => {
 
     const updatedPost = updatedPostForAgg[0];
 
-        if (updatedPost.comments && updatedPost.comments.length > 0) {
+    if (updatedPost.comments && updatedPost.comments.length > 0) {
 
-            await populateCommentAuthors(updatedPost.comments);
+      await populateCommentAuthors(updatedPost.comments);
 
-        }
+    }
 
-        addUserVoteStatus(updatedPost, req.user ? req.user.id : null);
+    addUserVoteStatus(updatedPost, req.user ? req.user.id : null);
 
-        res.status(200).json(updatedPost);
+    res.status(200).json(updatedPost);
 
-      } catch (error) {
+  } catch (error) {
 
-        console.error('Error adding comment:', error);
+    console.error('Error adding comment:', error);
 
-        res.status(500).json({ message: 'Error adding comment' });
+    res.status(500).json({ message: 'Error adding comment' });
 
-      }
+  }
 
-    };
+};
 
 const createPost = async (req, res) => {
   console.log('Create post called');
@@ -402,20 +404,20 @@ const createPost = async (req, res) => {
     const result = await mongoose.connection.db
       .collection('posts')
       .insertOne(newPost)
-    
+
     // Add XP for creating a post
     await addXP(userId.toString(), 10, { totalPosts: 1 });
 
     const createdPost = await mongoose.connection.db
       .collection('posts')
-            .aggregate([
-              { $match: { _id: result.insertedId } },
-              ...postAggregationPipeline,
-            ])
-            .toArray()
-          addUserVoteStatus(createdPost[0], req.user ? req.user.id : null);
-          res.status(201).json(createdPost[0])
-        } catch (error) {
+      .aggregate([
+        { $match: { _id: result.insertedId } },
+        ...postAggregationPipeline,
+      ])
+      .toArray()
+    addUserVoteStatus(createdPost[0], req.user ? req.user.id : null);
+    res.status(201).json(createdPost[0])
+  } catch (error) {
     console.error('Error creating post:', error)
     res.status(500).json({ message: 'Error creating post' })
   }
@@ -480,7 +482,7 @@ const voteComment = async (req, res) => {
         commentToVote.upvoted_by.push(userId);
         // Award XP to comment author for receiving an upvote
         if (commentToVote.author.toString() !== userId.toString()) {
-            await addXP(commentToVote.author.toString(), 2, { totalLikesReceived: 1 });
+          await addXP(commentToVote.author.toString(), 2, { totalLikesReceived: 1 });
         }
         if (downvoted) {
           // User was downvoting, remove downvote
@@ -539,17 +541,17 @@ const voteComment = async (req, res) => {
       }
     }
 
-        if (updatedPost.comments && updatedPost.comments.length > 0) {
+    if (updatedPost.comments && updatedPost.comments.length > 0) {
 
-          await populateCommentAuthors(updatedPost.comments)
+      await populateCommentAuthors(updatedPost.comments)
 
-        }
+    }
 
-        addUserVoteStatus(updatedPost, req.user ? req.user.id : null);
+    addUserVoteStatus(updatedPost, req.user ? req.user.id : null);
 
-        res.status(200).json(updatedPost)
+    res.status(200).json(updatedPost)
 
-      } catch (error) {
+  } catch (error) {
     console.error('Error voting on comment:', error)
     res.status(500).json({ message: 'Error voting on comment' })
   }
@@ -640,53 +642,53 @@ const getPostById = async (req, res) => {
       return res.status(404).json({ message: 'Post not found' });
     }
 
-        const post = postAgg[0];
+    const post = postAgg[0];
 
-    
 
-        // Add author avatar URL
 
-        if (post.author && post.author.avatar_key) {
+    // Add author avatar URL
 
-            post.author.avatar = getFileUrl(post.author.avatar_key);
+    if (post.author && post.author.avatar_key) {
 
-        }
+      post.author.avatar = getFileUrl(post.author.avatar_key);
 
-        // Add attachment URLs for the main post
+    }
 
-        if (post.attachments) {
+    // Add attachment URLs for the main post
 
-            post.attachments.forEach(att => {
+    if (post.attachments) {
 
-                if (att.object_key) att.url = getFileUrl(att.object_key);
+      post.attachments.forEach(att => {
 
-            });
+        if (att.object_key) att.url = getFileUrl(att.object_key);
 
-        }
+      });
 
-    
+    }
 
-        if (post.comments && post.comments.length > 0) {
 
-            await populateCommentAuthors(post.comments);
 
-        }
+    if (post.comments && post.comments.length > 0) {
 
-    
+      await populateCommentAuthors(post.comments);
 
-        addUserVoteStatus(post, req.user ? req.user.id : null);
+    }
 
-        res.status(200).json(post);
 
-      } catch (error) {
 
-        console.error('Error fetching post by ID:', error);
+    addUserVoteStatus(post, req.user ? req.user.id : null);
 
-        res.status(500).json({ message: 'Error fetching post by ID' });
+    res.status(200).json(post);
 
-      }
+  } catch (error) {
 
-    };
+    console.error('Error fetching post by ID:', error);
+
+    res.status(500).json({ message: 'Error fetching post by ID' });
+
+  }
+
+};
 
 const getPostByCommentId = async (req, res) => {
   try {
@@ -703,7 +705,7 @@ const getPostByCommentId = async (req, res) => {
     if (!post) {
       return res.status(404).json({ message: 'Post not found for this comment' });
     }
-    
+
     // Fake req and res objects to call getPostById
     const mockReq = { params: { id: post._id.toString() }, user: req.user };
     const mockRes = {
@@ -754,7 +756,7 @@ const getCommentReplies = async (req, res) => {
     const replies = parentComment.replies || [];
 
     await populateCommentAuthors(replies);
-    
+
     replies.forEach(reply => {
       addUserVoteStatus(reply, userId);
     });
