@@ -83,23 +83,13 @@ export function Sidebar({ selectedCourse, onCourseSelect, sortBy, onSortChange }
             <div className="grid grid-cols-2 gap-3 text-center">
               <div>
                 <p className="text-2xl font-bold text-primary">
-                  {posts.filter(post => post.author.id === user?._id).length}
+                  {user?.stats?.totalPosts ?? 0}
                 </p>
                 <p className="text-xs text-muted-foreground">Posts totales</p>
               </div>
               <div>
                 <p className="text-2xl font-bold text-accent">
-                  {posts.reduce((sum, post) => {
-                    // Count comments recursively (including replies)
-                    const countUserComments = (comments: any[]): number => {
-                      return comments.reduce((acc, c) => {
-                        const isUserComment = c.author.id === user?._id ? 1 : 0;
-                        const repliesCount = c.replies ? countUserComments(c.replies) : 0;
-                        return acc + isUserComment + repliesCount;
-                      }, 0);
-                    };
-                    return sum + countUserComments(post.comments || []);
-                  }, 0)}
+                  {user?.stats?.totalComments ?? 0}
                 </p>
                 <p className="text-xs text-muted-foreground">Comentarios</p>
               </div>

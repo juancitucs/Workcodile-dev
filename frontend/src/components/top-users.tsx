@@ -7,6 +7,32 @@ import { Dialog, DialogContent, DialogTrigger } from './ui/dialog';
 import { Trophy, Users, Loader2, AlertTriangle, Award } from 'lucide-react';
 import { UserProfile } from './user-profile';
 
+// Importar imágenes de badges desde assets
+import nivel1 from '../assets/nivel1.png';
+import nivel2 from '../assets/nivel2.png';
+import nivel3 from '../assets/nivel3.png';
+import nivel4 from '../assets/nivel4.png';
+import nivel5 from '../assets/nivel5.png';
+import nivel6 from '../assets/nivel6.png';
+import nivel7 from '../assets/nivel7.png';
+import nivel8 from '../assets/nivel8.png';
+import nivel9 from '../assets/nivel9.png';
+import nivel10 from '../assets/nivel10.png';
+
+// Mapa de imágenes de badges por nivel
+const badgeImages: Record<number, string> = {
+    1: nivel1,
+    2: nivel2,
+    3: nivel3,
+    4: nivel4,
+    5: nivel5,
+    6: nivel6,
+    7: nivel7,
+    8: nivel8,
+    9: nivel9,
+    10: nivel10,
+};
+
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
 // The extensive documentation comments have been removed for brevity,
@@ -26,7 +52,7 @@ interface UserRank {
 const getBadgeImage = (level: number): string => {
     // Limitar nivel entre 1 y 10 para las imágenes disponibles
     const badgeLevel = Math.min(Math.max(level, 1), 10);
-    return `/badges/nivel${badgeLevel}.png`;
+    return badgeImages[badgeLevel];
 };
 
 // XP requerido para cada nivel (basado en la fórmula: 100 * 2^(level-1))

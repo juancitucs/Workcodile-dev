@@ -9,6 +9,12 @@ export interface User {
   bookmarked_posts?: string[]
   level?: number  // Nivel del usuario para mostrar badge
   xp?: number     // Experiencia del usuario
+  stats?: {
+    totalPosts: number
+    totalComments: number
+    totalLikesReceived: number
+    totalLikesGiven: number
+  }
 }
 
 export interface Course {
