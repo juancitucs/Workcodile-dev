@@ -2109,3 +2109,9 @@ button[data-slot="button"]:hover .text-muted-foreground,
 .christmas [data-report-dialog] [role="radiogroup"]>div:hover {
   background-color: rgba(239, 68, 68, 0.1) !important;
 }
+
+/* Modal de compartir - más angosto */
+[data-share-dialog] {
+  max-width: 620px !important;
+  width: 90% !important;
+}

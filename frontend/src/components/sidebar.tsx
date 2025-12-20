@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { motion } from 'motion/react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
@@ -31,7 +32,7 @@ interface SidebarProps {
   className?: string;
 }
 
-export function Sidebar({ selectedCourse, onCourseSelect, sortBy, onSortChange }: SidebarProps) {
+const SidebarComponent = ({ selectedCourse, onCourseSelect, sortBy, onSortChange }: SidebarProps) => {
   const { posts, user, getCoursesByCycle } = useApp();
   const navigate = useNavigate();
   const location = useLocation();
@@ -272,4 +273,12 @@ export function Sidebar({ selectedCourse, onCourseSelect, sortBy, onSortChange }
 
     </div>
   );
-}
+};
+
+// React.memo to prevent re-renders when sidebar props haven't changed
+export const Sidebar = memo(SidebarComponent, (prevProps, nextProps) => {
+  return (
+    prevProps.selectedCourse === nextProps.selectedCourse &&
+    prevProps.sortBy === nextProps.sortBy
+  );
+});

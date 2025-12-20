@@ -147,7 +147,7 @@ export function PostActions({
               <span className="hidden sm:inline">Compartir</span>
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-md">
+          <DialogContent className="sm:max-w-md" data-share-dialog>
             <DialogHeader>
               <DialogTitle>Compartir publicación</DialogTitle>
               <DialogDescription>

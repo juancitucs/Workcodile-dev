@@ -90,6 +90,7 @@ export const Header = memo(function Header({ onCreatePost, onSearch, onToggleMob
               size="sm"
               className="lg:hidden flex-shrink-0"
               onClick={onToggleMobileMenu}
+              aria-label="Abrir menú de navegación"
             >
               <Menu className="h-6 w-6" />
             </Button>
@@ -125,6 +126,7 @@ export const Header = memo(function Header({ onCreatePost, onSearch, onToggleMob
               onClick={onResetFilters}
               className="flex-shrink-0"
               title="Limpiar filtros (sin recargar)"
+              aria-label="Ir al inicio y limpiar filtros"
             >
               <Home className="h-5 w-5" />
             </Button>
@@ -132,14 +134,15 @@ export const Header = memo(function Header({ onCreatePost, onSearch, onToggleMob
 
           {/* Center Section: Search Bar */}
           <div className="flex-1 max-w-[493px] mx-2 block md:hidden">
-            <form onSubmit={handleSearch} className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <form onSubmit={handleSearch} className="relative" role="search">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" aria-hidden="true" />
               <Input
                 type="search"
                 placeholder="Buscar publicaciones..."
                 value={searchQuery}
                 onChange={(e) => handleSearchChange(e.target.value)}
                 className="pl-10 bg-workcodile-gray-light/30 border-workcodile-border-light backdrop-blur-sm focus:border-workcodile-green/50 transition-all duration-300"
+                aria-label="Buscar publicaciones"
               />
             </form>
           </div>
@@ -165,6 +168,7 @@ export const Header = memo(function Header({ onCreatePost, onSearch, onToggleMob
               className="sm:hidden"
               size="icon"
               variant="outline"
+              aria-label="Crear publicación"
             >
               {christmasTheme ? (
                 <Gift className="h-4 w-4 gift-icon" />
@@ -203,6 +207,7 @@ export const Header = memo(function Header({ onCreatePost, onSearch, onToggleMob
               size="icon"
               onClick={toggleTheme}
               className='sm:inline-flex'
+              aria-label={theme === 'dark' ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'}
             >
               {theme === 'dark' ? (
                 <Sun className="h-5 w-5" />
@@ -218,6 +223,8 @@ export const Header = memo(function Header({ onCreatePost, onSearch, onToggleMob
               onClick={toggleChristmasTheme}
               className={`sm:inline-flex transition-colors ${christmasTheme ? 'text-red-500 bg-red-500/10 hover:bg-red-500/20' : ''}`}
               title={christmasTheme ? 'Desactivar tema navideño' : 'Activar tema navideño'}
+              aria-label={christmasTheme ? 'Desactivar tema navideño' : 'Activar tema navideño'}
+              aria-pressed={christmasTheme}
             >
               <TreePine className="h-5 w-5" />
             </Button>
@@ -225,7 +232,7 @@ export const Header = memo(function Header({ onCreatePost, onSearch, onToggleMob
             {/* User Menu */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="p-0 rounded-full h-8 w-8">
+                <Button variant="ghost" className="p-0 rounded-full h-8 w-8" aria-label="Menú de usuario">
                   <Avatar className="h-8 w-8">
                     <AvatarImage src={user?.avatar} alt={user?.name} />
                     <AvatarFallback className="bg-primary/10">

@@ -45,6 +45,7 @@ interface AppContextType {
     vote: 'up' | 'down'
   ) => Promise<void>
   fetchCommentReplies: (postId: string, commentId: string) => Promise<Comment[]>
+  fetchMoreComments: (postId: string) => Promise<void>
   searchPosts: (query: string) => Post[]
   getCourseById: (courseId: string) => Course | undefined
   getCoursesByCycle: (cycle: number) => Course[]
@@ -224,6 +225,11 @@ const transformBackendPost = (post: any): Post => ({
   views: post.views || 0,
   isBookmarked: false,
   userVote: post.user_vote,
+  commentsDisabled: post.commentsDisabled || false,
+  // Comment pagination
+  totalComments: post.totalComments,
+  hasMoreComments: post.hasMoreComments,
+  commentOffset: post.commentOffset,
 })
 
 const transformBackendNotification = (notification: any): Notification => ({
@@ -735,6 +741,61 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const token = localStorage.getItem('token')
     if (!token) return
 
+    // Create a temporary optimistic comment
+    const tempCommentId = `temp-${Date.now()}`
+    const optimisticComment: Comment = {
+      id: tempCommentId,
+      content,
+      author: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        avatar: user.avatar,
+        university: user.university,
+        level: user.level,
+      },
+      createdAt: new Date(),
+      score: 0,
+      userVote: undefined,
+      replies: [],
+      parentId,
+      attachments: attachments.map((att, index) => ({
+        ...att,
+        id: `temp-att-${index}`,
+      })) as FileAttachment[],
+    }
+
+    // Helper to add comment to the right place in the tree
+    const addCommentToTree = (comments: Comment[], newComment: Comment, targetParentId?: string): Comment[] => {
+      if (!targetParentId) {
+        // Add to root level
+        return [...comments, newComment]
+      }
+      // Add as reply to a parent comment
+      return comments.map(comment => {
+        if (comment.id === targetParentId) {
+          return { ...comment, replies: [...comment.replies, newComment] }
+        }
+        if (comment.replies.length > 0) {
+          return { ...comment, replies: addCommentToTree(comment.replies, newComment, targetParentId) }
+        }
+        return comment
+      })
+    }
+
+    // Optimistic update - show comment immediately
+    setPosts((prev) =>
+      prev.map((p) => {
+        if (p.id === postId) {
+          return {
+            ...p,
+            comments: addCommentToTree(p.comments, optimisticComment, parentId),
+          }
+        }
+        return p
+      })
+    )
+
     try {
       const response = await fetch(
         `${API_BASE_URL}/api/posts/${postId}/comments`,
@@ -752,6 +813,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         throw new Error('Failed to add comment')
       }
 
+      // Reconcile with server response to get the real comment ID
       const updatedPost = await response.json()
       const transformedPost = transformBackendPost(updatedPost)
 
@@ -760,6 +822,27 @@ export function AppProvider({ children }: { children: ReactNode }) {
       )
     } catch (error) {
       console.error('Error adding comment:', error)
+      // Rollback optimistic update on error
+      const removeCommentFromTree = (comments: Comment[], commentId: string): Comment[] => {
+        return comments
+          .filter(c => c.id !== commentId)
+          .map(c => ({
+            ...c,
+            replies: removeCommentFromTree(c.replies, commentId)
+          }))
+      }
+
+      setPosts((prev) =>
+        prev.map((p) => {
+          if (p.id === postId) {
+            return {
+              ...p,
+              comments: removeCommentFromTree(p.comments, tempCommentId),
+            }
+          }
+          return p
+        })
+      )
     }
   }
 
@@ -922,6 +1005,51 @@ export function AppProvider({ children }: { children: ReactNode }) {
     } catch (error) {
       console.error('Failed to fetch replies:', error);
       return [];
+    }
+  }
+
+  // Fetch more comments for a post (pagination)
+  const fetchMoreComments = async (postId: string) => {
+    const token = localStorage.getItem('token')
+    const headers: HeadersInit = {}
+    if (token) {
+      headers['x-auth-token'] = token
+    }
+
+    const currentPost = posts.find(p => p.id === postId)
+    if (!currentPost || !currentPost.hasMoreComments) return
+
+    const currentOffset = currentPost.comments.length
+    const limit = 5
+
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/api/posts/${postId}?commentOffset=${currentOffset}&commentLimit=${limit}`,
+        { headers }
+      )
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch more comments')
+      }
+
+      const data = await response.json()
+      const newComments = data.comments ? data.comments.map(transformBackendComment) : []
+
+      setPosts(prev =>
+        prev.map(post => {
+          if (post.id === postId) {
+            return {
+              ...post,
+              comments: [...post.comments, ...newComments],
+              hasMoreComments: data.hasMoreComments,
+              commentOffset: currentOffset,
+            }
+          }
+          return post
+        })
+      )
+    } catch (error) {
+      console.error('Error fetching more comments:', error)
     }
   }
 
@@ -1089,6 +1217,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const token = localStorage.getItem('token')
     if (!token) return
 
+    // Store the post for potential rollback
+    let deletedPost: Post | undefined
+
+    // Optimistic update - remove post immediately
+    setPosts((prev) => {
+      deletedPost = prev.find((post) => post.id === postId)
+      return prev.filter((post) => post.id !== postId)
+    })
+
     try {
       const response = await fetch(`${API_BASE_URL}/api/posts/${postId}`, {
         method: 'DELETE',
@@ -1100,10 +1237,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
       if (!response.ok) {
         throw new Error('Failed to delete post')
       }
-
-      setPosts((prev) => prev.filter((post) => post.id !== postId))
+      // Post successfully deleted, no further action needed
     } catch (error) {
       console.error('Error deleting post:', error)
+      // Rollback - restore the post on error
+      if (deletedPost) {
+        setPosts((prev) => [...prev, deletedPost!])
+      }
     }
   }
 
@@ -1162,6 +1302,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         addComment,
         voteComment,
         fetchCommentReplies,
+        fetchMoreComments,
         searchPosts,
         getCourseById,
         getCoursesByCycle,

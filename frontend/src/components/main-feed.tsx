@@ -11,6 +11,7 @@ import {
   MessageCircle
 } from 'lucide-react';
 import { Post } from './types';
+import { PostCardSkeletonList } from './post-card-skeleton';
 
 const CustomList = forwardRef(({ children, ...props }: { children: React.ReactNode }, ref: React.ForwardedRef<HTMLDivElement>) => {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -145,7 +146,7 @@ export function MainFeed() {
             Footer: () => (
               <div className="text-center py-8">
                 {isFetchingPosts ? (
-                  <p>Cargando...</p>
+                  <PostCardSkeletonList count={2} />
                 ) : hasMorePosts ? (
                   <Button
                     variant="outline"

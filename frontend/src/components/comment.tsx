@@ -186,7 +186,7 @@ export function Comment({ comment, postId, onCommentVote, highlightCommentId, de
                               <p className="text-xs font-medium truncate">{attachment.name}</p>
                               <p className="text-xs text-muted-foreground">{formatFileSize(attachment.size)}</p>
                             </div>
-                            <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+                            <Button variant="ghost" size="sm" className="h-6 w-6 p-0" aria-label="Descargar archivo">
                               <Download className="h-3 w-3" />
                             </Button>
                           </motion.div>
@@ -206,6 +206,8 @@ export function Comment({ comment, postId, onCommentVote, highlightCommentId, de
                 variant="ghost"
                 onClick={() => onCommentVote(comment.id, 'up')}
                 className={`h-6 w-6 ${comment.userVote === 'up' ? 'text-primary' : 'text-muted-foreground'}`}
+                aria-label="Votar positivo en comentario"
+                aria-pressed={comment.userVote === 'up'}
               >
                 <ChevronUp className="h-4 w-4" />
               </Button>
@@ -215,6 +217,8 @@ export function Comment({ comment, postId, onCommentVote, highlightCommentId, de
                 variant="ghost"
                 onClick={() => onCommentVote(comment.id, 'down')}
                 className={`h-6 w-6 ${comment.userVote === 'down' ? 'text-destructive' : 'text-muted-foreground'}`}
+                aria-label="Votar negativo en comentario"
+                aria-pressed={comment.userVote === 'down'}
               >
                 <ChevronDown className="h-4 w-4" />
               </Button>

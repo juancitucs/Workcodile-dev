@@ -1,6 +1,6 @@
 import MarkdownRenderer from './markdown-renderer';
 import { Link, useNavigate } from 'react-router-dom';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, memo } from 'react';
 import { motion } from 'motion/react';
 import { Card, CardContent, CardHeader } from './ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
@@ -42,7 +42,6 @@ import {
   Download,
   Pencil,
   Trash2,
-  MessageSquareOff,
   Flag,
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
@@ -69,7 +68,8 @@ const getCycleTextColor = (cycle: number) => {
   return `cycle-${cycle}-text`;
 };
 
-export function PostCard({ post, startWithCommentsOpen = false, highlightCommentId, isDashboardView }: PostCardProps) {
+// Wrapped with React.memo to prevent unnecessary re-renders
+const PostCardComponent = ({ post, startWithCommentsOpen = false, highlightCommentId, isDashboardView }: PostCardProps) => {
   const navigate = useNavigate();
   const contentRef = useRef<HTMLDivElement>(null);
   const [isContentTruncated, setIsContentTruncated] = useState(false);
@@ -82,7 +82,7 @@ export function PostCard({ post, startWithCommentsOpen = false, highlightComment
     toggleBookmark,
     reportPost,
     deletePost,
-    toggleComments,
+    fetchMoreComments,
   } = useApp();
   const [showComments, setShowComments] = useState(startWithCommentsOpen);
   const [showProfile, setShowProfile] = useState(false);
@@ -242,7 +242,7 @@ export function PostCard({ post, startWithCommentsOpen = false, highlightComment
               </div>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                  <Button variant="ghost" size="sm">
+                  <Button variant="ghost" size="sm" aria-label="Opciones de publicación">
                     <MoreHorizontal className="h-4 w-4" />
                   </Button>
                 </DropdownMenuTrigger>
@@ -256,22 +256,6 @@ export function PostCard({ post, startWithCommentsOpen = false, highlightComment
                       >
                         <Pencil className="h-4 w-4 mr-2 group-focus:text-white" />
                         Editar publicación
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        className="cursor-pointer group"
-                        onClick={() => toggleComments(post.id)}
-                      >
-                        {post.commentsDisabled ? (
-                          <>
-                            <MessageSquareOff className="h-4 w-4 mr-2 group-focus:text-white" />
-                            Activar comentarios
-                          </>
-                        ) : (
-                          <>
-                            <MessageSquareOff className="h-4 w-4 mr-2 group-focus:text-white" />
-                            Desactivar comentarios
-                          </>
-                        )}
                       </DropdownMenuItem>
                       <DropdownMenuItem
                         className="cursor-pointer text-destructive focus:text-white group"
@@ -310,6 +294,8 @@ export function PostCard({ post, startWithCommentsOpen = false, highlightComment
                     handleVote('up');
                   }}
                   className={`h-8 w-8 p-0 ${post.userVote === 'up' ? 'bg-green-500 hover:bg-green-600 text-white' : ''}`}
+                  aria-label="Votar positivo"
+                  aria-pressed={post.userVote === 'up'}
                 >
                   <ChevronUp className="h-4 w-4" />
                 </Button>
@@ -333,8 +319,9 @@ export function PostCard({ post, startWithCommentsOpen = false, highlightComment
                     handleVote('down');
                   }}
                   className="h-8 w-8 p-0"
+                  aria-label="Votar negativo"
+                  aria-pressed={post.userVote === 'down'}
                 >
-                  {' '}
                   <ChevronDown className="h-4 w-4" />
                 </Button>
               </div>
@@ -474,6 +461,17 @@ export function PostCard({ post, startWithCommentsOpen = false, highlightComment
                       onCommentVote={handleCommentVote}
                       highlightCommentId={highlightCommentId}
                     />
+
+                    {/* Load More Comments Button */}
+                    {post.hasMoreComments && (
+                      <Button
+                        variant="ghost"
+                        className="w-full text-primary hover:text-primary/80"
+                        onClick={() => fetchMoreComments(post.id)}
+                      >
+                        Cargar más comentarios ({post.comments.length} de {post.totalComments})
+                      </Button>
+                    )}
                   </motion.div>
                 )}
               </div>
@@ -491,15 +489,15 @@ export function PostCard({ post, startWithCommentsOpen = false, highlightComment
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure you want to delete this post?</AlertDialogTitle>
+            <AlertDialogTitle>¿Estás seguro de eliminar esta publicación?</AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete your post and remove your
-              data from our servers.
+              Esta acción no se puede deshacer. Se eliminará permanentemente tu publicación
+              de nuestros servidores.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete}>Continue</AlertDialogAction>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete}>Eliminar</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
@@ -587,4 +585,19 @@ export function PostCard({ post, startWithCommentsOpen = false, highlightComment
       </Dialog>
     </>
   );
-}
+};
+
+// React.memo with custom comparator to avoid re-renders when post hasn't changed
+export const PostCard = memo(PostCardComponent, (prevProps, nextProps) => {
+  // Return true if props are equal (should NOT re-render)
+  return (
+    prevProps.post.id === nextProps.post.id &&
+    prevProps.post.upvotes === nextProps.post.upvotes &&
+    prevProps.post.downvotes === nextProps.post.downvotes &&
+    prevProps.post.userVote === nextProps.post.userVote &&
+    prevProps.post.comments.length === nextProps.post.comments.length &&
+    prevProps.startWithCommentsOpen === nextProps.startWithCommentsOpen &&
+    prevProps.highlightCommentId === nextProps.highlightCommentId &&
+    prevProps.isDashboardView === nextProps.isDashboardView
+  );
+});

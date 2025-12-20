@@ -55,6 +55,10 @@ export interface Post {
   views: number
   isBookmarked?: boolean
   commentsDisabled?: boolean
+  // Comment pagination
+  totalComments?: number
+  hasMoreComments?: boolean
+  commentOffset?: number
 }
 
 export interface Comment {

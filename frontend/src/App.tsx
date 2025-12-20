@@ -6,6 +6,7 @@ import { SinglePostView } from './components/single-post-view'
 import { MainLayout } from './components/MainLayout'
 import { Snowflakes } from './components/snowflakes'
 import { ChristmasMusicPlayer } from './components/ChristmasMusicPlayer'
+import { ErrorBoundary } from './components/error-boundary'
 import { Loader2 } from 'lucide-react'
 import { Routes, Route } from 'react-router-dom'
 
@@ -36,11 +37,14 @@ function AppContent() {
 
 export default function App() {
   return (
-    <AppProvider>
-      <AppContent />
-      <Snowflakes /> {/* 🎄 Copos de nieve navideños */}
-      <ChristmasMusicPlayer /> {/* 🎵 Música navideña */}
-      <Toaster />
-    </AppProvider>
+    <ErrorBoundary>
+      <AppProvider>
+        <AppContent />
+        <Snowflakes /> {/* 🎄 Copos de nieve navideños */}
+        <ChristmasMusicPlayer /> {/* 🎵 Música navideña */}
+        <Toaster />
+      </AppProvider>
+    </ErrorBoundary>
   )
 }
+
