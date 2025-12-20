@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { motion } from 'motion/react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { useApp } from './app-context';
 import { WorkCodileLogo } from './crocodile-icon';
-import { Loader2, GraduationCap, Users, BrainCircuit } from 'lucide-react';
+import { Loader2, GraduationCap, Users, BrainCircuit, Eye, EyeOff, Check, X } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from './ui/dialog'; // Added for code verification dialog
 
 export function AuthPage() {
@@ -31,6 +31,31 @@ export function AuthPage() {
     password: '',
     confirmPassword: ''
   });
+
+  // Estados para mostrar/ocultar contraseñas
+  const [showLoginPassword, setShowLoginPassword] = useState(false);
+  const [showRegisterPassword, setShowRegisterPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  // Validación de contraseña en tiempo real
+  const passwordValidation = useMemo(() => {
+    const password = registerForm.password;
+    return {
+      minLength: password.length >= 8,
+      hasNumber: /\d/.test(password),
+      hasSymbol: /[!@#$%^&*(),.?":{}|<>]/.test(password),
+      hasUppercase: /[A-Z]/.test(password),
+    };
+  }, [registerForm.password]);
+
+  // Calcular fuerza de contraseña
+  const passwordStrength = useMemo(() => {
+    const validCount = Object.values(passwordValidation).filter(Boolean).length;
+    if (validCount === 0) return { level: 0, label: '', color: '' };
+    if (validCount <= 2) return { level: 1, label: 'Débil', color: 'bg-red-500' };
+    if (validCount === 3) return { level: 2, label: 'Media', color: 'bg-yellow-500' };
+    return { level: 3, label: 'Fuerte', color: 'bg-green-500' };
+  }, [passwordValidation]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -262,14 +287,33 @@ export function AuthPage() {
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="login-password">Contraseña</Label>
-                      <Input
-                        id="login-password"
-                        type="password"
-                        placeholder="**********"
-                        value={loginForm.password}
-                        onChange={(e) => setLoginForm(prev => ({ ...prev, password: e.target.value }))}
-                        required
-                      />
+                      <div className="relative">
+                        <Input
+                          id="login-password"
+                          type={showLoginPassword ? "text" : "password"}
+                          placeholder="**********"
+                          value={loginForm.password}
+                          onChange={(e) => setLoginForm(prev => ({ ...prev, password: e.target.value }))}
+                          required
+                          className="pr-10"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowLoginPassword(!showLoginPassword)}
+                          className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                        >
+                          {showLoginPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        </button>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <button
+                        type="button"
+                        onClick={() => alert('Función de recuperar contraseña próximamente...')}
+                        className="text-sm text-gray-600 hover:text-gray-800 hover:underline cursor-pointer"
+                      >
+                        ¿Olvidaste tu contraseña?
+                      </button>
                     </div>
                     {error && (
                       <p className="text-destructive text-sm text-center">{error}</p>
@@ -313,25 +357,85 @@ export function AuthPage() {
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="register-password">Contraseña</Label>
-                      <Input
-                        id="register-password"
-                        type="password"
-                        placeholder="**********"
-                        value={registerForm.password}
-                        onChange={(e) => setRegisterForm(prev => ({ ...prev, password: e.target.value }))}
-                        required
-                      />
+                      <div className="relative">
+                        <Input
+                          id="register-password"
+                          type={showRegisterPassword ? "text" : "password"}
+                          placeholder="**********"
+                          value={registerForm.password}
+                          onChange={(e) => setRegisterForm(prev => ({ ...prev, password: e.target.value }))}
+                          required
+                          className="pr-10"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowRegisterPassword(!showRegisterPassword)}
+                          className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                        >
+                          {showRegisterPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        </button>
+                      </div>
+
+                      {/* Indicador de fuerza de contraseña */}
+                      {registerForm.password && (
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2">
+                            <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
+                              <div
+                                className={`h-full transition-all duration-300 ${passwordStrength.color}`}
+                                style={{ width: `${(passwordStrength.level / 3) * 100}%` }}
+                              />
+                            </div>
+                            <span className={`text-xs font-medium ${passwordStrength.level === 1 ? 'text-red-500' :
+                              passwordStrength.level === 2 ? 'text-yellow-600' :
+                                passwordStrength.level === 3 ? 'text-green-500' : ''
+                              }`}>
+                              {passwordStrength.label}
+                            </span>
+                          </div>
+
+                          {/* Lista de requisitos */}
+                          <div className="grid grid-cols-2 gap-1 text-xs">
+                            <div className={`flex items-center gap-1 ${passwordValidation.minLength ? 'text-green-600' : 'text-gray-400'}`}>
+                              {passwordValidation.minLength ? <Check className="h-3 w-3" /> : <X className="h-3 w-3" />}
+                              Mínimo 8 caracteres
+                            </div>
+                            <div className={`flex items-center gap-1 ${passwordValidation.hasNumber ? 'text-green-600' : 'text-gray-400'}`}>
+                              {passwordValidation.hasNumber ? <Check className="h-3 w-3" /> : <X className="h-3 w-3" />}
+                              Un número
+                            </div>
+                            <div className={`flex items-center gap-1 ${passwordValidation.hasSymbol ? 'text-green-600' : 'text-gray-400'}`}>
+                              {passwordValidation.hasSymbol ? <Check className="h-3 w-3" /> : <X className="h-3 w-3" />}
+                              Un símbolo
+                            </div>
+                            <div className={`flex items-center gap-1 ${passwordValidation.hasUppercase ? 'text-green-600' : 'text-gray-400'}`}>
+                              {passwordValidation.hasUppercase ? <Check className="h-3 w-3" /> : <X className="h-3 w-3" />}
+                              Una mayúscula
+                            </div>
+                          </div>
+                        </div>
+                      )}
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="register-confirm">Confirmar contraseña</Label>
-                      <Input
-                        id="register-confirm"
-                        type="password"
-                        placeholder="**********"
-                        value={registerForm.confirmPassword}
-                        onChange={(e) => setRegisterForm(prev => ({ ...prev, confirmPassword: e.target.value }))}
-                        required
-                      />
+                      <div className="relative">
+                        <Input
+                          id="register-confirm"
+                          type={showConfirmPassword ? "text" : "password"}
+                          placeholder="**********"
+                          value={registerForm.confirmPassword}
+                          onChange={(e) => setRegisterForm(prev => ({ ...prev, confirmPassword: e.target.value }))}
+                          required
+                          className="pr-10"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                          className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                        >
+                          {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        </button>
+                      </div>
                     </div>
                     {error && (
                       <p className="text-destructive text-sm text-center">{error}</p>
@@ -360,7 +464,7 @@ export function AuthPage() {
 
       {/* Code Verification Dialog */}
       <Dialog open={currentStep === 'verifyCode'} onOpenChange={(open) => { if (!open && !isLoading) setCurrentStep('form'); }}>
-        <DialogContent className="sm:max-w-sm" style={{ maxWidth: '360px' }}>
+        <DialogContent className="verification-modal">
           <DialogHeader>
             <DialogTitle>Verificación de Código</DialogTitle>
             <DialogDescription>

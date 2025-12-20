@@ -2077,9 +2077,9 @@ button[data-slot="button"]:hover .text-muted-foreground,
 }
 
 /* =====================================================================
-   MODAL DE VERIFICACIÓN DE CÓDIGO - Ancho reducido
+   MODAL DE VERIFICACIÓN DE CÓDIGO - Ancho reducido (solo este modal)
    ===================================================================== */
-[data-slot="dialog-content"] {
+.verification-modal {
   max-width: 340px !important;
   width: 90% !important;
 }
