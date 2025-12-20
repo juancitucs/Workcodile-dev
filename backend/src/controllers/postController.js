@@ -629,6 +629,8 @@ const incrementView = async (req, res) => {
 const getPostById = async (req, res) => {
   try {
     const { id } = req.params;
+    const commentLimit = parseInt(req.query.commentLimit, 10) || 5; // Default 5 comments initially
+    const commentOffset = parseInt(req.query.commentOffset, 10) || 0;
 
     const postAgg = await mongoose.connection.db
       .collection('posts')
@@ -644,50 +646,46 @@ const getPostById = async (req, res) => {
 
     const post = postAgg[0];
 
-
-
     // Add author avatar URL
-
     if (post.author && post.author.avatar_key) {
-
       post.author.avatar = getFileUrl(post.author.avatar_key);
-
     }
 
     // Add attachment URLs for the main post
-
     if (post.attachments) {
-
       post.attachments.forEach(att => {
-
         if (att.object_key) att.url = getFileUrl(att.object_key);
-
       });
-
     }
 
+    // Store total comments count before slicing
+    const totalComments = post.comments ? post.comments.length : 0;
 
-
+    // Paginate root-level comments only (replies stay nested)
     if (post.comments && post.comments.length > 0) {
+      // Sort comments by score (most popular first)
+      post.comments.sort((a, b) => (b.score || 0) - (a.score || 0));
 
-      await populateCommentAuthors(post.comments);
-
+      // Apply pagination to root-level comments
+      const paginatedComments = post.comments.slice(commentOffset, commentOffset + commentLimit);
+      await populateCommentAuthors(paginatedComments);
+      post.comments = paginatedComments;
     }
-
-
 
     addUserVoteStatus(post, req.user ? req.user.id : null);
+
+    // Add pagination metadata
+    post.totalComments = totalComments;
+    post.hasMoreComments = commentOffset + commentLimit < totalComments;
+    post.commentOffset = commentOffset;
+    post.commentLimit = commentLimit;
 
     res.status(200).json(post);
 
   } catch (error) {
-
     console.error('Error fetching post by ID:', error);
-
     res.status(500).json({ message: 'Error fetching post by ID' });
-
   }
-
 };
 
 const getPostByCommentId = async (req, res) => {
