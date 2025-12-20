@@ -11,12 +11,7 @@
      ===================================================================== */
 
   --workcodile-green: #22c55e;
-  /* COLOR PRIMARIO VERDE - El verde principal de WorkCodile. Cámbialo a #3b82f6 para azul, #ef4444 para rojo */
 
-  /* =====================================================================
-     LÍNEAS DIVISORAS - CONFIGURACIÓN CENTRALIZADA
-     Cambia estos valores UNA VEZ y se actualizarán TODAS las líneas divisoras
-     ===================================================================== */
   --divider-thickness: 2px;
   /* GROSOR DE TODAS LAS LÍNEAS - Cambia a 2px, 4px, etc */
   --divider-color-light: #acaaaac3;
@@ -2079,4 +2074,12 @@ button[data-slot="button"]:hover .text-muted-foreground,
 .dark [class*="hover:bg-primary"]:hover {
   background: rgba(184, 222, 180, 0.049) !important;
   background-color: rgba(180, 222, 181, 0.049) !important;
+}
+
+/* =====================================================================
+   MODAL DE VERIFICACIÓN DE CÓDIGO - Ancho reducido
+   ===================================================================== */
+[data-slot="dialog-content"] {
+  max-width: 340px !important;
+  width: 90% !important;
 }

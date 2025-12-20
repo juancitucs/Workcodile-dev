@@ -360,7 +360,7 @@ export function AuthPage() {
 
       {/* Code Verification Dialog */}
       <Dialog open={currentStep === 'verifyCode'} onOpenChange={(open) => { if (!open && !isLoading) setCurrentStep('form'); }}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-sm" style={{ maxWidth: '360px' }}>
           <DialogHeader>
             <DialogTitle>Verificación de Código</DialogTitle>
             <DialogDescription>
