@@ -906,7 +906,7 @@ textarea,
 /* Fallback de Firefox */
 * {
   scrollbar-width: thin !important;
-  scrollbar-color: hsl(142 76% 36% / 0.3) transparent !important;
+  scrollbar-color: hsl(142 76% 36% / 0.6) transparent !important;
 }
 
 /* Navegadores Chromium (Brave, Chrome, Edge) - Scrollbar personalizado para elementos no-body */
@@ -938,7 +938,7 @@ textarea,
 }
 
 .sidebar-scroll:hover {
-  scrollbar-color: hsl(142 76% 36% / 0.35) transparent !important;
+  scrollbar-color: hsl(142 76% 36% / 0.7) transparent !important;
   /* Firefox - mostrar en hover */
 }
 
@@ -962,42 +962,42 @@ textarea,
 }
 
 .sidebar-scroll:hover::-webkit-scrollbar-thumb {
-  background: hsl(142 76% 36% / 0.35) !important;
+  background: hsl(142 76% 36% / 0.7) !important;
 }
 
 .sidebar-scroll:hover::-webkit-scrollbar-thumb:hover {
-  background: hsl(142 76% 36% / 0.6) !important;
+  background: hsl(142 76% 36% / 0.85) !important;
 }
 
 /* Scrollbars rojos del tema Navidad */
 .christmas .sidebar-scroll:hover {
-  scrollbar-color: hsl(0 72% 51% / 0.35) transparent !important;
+  scrollbar-color: hsl(0 72% 51% / 0.7) transparent !important;
   /* Firefox - red */
 }
 
 .christmas .sidebar-scroll:hover::-webkit-scrollbar-thumb {
-  background: hsl(0 72% 51% / 0.35) !important;
+  background: hsl(0 72% 51% / 0.7) !important;
   /* Webkit - red */
 }
 
 .christmas .sidebar-scroll:hover::-webkit-scrollbar-thumb:hover {
-  background: hsl(0 72% 51% / 0.6) !important;
+  background: hsl(0 72% 51% / 0.85) !important;
   /* Webkit hover - red */
 }
 
 /* Christmas theme - main browser scrollbar (red) */
 html.christmas::-webkit-scrollbar-thumb,
 .christmas::-webkit-scrollbar-thumb {
-  background-color: hsl(0 72% 51% / 0.4) !important;
+  background-color: hsl(0 72% 51% / 0.7) !important;
 }
 
 html.christmas::-webkit-scrollbar-thumb:hover,
 .christmas::-webkit-scrollbar-thumb:hover {
-  background-color: hsl(0 72% 51% / 0.7) !important;
+  background-color: hsl(0 72% 51% / 0.9) !important;
 }
 
 html.christmas {
-  scrollbar-color: hsl(0 72% 51% / 0.4) transparent !important;
+  scrollbar-color: hsl(0 72% 51% / 0.7) transparent !important;
 }
 
 /* Christmas theme - modal scrollbars (red) */
@@ -1005,21 +1005,21 @@ html.christmas {
 .christmas [role="dialog"] *::-webkit-scrollbar-thumb,
 .christmas [data-slot="dialog-content"]::-webkit-scrollbar-thumb,
 .christmas [data-slot="dialog-content"] *::-webkit-scrollbar-thumb {
-  background-color: hsl(0 72% 51% / 0.4) !important;
+  background-color: hsl(0 72% 51% / 0.7) !important;
 }
 
 .christmas [role="dialog"]::-webkit-scrollbar-thumb:hover,
 .christmas [role="dialog"] *::-webkit-scrollbar-thumb:hover,
 .christmas [data-slot="dialog-content"]::-webkit-scrollbar-thumb:hover,
 .christmas [data-slot="dialog-content"] *::-webkit-scrollbar-thumb:hover {
-  background-color: hsl(0 72% 51% / 0.7) !important;
+  background-color: hsl(0 72% 51% / 0.9) !important;
 }
 
 .christmas [role="dialog"],
 .christmas [role="dialog"] *,
 .christmas [data-slot="dialog-content"],
 .christmas [data-slot="dialog-content"] * {
-  scrollbar-color: hsl(0 72% 51% / 0.4) transparent !important;
+  scrollbar-color: hsl(0 72% 51% / 0.7) transparent !important;
 }
 
 /* Move scrollbar to left side */
@@ -2082,4 +2082,30 @@ button[data-slot="button"]:hover .text-muted-foreground,
 .verification-modal {
   max-width: 340px !important;
   width: 90% !important;
+}
+
+/* =====================================================================
+   MODAL DE REPORTE - Ancho reducido (solo este modal)
+   ===================================================================== */
+[data-report-dialog] {
+  max-width: 360px !important;
+  width: 90% !important;
+}
+
+/* Opciones del modal de reporte - espaciado y hover */
+[data-report-dialog] [role="radiogroup"]>div {
+  padding: 8px 10px !important;
+  margin-bottom: 4px !important;
+  border-radius: 6px !important;
+  transition: background-color 0.15s ease !important;
+  cursor: pointer !important;
+}
+
+[data-report-dialog] [role="radiogroup"]>div:hover {
+  background-color: rgba(34, 197, 94, 0.1) !important;
+}
+
+/* Modo navideño */
+.christmas [data-report-dialog] [role="radiogroup"]>div:hover {
+  background-color: rgba(239, 68, 68, 0.1) !important;
 }

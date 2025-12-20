@@ -136,7 +136,7 @@ function toRoman(num: number): string {
 // Helper function to create short abbreviations
 function getShortName(fullName: string): string {
     const abbreviations: Record<string, string> = {
-        'FUNDAMENTOS DE PROGRAMACION': 'F. Programacion',
+        'FUNDAMENTOS DE PROGRAMACION': 'Fundamentos P.',
         'MATEMATICA I': 'Matemática 1',
         'MATEMATICA II': 'Matemática 2',
         'MATEMATICA III': 'Matemática 3',
@@ -167,13 +167,13 @@ function getShortName(fullName: string): string {
         'CIRCUITOS ELECTRICOS Y ELECTRONICOS': 'Circuitos Elec.',
         'INVESTIGACION OPERATIVA I': 'Inv. Operat. 1',
         'INVESTIGACION OPERATIVA II': 'Inv. Operat.2',
-        'SISTEMAS DISTRIBUIDOS': 'Sist. Distribuidos',
+        'SISTEMAS DISTRIBUIDOS': 'Sist. Distribu.',
         'APLICACIONES WEB I': 'App Web 1',
         'APLICACIONES WEB II': 'App Web 2',
-        'METODOS NUMERICOS': 'Mét. Numéricos',
-        'SISTEMAS DIGITALES': 'Sist. Digitales',
+        'METODOS NUMERICOS': 'M. Numéricos',
+        'SISTEMAS DIGITALES': 'Sist. Digitale',
         'INGENIERIA DE SOFTWARE': 'Ing. Software',
-        'BUSINESS INTELLIGENCE': 'Business Intel.',
+        'BUSINESS INTELLIGENCE': 'Business Int.',
         'PROGRAMACION DE DISPOSITIVOS MOVILES I': 'Pro. Móviles 1',
         'PROGRAMACION DE DISPOSITIVOS MOVILES II': 'Pro. Móviles 2',
         'REALIDAD AUMENTADA': 'Realidad Aum.',
@@ -186,7 +186,7 @@ function getShortName(fullName: string): string {
         'REDES II': 'Redes 2',
         'LENGUAJE DE BAJO NIVEL': 'Bajo Nivel',
         'CLOUD COMPUTING': 'Cloud Comp.',
-        'PROCESAMIENTO DE IMAGENES Y VIDEOS': 'Proc. Img/Video',
+        'PROCESAMIENTO DE IMAGENES Y VIDEOS': 'Proc. Img.',
         'PROYECTO DE INVESTIGACION I': 'Proy. Invest. 1',
         'PROYECTO DE INVESTIGACION II': 'Proy. Invest. 2',
         'INTERACCION HUMANO COMPUTADOR': 'HCI',
@@ -195,9 +195,9 @@ function getShortName(fullName: string): string {
         'INTELIGENCIA ARTIFICIAL I': 'IA 1',
         'INTELIGENCIA ARTIFICIAL II': 'IA 2',
         'SEGURIDAD INFORMATICA': 'Seg. Inform.',
-        'FORMACION DE EMPRESAS CON BASE TECNOLOGICA': 'Form. Empresas',
-        'PROYECTOS INFORMATICOS I': 'Proy. Informat. 1',
-        'PROYECTOS INFORMATICOS II': 'Proy. Informat. 2',
+        'FORMACION DE EMPRESAS CON BASE TECNOLOGICA': 'Form. Empres.',
+        'PROYECTOS INFORMATICOS I': 'Proy. Infor. 1',
+        'PROYECTOS INFORMATICOS II': 'Proy. Infor. 2',
         'AUDITORIA DE SISTEMAS DE INFORMACION': 'Auditoría SI',
         'SEGURIDAD DE LA INFORMACION': 'Seg. Info.',
         'SEMINARIO DE TESIS': 'Sem. Tesis',
@@ -247,7 +247,7 @@ function getAllDescendants(courseId: string, unlocksMap: Record<string, string[]
 
 // === MOCK DATA - MALLA CURRICULAR (Datos reales de UNAM) ===
 // TODO BACKEND: El endpoint GET /api/courses debe devolver esta estructura
-const MOCK_CURRICULUM: Course[] = [
+/*const MOCK_CURRICULUM: Course[] = [
     // Ciclo 1
     { _id: 'IS-124', code: 'IS-124', name: 'REDACCION Y COMUNICACION', cycle: 1, prerequisites: [], type: 'basic' },
     { _id: 'IS-127', code: 'IS-127', name: 'BIOLOGIA Y MEDIO AMBIENTE', cycle: 1, prerequisites: [], type: 'basic' },
@@ -324,7 +324,7 @@ const MOCK_CURRICULUM: Course[] = [
     { _id: 'IS-1021', code: 'IS-1021', name: 'INTELIGENCIA ARTIFICIAL II', cycle: 10, prerequisites: ['IS-921'], type: 'basic' },
     { _id: 'IS-1026', code: 'IS-1026', name: 'PROYECTOS INFORMATICOS II', cycle: 10, prerequisites: ['IS-925'], type: 'basic' },
 ];
-
+*/
 // === MAIN COMPONENT ===
 export const CurriculumModal = memo(function CurriculumModal({ trigger }: CurriculumModalProps) {
     const { user, authStatus, theme, christmasTheme } = useApp(); // Use auth context + theme

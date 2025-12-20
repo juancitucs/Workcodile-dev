@@ -11,6 +11,10 @@ import { PostActions } from './post-actions';
 import { WorkCodileLogo } from './crocodile-icon';
 import { UserProfile } from './user-profile';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from './ui/accordion';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from './ui/dialog';
+import { Label } from './ui/label';
+import { Textarea } from './ui/textarea';
+import { RadioGroup, RadioGroupItem } from './ui/radio-group';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -25,7 +29,6 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from './ui/dropdown-menu';
 import {
@@ -41,8 +44,6 @@ import {
   Trash2,
   MessageSquareOff,
   Flag,
-  Bookmark,
-  Bell,
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -88,6 +89,10 @@ export function PostCard({ post, startWithCommentsOpen = false, highlightComment
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showReportDialog, setShowReportDialog] = useState(false);
+  const [reportReason, setReportReason] = useState('');
+  const [customReason, setCustomReason] = useState('');
+  const [isSubmittingReport, setIsSubmittingReport] = useState(false);
 
   useEffect(() => {
     if (isDashboardView && contentRef.current) {
@@ -130,8 +135,25 @@ export function PostCard({ post, startWithCommentsOpen = false, highlightComment
     toggleBookmark(post.id);
   };
 
-  const handleReport = () => {
-    reportPost(post.id);
+  const handleReport = async () => {
+    const finalReason = reportReason === 'other' ? customReason : reportReason;
+    if (!finalReason.trim()) {
+      toast.error('Por favor selecciona o escribe una razón para el reporte');
+      return;
+    }
+
+    setIsSubmittingReport(true);
+    try {
+      await reportPost(post.id, finalReason);
+      toast.success('¡Reporte enviado! Gracias por ayudarnos a mantener la comunidad segura.');
+      setShowReportDialog(false);
+      setReportReason('');
+      setCustomReason('');
+    } catch (error) {
+      toast.error('Error al enviar el reporte. Intenta de nuevo.');
+    } finally {
+      setIsSubmittingReport(false);
+    }
   };
 
   const handleDelete = async () => {
@@ -264,16 +286,8 @@ export function PostCard({ post, startWithCommentsOpen = false, highlightComment
                   {user?.id !== post.author.id && (
                     <>
                       <DropdownMenuItem
-                        className="cursor-pointer group"
-                        onClick={handleBookmark}
-                      >
-                        <Bookmark className={`h-4 w-4 mr-2 group-focus:text-white ${post.isBookmarked ? 'fill-current' : ''}`} />
-                        {post.isBookmarked ? 'Quitar de marcadores' : 'Guardar en marcadores'}
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem
                         className="cursor-pointer text-destructive focus:text-white group"
-                        onClick={handleReport}
+                        onClick={() => setShowReportDialog(true)}
                       >
                         <Flag className="h-4 w-4 mr-2 group-focus:text-white" />
                         Reportar publicación
@@ -496,6 +510,81 @@ export function PostCard({ post, startWithCommentsOpen = false, highlightComment
           onClose={() => setShowEditModal(false)}
         />
       )}
+      {/* Report Post Dialog */}
+      <Dialog open={showReportDialog} onOpenChange={setShowReportDialog}>
+        <DialogContent data-report-dialog className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Flag className="h-5 w-5 text-destructive" />
+              Reportar publicación
+            </DialogTitle>
+            <DialogDescription>
+              Selecciona la razón por la que deseas reportar esta publicación.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <RadioGroup value={reportReason} onValueChange={setReportReason}>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="spam" id="spam" />
+                <Label htmlFor="spam" className="cursor-pointer">Spam o publicidad no deseada</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="inappropriate" id="inappropriate" />
+                <Label htmlFor="inappropriate" className="cursor-pointer">Contenido inapropiado u ofensivo</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="harassment" id="harassment" />
+                <Label htmlFor="harassment" className="cursor-pointer">Acoso o bullying</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="false_info" id="false_info" />
+                <Label htmlFor="false_info" className="cursor-pointer">Información falsa o engañosa</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="plagiarism" id="plagiarism" />
+                <Label htmlFor="plagiarism" className="cursor-pointer">Plagio o contenido copiado</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="other" id="other" />
+                <Label htmlFor="other" className="cursor-pointer">Otra razón</Label>
+              </div>
+            </RadioGroup>
+            {reportReason === 'other' && (
+              <div className="space-y-2">
+                <Label htmlFor="custom-reason">Describe la razón:</Label>
+                <Textarea
+                  id="custom-reason"
+                  placeholder="Escribe aquí el motivo de tu reporte..."
+                  value={customReason}
+                  onChange={(e) => setCustomReason(e.target.value)}
+                  className="min-h-[80px]"
+                  maxLength={300}
+                />
+                <p className="text-xs text-muted-foreground text-right">{customReason.length}/300</p>
+              </div>
+            )}
+          </div>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowReportDialog(false);
+                setReportReason('');
+                setCustomReason('');
+              }}
+            >
+              Cancelar
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleReport}
+              disabled={isSubmittingReport || !reportReason}
+            >
+              {isSubmittingReport ? 'Enviando...' : 'Enviar reporte'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

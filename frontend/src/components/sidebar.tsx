@@ -21,7 +21,6 @@ import {
   Clock,
   TrendingUp,
   Filter,
-  Bookmark
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -194,30 +193,6 @@ export function Sidebar({ selectedCourse, onCourseSelect, sortBy, onSortChange }
               </div>
             </Button>
 
-            {/* Bookmarks Button */}
-            <Button
-              variant={selectedCourse === 'bookmarks' ? 'default' : 'ghost'}
-              onClick={() => handleCourseChange('bookmarks')}
-              className="w-full justify-start h-auto p-3 hover-lift transition-all duration-300 mb-4"
-            >
-              <div className="flex items-center justify-between w-full">
-                <div className="flex items-center space-x-3">
-                  <Bookmark className={`h-4 w-4 ${selectedCourse === 'bookmarks' ? 'text-primary-foreground' : 'text-primary'}`} />
-                  <div className="text-left">
-                    <p className="font-medium">Mis Marcadores</p>
-                    <p className={`text-xs ${selectedCourse === 'bookmarks' ? 'text-primary-foreground/80' : 'text-muted-foreground'}`}>
-                      Publicaciones guardadas
-                    </p>
-                  </div>
-                </div>
-                <Badge
-                  variant={selectedCourse === 'bookmarks' ? 'secondary' : 'outline'}
-                  className="ml-2"
-                >
-                  {posts.filter(p => p.isBookmarked).length}
-                </Badge>
-              </div>
-            </Button>
 
             <Accordion type="multiple" className="w-full">
               {cycles.map((cycle) => {

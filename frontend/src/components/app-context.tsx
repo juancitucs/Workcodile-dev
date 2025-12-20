@@ -53,7 +53,7 @@ interface AppContextType {
   christmasTheme: boolean
   toggleChristmasTheme: () => void
   toggleBookmark: (postId: string) => void
-  reportPost: (postId: string) => void
+  reportPost: (postId: string, reason?: string) => void
   incrementViews: (postId: string) => void
   incrementViewsBatch: (postIds: string[]) => void
   mainFeedKey: number

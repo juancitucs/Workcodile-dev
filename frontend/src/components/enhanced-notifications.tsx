@@ -66,24 +66,26 @@ export function EnhancedNotifications() {
               {groupedNotifications[group].map(notification => {
                 const Icon = getNotificationIcon(notification.type);
                 return (
-                  <div
+                  <motion.div
                     key={notification.id}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
                     onClick={() => handleNotificationSelect(notification)}
-                    className={`flex items-start p-4 rounded-lg transition-colors ${!notification.read ? 'bg-blue-50 dark:bg-blue-950/30' : 'hover:bg-muted/50'} ${notification.link ? 'cursor-pointer' : ''}`}
+                    className={`flex items-start p-4 rounded-2xl transition-all duration-200 border ${!notification.read ? 'bg-primary/5 border-primary/20 shadow-sm' : 'border-transparent hover:bg-muted/50 hover:border-border/50'} ${notification.link ? 'cursor-pointer hover:scale-[1.01]' : ''}`}
                   >
-                    <div className={`h-8 w-8 flex-shrink-0 rounded-full flex items-center justify-center mr-3 ${!notification.read ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>
-                      <Icon className="h-4 w-4" />
+                    <div className={`h-10 w-10 flex-shrink-0 rounded-xl flex items-center justify-center mr-3 transition-colors ${!notification.read ? 'bg-primary text-primary-foreground shadow-md' : 'bg-muted text-muted-foreground'}`}>
+                      <Icon className="h-5 w-5" />
                     </div>
-                    <div className='flex-1'>
-                      <p className="text-sm">{notification.text}</p>
+                    <div className='flex-1 min-w-0'>
+                      <p className="text-sm font-medium leading-relaxed">{notification.text}</p>
                       <p className="text-xs text-muted-foreground mt-1">
                         {formatDistanceToNow(notification.createdAt, { addSuffix: true, locale: es })}
                       </p>
                     </div>
                     {!notification.read && (
-                      <div className="h-2 w-2 rounded-full bg-primary self-center ml-2 flex-shrink-0" />
+                      <div className="h-2.5 w-2.5 rounded-full bg-primary self-center ml-3 flex-shrink-0 animate-pulse" />
                     )}
-                  </div>
+                  </motion.div>
                 )
               })}
             </div>

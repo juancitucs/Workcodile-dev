@@ -55,18 +55,19 @@ const getBadgeImage = (level: number): string => {
     return badgeImages[badgeLevel];
 };
 
-// XP requerido para cada nivel (basado en la fórmula: 100 * 2^(level-1))
+// XP requerido para cada nivel (ACUMULATIVO - suma de todos los niveles anteriores)
+// Backend usa: while (xp >= xpForNextLevel) { xp -= xpForNextLevel; level++; xpForNextLevel *= 2; }
 const LEVEL_XP_REQUIREMENTS = [
     { level: 1, xp: 0, name: 'Cachimbo' },
-    { level: 2, xp: 100, name: 'Aprendiz' },
-    { level: 3, xp: 200, name: 'Junior' },
-    { level: 4, xp: 400, name: 'Analista' },
-    { level: 5, xp: 800, name: 'Profesional' },
-    { level: 6, xp: 1600, name: 'Senior' },
-    { level: 7, xp: 3200, name: 'Líder' },
-    { level: 8, xp: 6400, name: 'Experto' },
-    { level: 9, xp: 12800, name: 'Director' },
-    { level: 10, xp: 25600, name: 'Referente Ápex' },
+    { level: 2, xp: 100, name: 'Aprendiz' },       // 100
+    { level: 3, xp: 300, name: 'Junior' },         // 100 + 200 = 300
+    { level: 4, xp: 700, name: 'Analista' },       // 300 + 400 = 700
+    { level: 5, xp: 1500, name: 'Profesional' },   // 700 + 800 = 1500
+    { level: 6, xp: 3100, name: 'Senior' },        // 1500 + 1600 = 3100
+    { level: 7, xp: 6300, name: 'Líder' },         // 3100 + 3200 = 6300
+    { level: 8, xp: 12700, name: 'Experto' },      // 6300 + 6400 = 12700
+    { level: 9, xp: 25500, name: 'Director' },     // 12700 + 12800 = 25500
+    { level: 10, xp: 51100, name: 'Referente Ápex' }, // 25500 + 25600 = 51100
 ];
 
 interface UserRowProps {
@@ -92,11 +93,9 @@ const UserRow = memo(function UserRow({ user, index, onUserClick }: UserRowProps
             </Avatar>
             <div className="flex-1 min-w-0">
                 <p className="sidebar-item-title text-sm font-medium truncate hover:text-primary transition-colors">{user.name}</p>
-                <div className="flex items-center space-x-1.5 text-xs text-muted-foreground">
-                    <span>{user.totalPosts} posts</span>
-                    <span>•</span>
-                    <span>{user.totalLikes} likes</span>
-                </div>
+                <p className="text-xs text-muted-foreground">
+                    Nivel {user.level} - {LEVEL_XP_REQUIREMENTS.find(l => l.level === user.level)?.name || 'Cachimbo'}
+                </p>
             </div>
             <div className="flex-shrink-0">
                 {/* Imagen del badge según nivel - solo imagen, sin texto */}

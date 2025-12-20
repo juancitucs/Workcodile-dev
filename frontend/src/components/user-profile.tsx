@@ -498,8 +498,9 @@ export function UserProfile({ isOpen, onClose, userId }: UserProfileProps) {
                       {(() => {
                         const currentXp = profileUser.xp || 0;
                         const currentLevel = profileUser.level || 1;
-                        // XP requerido para cada nivel (fórmula: nivel 1=0, nivel 2=100, nivel 3=200, etc duplicando)
-                        const xpThresholds = [0, 100, 200, 400, 800, 1600, 3200, 6400, 12800, 25600, 51200];
+                        // XP ACUMULATIVO requerido para cada nivel (backend resta XP en cada nivel)
+                        // Nivel 2=100, Nivel 3=100+200=300, Nivel 4=300+400=700, etc.
+                        const xpThresholds = [0, 100, 300, 700, 1500, 3100, 6300, 12700, 25500, 51100, 102300];
                         const currentLevelXp = xpThresholds[currentLevel - 1] || 0;
                         const nextLevelXp = xpThresholds[currentLevel] || xpThresholds[xpThresholds.length - 1];
                         const xpInCurrentLevel = currentXp - currentLevelXp;
