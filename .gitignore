@@ -3,6 +3,7 @@
 **/build
 # Archivos de build
 **/dist
+frontend/build/
 
 # Logs
 npm-debug.log*
