@@ -21,6 +21,8 @@ interface AppContextType {
   login: (email: string, password: string) => Promise<void>
   sendVerificationCode: (name: string, email: string, password: string) => Promise<any>
   verifyAndRegister: (email: string, password: string, verificationCode: string) => Promise<any>
+  forgotPassword: (email: string) => Promise<any>;
+  resetPassword: (email: string, code: string, password: string) => Promise<any>;
   logout: () => void
   updateProfile: (profileData: Partial<User>) => void
   createPost: (
@@ -592,6 +594,42 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setAuthStatus('authenticated');
     return responseData; // Retorna { token, user }
   }
+
+  const forgotPassword = async (email: string) => {
+    const response = await fetch(`${API_BASE_URL}/api/auth/forgot-password`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ email }),
+    });
+
+    const responseData = await response.json();
+
+    if (!response.ok) {
+      throw new Error(responseData.msg || 'Error al enviar el correo de recuperación');
+    }
+
+    return responseData;
+  };
+
+  const resetPassword = async (email: string, code: string, password: string) => {
+    const response = await fetch(`${API_BASE_URL}/api/auth/reset-password`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ email, code, password }),
+    });
+
+    const responseData = await response.json();
+
+    if (!response.ok) {
+      throw new Error(responseData.msg || 'Error al restablecer la contraseña');
+    }
+
+    return responseData;
+  };
 
   const logout = () => {
     localStorage.removeItem('token')
@@ -1293,6 +1331,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
         login,
         sendVerificationCode, // new function
         verifyAndRegister,    // new function
+        forgotPassword,
+        resetPassword,
         logout,
         updateProfile,
         createPost,

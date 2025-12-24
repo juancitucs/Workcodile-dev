@@ -41,4 +41,24 @@ function getPasswordResetEmailHTML(name, resetLink) {
   `;
 }
 
-module.exports = { getVerificationCodeHTML, getPasswordResetEmailHTML };
+/**
+ * Genera el HTML para un correo de recuperación de contraseña con un código.
+ * @param {string} name - Nombre del usuario.
+ * @param {string} resetCode - El código de restablecimiento de contraseña.
+ * @returns {string} - El HTML del correo.
+ */
+function getPasswordResetCodeEmailHTML(name, resetCode) {
+  return `
+    <div style="font-family: sans-serif; padding: 20px; color: #333;">
+      <h2>Recuperación de Contraseña de WorkCodile</h2>
+      <p>Hola, ${name}.</p>
+      <p>Recibimos una solicitud para restablecer tu contraseña. Usa el siguiente código para restablecer tu contraseña:</p>
+      <p style="font-size: 24px; font-weight: bold; color: #22c55e; letter-spacing: 5px;">${resetCode}</p>
+      <p>Este código es válido por 10 minutos.</p>
+      <p>Si no solicitaste un restablecimiento de contraseña, puedes ignorar este correo de forma segura.</p>
+      <p>— El equipo de WorkCodile</p>
+    </div>
+  `;
+}
+
+module.exports = { getVerificationCodeHTML, getPasswordResetEmailHTML, getPasswordResetCodeEmailHTML };

@@ -2,7 +2,7 @@ const User = require('../models/User')
 const bcrypt = require('bcrypt')
 const jwt = require('jsonwebtoken')
 const crypto = require('crypto'); // Added for token generation
-const { sendVerificationCodeEmail } = require('../services/email/email.service'); // Added for sending verification code email
+const { sendVerificationCodeEmail, sendPasswordResetCodeEmail } = require('../services/email/email.service'); // Added for sending verification code email
 const { getFileUrl } = require('../services/storage/storage.service'); // Added for getting file public URL
 
 const sendVerificationCode = async (req, res) => { // Renamed from register
@@ -182,10 +182,6 @@ const getUserById = async (req, res) => {
   }
 };
 
-
-
-
-
 const verifyAndRegister = async (req, res) => {
   const { email, verificationCode } = req.body;
 
@@ -229,4 +225,64 @@ const verifyAndRegister = async (req, res) => {
   }
 };
 
-module.exports = { sendVerificationCode, verifyAndRegister, login, getMe, updateUserTheme, updateProfile, getUserById };
+const forgotPassword = async (req, res) => {
+  const { email } = req.body;
+
+  try {
+    const user = await User.findOne({ email });
+    if (!user) {
+      // To prevent user enumeration, we send a generic success message even if the user doesn't exist.
+      return res.status(200).json({ msg: 'If a user with that email exists, a password reset code has been sent.' });
+    }
+
+    // Generate a 6-digit password reset code
+    const resetCode = Math.floor(100000 + Math.random() * 900000).toString();
+    user.passwordResetCode = resetCode;
+    user.passwordResetExpires = Date.now() + 600000; // 10 minutes
+
+    await user.save();
+
+    // Send password reset code email
+    await sendPasswordResetCodeEmail(user.email, user.name, resetCode);
+
+    res.status(200).json({ msg: 'A password reset code has been sent to your email.' });
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+};
+
+const resetPassword = async (req, res) => {
+  const { email, code, password } = req.body;
+
+  try {
+    const user = await User.findOne({
+      email,
+      passwordResetCode: code,
+      passwordResetExpires: { $gt: Date.now() },
+    });
+
+    if (!user) {
+      return res.status(400).json({ msg: 'Invalid reset code or it has expired.' });
+    }
+
+    // Hash the new password
+    const salt = await bcrypt.genSalt(10);
+    user.password = await bcrypt.hash(password, salt);
+
+    // Clear the password reset fields
+    user.passwordResetCode = undefined;
+    user.passwordResetExpires = undefined;
+
+    await user.save();
+
+    res.status(200).json({ msg: 'Password has been reset successfully.' });
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+};
+
+module.exports = { sendVerificationCode, verifyAndRegister, login, getMe, updateUserTheme, updateProfile, getUserById, forgotPassword, resetPassword };

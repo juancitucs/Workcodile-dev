@@ -9,6 +9,7 @@ import { useApp } from './app-context';
 import { WorkCodileLogo } from './crocodile-icon';
 import { Loader2, GraduationCap, Users, BrainCircuit, Eye, EyeOff, Check, X } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from './ui/dialog'; // Added for code verification dialog
+import { Link } from 'react-router-dom';
 
 export function AuthPage() {
   const { login, sendVerificationCode, verifyAndRegister } = useApp(); // Updated to new functions
@@ -307,13 +308,11 @@ export function AuthPage() {
                       </div>
                     </div>
                     <div className="text-right">
-                      <button
-                        type="button"
-                        onClick={() => alert('Función de recuperar contraseña próximamente...')}
+                      <Link to="/forgot-password"
                         className="text-sm text-gray-600 hover:text-gray-800 hover:underline cursor-pointer"
                       >
                         ¿Olvidaste tu contraseña?
-                      </button>
+                      </Link>
                     </div>
                     {error && (
                       <p className="text-destructive text-sm text-center">{error}</p>

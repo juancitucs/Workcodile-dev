@@ -1,6 +1,6 @@
 // backend/src/services/email/email.service.js
 const { sendEmail } = require('./email.provider');
-const { getVerificationCodeHTML, getPasswordResetEmailHTML } = require('./email.templates');
+const { getVerificationCodeHTML, getPasswordResetEmailHTML, getPasswordResetCodeEmailHTML } = require('./email.templates');
 
 /**
  * Envía un correo de verificación de registro con un código.
@@ -29,4 +29,17 @@ async function sendPasswordResetEmail(to, name, resetToken) {
   await sendEmail(to, subject, html);
 }
 
-module.exports = { sendVerificationCodeEmail, sendPasswordResetEmail };
+/**
+ * Envía un correo para restablecer la contraseña con un código.
+ * @param {string} to - Email del destinatario.
+ * @param {string} name - Nombre del usuario.
+ * @param {string} resetCode - El código para restablecer la contraseña.
+ */
+async function sendPasswordResetCodeEmail(to, name, resetCode) {
+  const subject = 'Restablece tu contraseña de WorkCodile';
+  const html = getPasswordResetCodeEmailHTML(name, resetCode);
+
+  await sendEmail(to, subject, html);
+}
+
+module.exports = { sendVerificationCodeEmail, sendPasswordResetEmail, sendPasswordResetCodeEmail };
