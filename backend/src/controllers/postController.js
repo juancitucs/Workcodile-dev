@@ -60,13 +60,6 @@ const postAggregationPipeline = [
             _id: '$comments.authorInfo._id',
             name: '$comments.authorInfo.name',
             avatar_key: '$comments.authorInfo.avatar_key',
-            avatar: {
-              $cond: {
-                if: '$comments.authorInfo.avatar_key',
-                then: { $concat: [`${process.env.MINIO_URL}/${process.env.MINIO_BUCKET}/`, '$comments.authorInfo.avatar_key'] },
-                else: null
-              }
-            },
             level: '$comments.authorInfo.level',
           },
           else: { // Default anonymous user info
@@ -78,26 +71,7 @@ const postAggregationPipeline = [
           }
         }
       },
-      'comments.attachments': {
-        $map: {
-          input: '$comments.attachments',
-          as: 'att',
-          in: {
-            $mergeObjects: [
-              '$$att',
-              {
-                url: {
-                  $cond: {
-                    if: '$$att.object_key',
-                    then: { $concat: [`${process.env.MINIO_URL}/${process.env.MINIO_BUCKET}/`, '$$att.object_key'] },
-                    else: null
-                  }
-                }
-              }
-            ]
-          }
-        }
-      }
+      'comments.attachments': '$comments.attachments'
     }
   },
   // Group back comments into an array, reconstructing replies
@@ -142,26 +116,7 @@ const postAggregationPipeline = [
       createdAt: 1,
       updatedAt: 1,
       hashtags: 1,
-      attachments: {
-        $map: {
-          input: '$attachments',
-          as: 'att',
-          in: {
-            $mergeObjects: [
-              '$$att',
-              {
-                url: {
-                  $cond: {
-                    if: '$$att.object_key',
-                    then: { $concat: [`${process.env.MINIO_URL}/${process.env.MINIO_BUCKET}/`, '$$att.object_key'] },
-                    else: null
-                  }
-                }
-              }
-            ]
-          }
-        }
-      },
+      attachments: 1,
       views: 1,
       upvote_count: 1,
       downvote_count: 1,
@@ -171,13 +126,6 @@ const postAggregationPipeline = [
         _id: '$author._id',
         name: '$author.name',
         avatar_key: '$author.avatar_key',
-        avatar: {
-          $cond: {
-            if: '$author.avatar_key',
-            then: { $concat: [`${process.env.MINIO_URL}/${process.env.MINIO_BUCKET}/`, '$author.avatar_key'] },
-            else: null
-          }
-        },
         level: '$author.level',
       },
       comments: {
@@ -223,6 +171,27 @@ const addUserVoteStatus = (item, currentUserId) => {
   }
 };
 
+const addUrlsToItems = (items) => {
+  if (!items) return;
+  for (const item of items) {
+    if (item.author && item.author.avatar_key) {
+      item.author.avatar = getFileUrl(item.author.avatar_key);
+    }
+    if (item.attachments) {
+      item.attachments.forEach(att => {
+        if (att.object_key) att.url = getFileUrl(att.object_key);
+      });
+    }
+    if (item.comments) {
+      addUrlsToItems(item.comments);
+    }
+    if (item.replies) {
+      addUrlsToItems(item.replies);
+    }
+  }
+};
+
+
 const getAllPosts = async (req, res) => {
   try {
     const page = parseInt(req.query.page, 10) || 1;
@@ -241,18 +210,10 @@ const getAllPosts = async (req, res) => {
       ])
       .toArray()
 
-    for (const post of posts) {
-      // Add author avatar URL
-      if (post.author && post.author.avatar_key) {
-        post.author.avatar = getFileUrl(post.author.avatar_key);
-      }
-      // Add attachment URLs
-      if (post.attachments) {
-        post.attachments.forEach(att => {
-          if (att.object_key) att.url = getFileUrl(att.object_key);
-        });
-      }
 
+    addUrlsToItems(posts);
+
+    for (const post of posts) {
       addUserVoteStatus(post, req.user ? req.user.id : null);
     }
 
@@ -363,7 +324,8 @@ const votePost = async (req, res) => {
         ...postAggregationPipeline,
       ])
       .toArray()
-
+    
+    addUrlsToItems(updatedPost);
     addUserVoteStatus(updatedPost[0], req.user ? req.user.id : null);
     res.status(200).json(updatedPost[0])
   } catch (error) {
@@ -446,7 +408,7 @@ const addCommentToPost = async (req, res) => {
 
     const updatedPost = updatedPostForAgg[0];
 
-
+    addUrlsToItems([updatedPost]);
 
     addUserVoteStatus(updatedPost, req.user ? req.user.id : null);
 
@@ -500,6 +462,7 @@ const createPost = async (req, res) => {
         ...postAggregationPipeline,
       ])
       .toArray()
+    addUrlsToItems(createdPost);
     addUserVoteStatus(createdPost[0], req.user ? req.user.id : null);
     res.status(201).json(createdPost[0])
   } catch (error) {
@@ -610,7 +573,7 @@ const voteComment = async (req, res) => {
 
     const updatedPost = updatedPostAgg[0]
 
-
+    addUrlsToItems([updatedPost]);
 
     addUserVoteStatus(updatedPost, req.user ? req.user.id : null);
 
@@ -711,18 +674,9 @@ const getPostById = async (req, res) => {
 
     const post = postAgg[0];
 
-    // Add author avatar URL
-    if (post.author && post.author.avatar_key) {
-      post.author.avatar = getFileUrl(post.author.avatar_key);
-    }
 
-    // Add attachment URLs for the main post
-    if (post.attachments) {
-      post.attachments.forEach(att => {
-        if (att.object_key) att.url = getFileUrl(att.object_key);
-      });
-    }
-
+    addUrlsToItems([post]);
+    
     // Store total comments count before slicing
     const totalComments = post.comments ? post.comments.length : 0;
 
@@ -817,7 +771,7 @@ const getCommentReplies = async (req, res) => {
 
     const replies = parentComment.replies || [];
 
-    await populateCommentAuthors(replies);
+    addUrlsToItems(replies);
 
     replies.forEach(reply => {
       addUserVoteStatus(reply, userId);
@@ -862,17 +816,7 @@ const updatePost = async (req, res) => {
     }
 
     const finalPost = postAgg[0];
-    if (finalPost.author && finalPost.author.avatar_key) {
-      finalPost.author.avatar = getFileUrl(finalPost.author.avatar_key);
-    }
-    if (finalPost.attachments) {
-      finalPost.attachments.forEach(att => {
-        if (att.object_key) att.url = getFileUrl(att.object_key);
-      });
-    }
-    if (finalPost.comments && finalPost.comments.length > 0) {
-      await populateCommentAuthors(finalPost.comments);
-    }
+    addUrlsToItems([finalPost]);
     addUserVoteStatus(finalPost, req.user ? req.user.id : null);
 
     res.status(200).json(finalPost);
