@@ -254,11 +254,10 @@ const forgotPassword = async (req, res) => {
 };
 
 const resetPassword = async (req, res) => {
-  const { email, code, password } = req.body;
+  const { code, password } = req.body;
 
   try {
     const user = await User.findOne({
-      email,
       passwordResetCode: code,
       passwordResetExpires: { $gt: Date.now() },
     });

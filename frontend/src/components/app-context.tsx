@@ -613,13 +613,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
     return responseData;
   };
 
-  const resetPassword = async (email: string, code: string, password: string) => {
+  const resetPassword = async (code: string, password: string) => {
     const response = await fetch(`${API_BASE_URL}/api/auth/reset-password`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ email, code, password }),
+      body: JSON.stringify({ code, password }),
     });
 
     const responseData = await response.json();

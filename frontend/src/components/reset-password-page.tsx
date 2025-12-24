@@ -16,7 +16,6 @@ export function ResetPasswordPage() {
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
   const [form, setForm] = useState({
-    email: '',
     code: '',
     password: '',
     confirmPassword: ''
@@ -37,7 +36,7 @@ export function ResetPasswordPage() {
     setMessage('');
 
     try {
-      const response = await resetPassword(form.email, form.code, form.password);
+      const response = await resetPassword(form.code, form.password);
       setMessage(response.msg);
       setTimeout(() => navigate('/auth'), 2000);
     } catch (err: any) {
@@ -89,22 +88,11 @@ export function ResetPasswordPage() {
             </div>
             <CardTitle>Restablecer Contraseña</CardTitle>
             <CardDescription>
-              Ingresa tu correo, el código que te enviamos y tu nueva contraseña.
+              Ingresa el código que te enviamos y tu nueva contraseña.
             </CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleResetPassword} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="email">Correo institucional</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="tu.nombre@unam.edu.pe"
-                  value={form.email}
-                  onChange={handleInputChange}
-                  required
-                />
-              </div>
               <div className="space-y-2">
                 <Label htmlFor="code">Código de Recuperación</Label>
                 <Input
