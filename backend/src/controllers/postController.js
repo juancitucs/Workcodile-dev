@@ -40,7 +40,7 @@ const postAggregationPipeline = [
     $addFields: {
       'comments.authorId': {
         $cond: {
-          if: { $isObject: '$comments.author' },
+          if: { $eq: [{ $type: '$comments.author' }, 'object'] },
           then: '$comments.author._id',
           else: '$comments.author'
         }
@@ -238,7 +238,7 @@ const getAllPosts = async (req, res) => {
       hasNextPage: page < totalPages,
     });
   } catch (error) {
-    console.error('Error fetching posts:', error)
+    console.error('Error fetching posts:', error);
     res.status(500).json({ message: 'Error fetching posts' })
   }
 }
