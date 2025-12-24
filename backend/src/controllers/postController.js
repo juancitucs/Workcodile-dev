@@ -194,56 +194,7 @@ const postAggregationPipeline = [
   }
 ];
 
-// Shared helper function for populating comment authors and URLs
-const populateCommentAuthors = async (comments) => {
-  for (const comment of comments) {
-    let authorIdToLookup = null;
-    if (comment.author && typeof comment.author.equals === 'function') { // Check if it's already an ObjectId
-      authorIdToLookup = comment.author;
-    } else if (comment.author) { // If it's a string, convert to ObjectId
-      authorIdToLookup = new ObjectId(comment.author);
-    } else if (comment.author_id) { // Fallback to author_id
-      authorIdToLookup = new ObjectId(comment.author_id);
-    }
 
-    if (authorIdToLookup) {
-      const author = await mongoose.connection.db.collection('users').findOne({ _id: authorIdToLookup });
-      if (author) {
-        comment.author = {
-          _id: author._id,
-          name: author.name,
-          avatar_key: author.avatar_key,
-          avatar: author.avatar_key ? getFileUrl(author.avatar_key) : undefined,
-          level: author.level || 1, // Nivel del usuario para mostrar badge
-        };
-      } else {
-        comment.author = {
-          _id: authorIdToLookup,
-          name: 'Usuario Eliminado',
-          avatar_key: null,
-          avatar: undefined,
-        };
-      }
-    } else {
-      comment.author = {
-        _id: null,
-        name: 'Usuario Anónimo',
-        avatar_key: null,
-        avatar: undefined,
-      };
-    }
-
-    // Add attachment URLs for comments
-    if (comment.attachments) {
-      comment.attachments.forEach(att => {
-        if (att.object_key && !att.url) att.url = getFileUrl(att.object_key);
-      });
-    }
-    if (comment.replies && comment.replies.length > 0) {
-      await populateCommentAuthors(comment.replies);
-    }
-  }
-};
 
 // Helper function to add user_vote status
 const addUserVoteStatus = (item, currentUserId) => {
@@ -301,9 +252,7 @@ const getAllPosts = async (req, res) => {
           if (att.object_key) att.url = getFileUrl(att.object_key);
         });
       }
-      if (post.comments && post.comments.length > 0) {
-        await populateCommentAuthors(post.comments);
-      }
+
       addUserVoteStatus(post, req.user ? req.user.id : null);
     }
 
@@ -497,11 +446,7 @@ const addCommentToPost = async (req, res) => {
 
     const updatedPost = updatedPostForAgg[0];
 
-    if (updatedPost.comments && updatedPost.comments.length > 0) {
 
-      await populateCommentAuthors(updatedPost.comments);
-
-    }
 
     addUserVoteStatus(updatedPost, req.user ? req.user.id : null);
 
@@ -665,9 +610,7 @@ const voteComment = async (req, res) => {
 
     const updatedPost = updatedPostAgg[0]
 
-    if (updatedPost.comments && updatedPost.comments.length > 0) {
-      await populateCommentAuthors(updatedPost.comments)
-    }
+
 
     addUserVoteStatus(updatedPost, req.user ? req.user.id : null);
 
@@ -790,7 +733,6 @@ const getPostById = async (req, res) => {
 
       // Apply pagination to root-level comments
       const paginatedComments = post.comments.slice(commentOffset, commentOffset + commentLimit);
-      await populateCommentAuthors(paginatedComments);
       post.comments = paginatedComments;
     }
 
