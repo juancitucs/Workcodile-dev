@@ -1,7 +1,6 @@
 import { AppProvider, useApp } from './components/app-context'
 import { AuthPage } from './components/auth-page'
 import { ForgotPasswordPage } from './components/forgot-password-page'
-import { ResetPasswordPage } from './components/reset-password-page'
 import { MainFeed } from './components/main-feed'
 import { Toaster } from './components/ui/sonner'
 import { SinglePostView } from './components/single-post-view'
@@ -29,7 +28,6 @@ function AppContent() {
         <>
           <Route path="/auth" element={<AuthPage />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-          <Route path="/reset-password" element={<ResetPasswordPage />} />
           <Route path="*" element={<Navigate to="/auth" />} />
         </>
       ) : (

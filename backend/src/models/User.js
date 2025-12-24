@@ -8,6 +8,8 @@ const userSchema = new mongoose.Schema(
     isVerified: { type: Boolean, default: false }, // For email verification
     verificationCode: String, // For code-based verification
     verificationCodeExpires: Date, // Expiry for the verification code
+    passwordResetCode: String, // For password reset code
+    passwordResetExpires: Date, // Expiry for the password reset code
     avatar_key: { type: String },
     bio: { type: String },
     role: {
