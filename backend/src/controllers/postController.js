@@ -743,35 +743,28 @@ const getCommentReplies = async (req, res) => {
     const { postId, commentId } = req.params;
     const userId = req.user ? req.user.id : null;
 
-    const post = await mongoose.connection.db.collection('posts').findOne({ _id: new ObjectId(postId) });
+    const postAgg = await mongoose.connection.db
+      .collection('posts')
+      .aggregate([
+        { $match: { _id: new ObjectId(postId) } },
+        ...postAggregationPipeline,
+      ])
+      .toArray();
 
-    if (!post) {
+    if (!postAgg.length) {
       return res.status(404).json({ message: 'Post not found' });
     }
 
-    let parentComment = null;
-    const findComment = (comments) => {
-      for (const comment of comments) {
-        if (comment._id.equals(new ObjectId(commentId))) {
-          parentComment = comment;
-          return;
-        }
-        if (comment.replies && comment.replies.length > 0) {
-          findComment(comment.replies);
-        }
-        if (parentComment) return;
-      }
-    };
+    const post = postAgg[0];
+    addUrlsToItems([post]);
 
-    findComment(post.comments);
+    const parentComment = findCommentRecursive(post.comments, new ObjectId(commentId));
 
     if (!parentComment) {
       return res.status(404).json({ message: 'Comment not found' });
     }
 
     const replies = parentComment.replies || [];
-
-    addUrlsToItems(replies);
 
     replies.forEach(reply => {
       addUserVoteStatus(reply, userId);
