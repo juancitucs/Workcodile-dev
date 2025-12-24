@@ -203,6 +203,16 @@ const addUrlsToItems = (items) => {
   }
 };
 
+const sortComments = (comments) => {
+  if (!comments) return;
+  comments.sort((a, b) => (b.score || 0) - (a.score || 0));
+  for (const comment of comments) {
+    if (comment.replies) {
+      sortComments(comment.replies);
+    }
+  }
+}
+
 
 const getAllPosts = async (req, res) => {
   try {
@@ -226,6 +236,7 @@ const getAllPosts = async (req, res) => {
     addUrlsToItems(posts);
 
     for (const post of posts) {
+      sortComments(post.comments);
       addUserVoteStatus(post, req.user ? req.user.id : null);
     }
 
@@ -694,8 +705,7 @@ const getPostById = async (req, res) => {
 
     // Paginate root-level comments only (replies stay nested)
     if (post.comments && post.comments.length > 0) {
-      // Sort comments by score (most popular first)
-      post.comments.sort((a, b) => (b.score || 0) - (a.score || 0));
+      sortComments(post.comments);
 
       // Apply pagination to root-level comments
       const paginatedComments = post.comments.slice(commentOffset, commentOffset + commentLimit);
@@ -715,6 +725,37 @@ const getPostById = async (req, res) => {
   } catch (error) {
     console.error('Error fetching post by ID:', error);
     res.status(500).json({ message: 'Error fetching post by ID' });
+  }
+};
+
+const populateAuthors = async (comments) => {
+  for (const comment of comments) {
+    let authorIdToLookup = null;
+    if (comment.author && comment.author._id) {
+        authorIdToLookup = new ObjectId(comment.author._id);
+    } else if (comment.author) {
+      authorIdToLookup = new ObjectId(comment.author);
+    }
+
+    if (authorIdToLookup) {
+      const author = await mongoose.connection.db.collection('users').findOne({ _id: authorIdToLookup });
+      if (author) {
+        comment.author = {
+          _id: author._id,
+          name: author.name,
+          avatar_key: author.avatar_key,
+          level: author.level || 1,
+        };
+      } else {
+        comment.author = { name: 'Usuario Eliminado' };
+      }
+    } else {
+      comment.author = { name: 'Usuario Anónimo' };
+    }
+
+    if (comment.replies && comment.replies.length > 0) {
+      await populateAuthors(comment.replies);
+    }
   }
 };
 
@@ -755,20 +796,11 @@ const getCommentReplies = async (req, res) => {
     const { postId, commentId } = req.params;
     const userId = req.user ? req.user.id : null;
 
-    const postAgg = await mongoose.connection.db
-      .collection('posts')
-      .aggregate([
-        { $match: { _id: new ObjectId(postId) } },
-        ...postAggregationPipeline,
-      ])
-      .toArray();
+    const post = await mongoose.connection.db.collection('posts').findOne({ _id: new ObjectId(postId) });
 
-    if (!postAgg.length) {
+    if (!post) {
       return res.status(404).json({ message: 'Post not found' });
     }
-
-    const post = postAgg[0];
-    addUrlsToItems([post]);
 
     const parentComment = findCommentRecursive(post.comments, new ObjectId(commentId));
 
@@ -777,6 +809,10 @@ const getCommentReplies = async (req, res) => {
     }
 
     const replies = parentComment.replies || [];
+    
+    await populateAuthors(replies);
+    addUrlsToItems(replies);
+    sortComments(replies);
 
     replies.forEach(reply => {
       addUserVoteStatus(reply, userId);

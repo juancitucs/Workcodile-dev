@@ -587,17 +587,4 @@ const PostCardComponent = ({ post, startWithCommentsOpen = false, highlightComme
   );
 };
 
-// React.memo with custom comparator to avoid re-renders when post hasn't changed
-export const PostCard = memo(PostCardComponent, (prevProps, nextProps) => {
-  // Return true if props are equal (should NOT re-render)
-  return (
-    prevProps.post.id === nextProps.post.id &&
-    prevProps.post.upvotes === nextProps.post.upvotes &&
-    prevProps.post.downvotes === nextProps.post.downvotes &&
-    prevProps.post.userVote === nextProps.post.userVote &&
-    prevProps.post.comments.length === nextProps.post.comments.length &&
-    prevProps.startWithCommentsOpen === nextProps.startWithCommentsOpen &&
-    prevProps.highlightCommentId === nextProps.highlightCommentId &&
-    prevProps.isDashboardView === nextProps.isDashboardView
-  );
-});
+export const PostCard = PostCardComponent;

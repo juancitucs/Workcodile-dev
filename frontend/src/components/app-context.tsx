@@ -178,7 +178,7 @@ const courses: Course[] = [
 
 const transformBackendComment = (comment: any): Comment => {
   const transformedReplies = comment.replies
-    ? comment.replies.map(transformBackendComment).sort((a: Comment, b: Comment) => b.score - a.score)
+    ? comment.replies.map(transformBackendComment)
     : [];
   return {
     ...comment,
@@ -218,7 +218,7 @@ const transformBackendPost = (post: any): Post => ({
   upvotes: post.upvote_count || 0,
   downvotes: post.downvote_count || 0,
   comments: post.comments
-    ? post.comments.map(transformBackendComment).sort((a: Comment, b: Comment) => b.score - a.score)
+    ? post.comments.map(transformBackendComment)
     : [],
   hashtags: post.hashtags || [],
   attachments: post.attachments ? post.attachments.map((att: any) => ({
@@ -752,14 +752,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
         throw new Error('Failed to vote on post'); // Error during API call
       }
 
-      // Reconcile with backend's response (optional, but good for consistency)
-      const updatedPostFromServer = await response.json();
-      const transformedPostFromServer = transformBackendPost(updatedPostFromServer);
-
-      setPosts((prev) =>
-        prev.map((p) => (p.id === postId ? transformedPostFromServer : p))
-      );
-
     } catch (error) {
       console.error('Error voting on post:', error);
       // Rollback to original state if API call fails
@@ -967,14 +959,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
       if (!response.ok) {
         throw new Error('Failed to vote on comment')
       }
-
-      // Reconcile with backend's response
-      const updatedPostFromServer = await response.json();
-      const transformedPostFromServer = transformBackendPost(updatedPostFromServer);
-
-      setPosts((prevPosts) =>
-        prevPosts.map((p) => (p.id === postId ? transformedPostFromServer : p))
-      );
 
     } catch (error) {
       console.error('Error voting on comment:', error)

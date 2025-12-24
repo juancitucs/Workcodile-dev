@@ -21,14 +21,4 @@ const CommentTreeComponent = ({ comments, postId, onCommentVote, highlightCommen
   );
 };
 
-// React.memo to prevent re-renders when comments haven't changed
-export const CommentTree = memo(CommentTreeComponent, (prevProps, nextProps) => {
-  return (
-    prevProps.postId === nextProps.postId &&
-    prevProps.comments.length === nextProps.comments.length &&
-    prevProps.highlightCommentId === nextProps.highlightCommentId &&
-    prevProps.depth === nextProps.depth &&
-    // Deep check on first comment to detect vote changes
-    prevProps.comments[0]?.userVote === nextProps.comments[0]?.userVote
-  );
-});
+export const CommentTree = CommentTreeComponent;
