@@ -35,11 +35,23 @@ const postAggregationPipeline = [
       preserveNullAndEmptyArrays: true // Keep posts even if they have no comments
     }
   },
+  // Add a consistent author ID field for comments to handle both old and new comment structures
+  {
+    $addFields: {
+      'comments.authorId': {
+        $cond: {
+          if: { $isObject: '$comments.author' },
+          then: '$comments.author._id',
+          else: '$comments.author'
+        }
+      }
+    }
+  },
   // Lookup author for comments
   {
     $lookup: {
       from: 'users',
-      localField: 'comments.author._id',
+      localField: 'comments.authorId',
       foreignField: '_id',
       as: 'comments.authorInfo'
     }
