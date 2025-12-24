@@ -121,8 +121,9 @@ db.courses.insertMany([
       "IS-526"
     ]
   }
+  ,
   { _id: "IS-623", name: "PROGRAMACION DE DISPOSITIVOS MOVILES I", cycle: 6, prerequisites: []
-  }
+  },
   { _id: "IS-621", name: "INGENIERIA DE SOFTWARE", cycle: 6, prerequisites: [
       "IS-522",
       "IS-523"

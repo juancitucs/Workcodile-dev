@@ -10,7 +10,7 @@ exports.getTopUsers = async (req, res) => {
   try {
     const limit = parseInt(req.query.limit, 10) || 10;
 
-    const topUsers = await User.find({})
+    const topUsers = await User.find({ isVerified: true })
       .sort({ xp: -1 })
       .limit(limit)
       .select('name avatar_key level xp stats.totalPosts stats.totalLikesReceived');
