@@ -12,7 +12,7 @@ const postAggregationPipeline = [
       effective_author_id: { $ifNull: ["$author", "$author_id"] }
     }
   },
-  // 1. Lookup author
+  // 1. Lookup author for the post
   {
     $lookup: {
       from: 'users',
@@ -21,14 +21,119 @@ const postAggregationPipeline = [
       as: 'author',
     },
   },
-  // 2. Unwind author
+  // 2. Unwind author for the post
   {
     $unwind: {
       path: '$author',
       preserveNullAndEmptyArrays: true, // Keep posts even if author is not found
     },
   },
-  // 3. Final projection
+  // Start comments processing
+  {
+    $unwind: {
+      path: '$comments',
+      preserveNullAndEmptyArrays: true // Keep posts even if they have no comments
+    }
+  },
+  // Lookup author for comments
+  {
+    $lookup: {
+      from: 'users',
+      localField: 'comments.author',
+      foreignField: '_id',
+      as: 'comments.authorInfo'
+    }
+  },
+  {
+    $unwind: {
+      path: '$comments.authorInfo',
+      preserveNullAndEmptyArrays: true
+    }
+  },
+  // Add avatar URLs for comment authors and attachment URLs for comments
+  {
+    $addFields: {
+      'comments.author': {
+        $cond: {
+          if: '$comments.authorInfo',
+          then: {
+            _id: '$comments.authorInfo._id',
+            name: '$comments.authorInfo.name',
+            avatar_key: '$comments.authorInfo.avatar_key',
+            avatar: {
+              $cond: {
+                if: '$comments.authorInfo.avatar_key',
+                then: { $concat: [`${process.env.MINIO_URL}/${process.env.MINIO_BUCKET}/`, '$comments.authorInfo.avatar_key'] },
+                else: null
+              }
+            },
+            level: '$comments.authorInfo.level',
+          },
+          else: { // Default anonymous user info
+            _id: '$comments.author', // Keep original author ID if available
+            name: 'Usuario Anónimo',
+            avatar_key: null,
+            avatar: null,
+            level: 1,
+          }
+        }
+      },
+      'comments.attachments': {
+        $map: {
+          input: '$comments.attachments',
+          as: 'att',
+          in: {
+            $mergeObjects: [
+              '$$att',
+              {
+                url: {
+                  $cond: {
+                    if: '$$att.object_key',
+                    then: { $concat: [`${process.env.MINIO_URL}/${process.env.MINIO_BUCKET}/`, '$$att.object_key'] },
+                    else: null
+                  }
+                }
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  // Group back comments into an array, reconstructing replies
+  {
+    $group: {
+      _id: '$_id',
+      title: { $first: '$title' },
+      content: { $first: '$content' },
+      course_id: { $first: '$course_id' },
+      createdAt: { $first: '$createdAt' },
+      updatedAt: { $first: '$updatedAt' },
+      hashtags: { $first: '$hashtags' },
+      attachments: { $first: '$attachments' },
+      views: { $first: '$views' },
+      upvote_count: { $first: { $size: { $ifNull: ["$upvoted_by", []] } } },
+      downvote_count: { $first: { $size: { $ifNull: ["$downvoted_by", []] } } },
+      upvoted_by: { $first: '$upvoted_by' },
+      downvoted_by: { $first: '$downvoted_by' },
+      author: { $first: '$author' },
+      comments: {
+        $push: {
+          _id: '$comments._id',
+          author: '$comments.author',
+          content: '$comments.content',
+          attachments: '$comments.attachments',
+          createdAt: '$comments.createdAt',
+          score: '$comments.score',
+          replies: '$comments.replies', // Keep original replies structure
+          parentId: '$comments.parentId',
+          upvoted_by: '$comments.upvoted_by',
+          downvoted_by: '$comments.downvoted_by'
+        }
+      }
+    }
+  },
+  // Final projection (similar to original, but with populated comments)
   {
     $project: {
       title: 1,
@@ -37,21 +142,56 @@ const postAggregationPipeline = [
       createdAt: 1,
       updatedAt: 1,
       hashtags: 1,
-      attachments: 1,
+      attachments: {
+        $map: {
+          input: '$attachments',
+          as: 'att',
+          in: {
+            $mergeObjects: [
+              '$$att',
+              {
+                url: {
+                  $cond: {
+                    if: '$$att.object_key',
+                    then: { $concat: [`${process.env.MINIO_URL}/${process.env.MINIO_BUCKET}/`, '$$att.object_key'] },
+                    else: null
+                  }
+                }
+              }
+            ]
+          }
+        }
+      },
       views: 1,
-      upvote_count: { $size: { $ifNull: ["$upvoted_by", []] } }, // Correctly count upvotes
-      downvote_count: { $size: { $ifNull: ["$downvoted_by", []] } }, // Correctly count downvotes
+      upvote_count: 1,
+      downvote_count: 1,
       upvoted_by: 1,
       downvoted_by: 1,
       author: {
         _id: '$author._id',
         name: '$author.name',
         avatar_key: '$author.avatar_key',
-        level: '$author.level', // Nivel del usuario para mostrar badge
+        avatar: {
+          $cond: {
+            if: '$author.avatar_key',
+            then: { $concat: [`${process.env.MINIO_URL}/${process.env.MINIO_BUCKET}/`, '$author.avatar_key'] },
+            else: null
+          }
+        },
+        level: '$author.level',
       },
-      comments: 1,
-    },
-  },
+      comments: {
+        $filter: {
+          input: '$comments',
+          as: 'comment',
+          // Filter out null comments that result from preserveNullAndEmptyArrays: true
+          // on posts with no comments.
+          // This also allows to filter out replies in favor of recursive population later on
+          cond: { $and: [{ $ne: ['$$comment', {}] }, { $eq: ['$$comment.parentId', null] }] }
+        }
+      }
+    }
+  }
 ];
 
 // Shared helper function for populating comment authors and URLs
@@ -292,7 +432,7 @@ const addCommentToPost = async (req, res) => {
 
     const comment = {
       _id: new ObjectId(),
-      author: userId,
+      author: { _id: userId },
       content,
       attachments: attachments || [], // ADD attachments
       createdAt: new Date(),
@@ -525,26 +665,8 @@ const voteComment = async (req, res) => {
 
     const updatedPost = updatedPostAgg[0]
 
-    const populateCommentAuthors = async (comments) => {
-      for (const comment of comments) {
-        const author = await mongoose.connection.db
-          .collection('users')
-          .findOne({ _id: comment.author_id })
-        comment.author = {
-          _id: author._id,
-          name: author.name,
-          avatar_key: author.avatar_key,
-        }
-        if (comment.replies && comment.replies.length > 0) {
-          await populateCommentAuthors(comment.replies)
-        }
-      }
-    }
-
     if (updatedPost.comments && updatedPost.comments.length > 0) {
-
       await populateCommentAuthors(updatedPost.comments)
-
     }
 
     addUserVoteStatus(updatedPost, req.user ? req.user.id : null);
