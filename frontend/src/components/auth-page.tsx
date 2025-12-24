@@ -464,11 +464,12 @@ export function AuthPage() {
       {/* Code Verification Dialog */}
       <Dialog open={currentStep === 'verifyCode'} onOpenChange={(open) => { if (!open && !isLoading) setCurrentStep('form'); }}>
         <DialogContent className="verification-modal">
+          <DialogTitle>Verificación de Código</DialogTitle>
+          <DialogDescription>
+            Hemos enviado un código de 6 dígitos a su correo electrónico ({tempRegisterData.email}). Por favor, introdúzcalo a continuación para completar su registro.
+          </DialogDescription>
           <DialogHeader>
-            <DialogTitle>Verificación de Código</DialogTitle>
-            <DialogDescription>
-              Hemos enviado un código de 6 dígitos a su correo electrónico ({tempRegisterData.email}). Por favor, introdúzcalo a continuación para completar su registro.
-            </DialogDescription>
+            {/* The original DialogTitle and DialogDescription were here, but have been moved to DialogContent for accessibility. */}
           </DialogHeader>
           <form onSubmit={handleVerifyCode} className="space-y-4 py-4">
             <div className="space-y-2">

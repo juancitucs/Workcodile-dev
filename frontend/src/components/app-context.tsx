@@ -22,7 +22,7 @@ interface AppContextType {
   sendVerificationCode: (name: string, email: string, password: string) => Promise<any>
   verifyAndRegister: (email: string, password: string, verificationCode: string) => Promise<any>
   forgotPassword: (email: string) => Promise<any>;
-  resetPassword: (email: string, code: string, password: string) => Promise<any>;
+  resetPassword: (code: string, password: string) => Promise<any>;
   logout: () => void
   updateProfile: (profileData: Partial<User>) => void
   createPost: (
@@ -686,57 +686,56 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const token = localStorage.getItem('token')
     if (!token) return
 
-    // Guardar el estado original de posts para revertir en caso de error
     let originalPosts: Post[] = [];
 
-    try {
-      setPosts((prev) => {
-        originalPosts = prev; // Guardar el estado antes de actualización optimista
-        const postIndex = prev.findIndex(p => p.id === postId);
-        if (postIndex === -1) return prev; // Post no encontrado
+    setPosts((prev) => {
+      originalPosts = JSON.parse(JSON.stringify(prev)); // Guardar el estado antes de actualización optimista
+      const postIndex = prev.findIndex(p => p.id === postId);
+      if (postIndex === -1) return prev; // Post no encontrado
 
-        const originalPost = prev[postIndex];
-        let newUpvotes = originalPost.upvotes;
-        let newDownvotes = originalPost.downvotes;
-        let newUserVote = originalPost.userVote;
+      const originalPost = prev[postIndex];
+      let newUpvotes = originalPost.upvotes;
+      let newDownvotes = originalPost.downvotes;
+      let newUserVote = originalPost.userVote;
 
-        // Determinar nuevos conteos de votos y estado de userVote
-        if (vote === 'up') {
-          if (originalPost.userVote === 'up') { // Usuario está quitando su upvote
-            newUpvotes--;
-            newUserVote = null;
-          } else { // Usuario está dando upvote
-            newUpvotes++;
-            if (originalPost.userVote === 'down') { // Usuario tenía downvote, quitar downvote
-              newDownvotes--;
-            }
-            newUserVote = 'up';
-          }
-        } else { // vote === 'down'
-          if (originalPost.userVote === 'down') { // Usuario está quitando su downvote
+      // Determinar nuevos conteos de votos y estado de userVote
+      if (vote === 'up') {
+        if (originalPost.userVote === 'up') { // Usuario está quitando su upvote
+          newUpvotes--;
+          newUserVote = null;
+        } else { // Usuario está dando upvote
+          newUpvotes++;
+          if (originalPost.userVote === 'down') { // Usuario tenía downvote, quitar downvote
             newDownvotes--;
-            newUserVote = null;
-          } else { // Usuario está dando downvote
-            newDownvotes++;
-            if (originalPost.userVote === 'up') { // Usuario tenía upvote, quitar upvote
-              newUpvotes--;
-            }
-            newUserVote = 'down';
           }
+          newUserVote = 'up';
         }
+      } else { // vote === 'down'
+        if (originalPost.userVote === 'down') { // Usuario está quitando su downvote
+          newDownvotes--;
+          newUserVote = null;
+        } else { // Usuario está dando downvote
+          newDownvotes++;
+          if (originalPost.userVote === 'up') { // Usuario tenía upvote, quitar upvote
+            newUpvotes--;
+          }
+          newUserVote = 'down';
+        }
+      }
 
-        const optimisticPost = {
-          ...originalPost,
-          upvotes: newUpvotes,
-          downvotes: newDownvotes,
-          userVote: newUserVote,
-        };
+      const optimisticPost = {
+        ...originalPost,
+        upvotes: newUpvotes,
+        downvotes: newDownvotes,
+        userVote: newUserVote,
+      };
 
-        const newPosts = [...prev];
-        newPosts[postIndex] = optimisticPost;
-        return newPosts;
-      });
+      const newPosts = [...prev];
+      newPosts[postIndex] = optimisticPost;
+      return newPosts;
+    });
 
+    try {
       const response = await fetch(
         `${API_BASE_URL}/api/posts/${postId}/vote`,
         {
@@ -778,6 +777,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     if (!user) return
     const token = localStorage.getItem('token')
     if (!token) return
+
+    let originalPosts: Post[] = [];
 
     // Create a temporary optimistic comment
     const tempCommentId = `temp-${Date.now()}`
@@ -822,17 +823,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
 
     // Optimistic update - show comment immediately
-    setPosts((prev) =>
-      prev.map((p) => {
-        if (p.id === postId) {
-          return {
-            ...p,
-            comments: addCommentToTree(p.comments, optimisticComment, parentId),
-          }
-        }
-        return p
-      })
-    )
+    setPosts((prev) => {
+      originalPosts = JSON.parse(JSON.stringify(prev));
+      const newPosts = JSON.parse(JSON.stringify(prev));
+      const postIndex = newPosts.findIndex((p: Post) => p.id === postId);
+      if (postIndex !== -1) {
+        newPosts[postIndex].comments = addCommentToTree(newPosts[postIndex].comments, optimisticComment, parentId);
+      }
+      return newPosts;
+    })
 
     try {
       const response = await fetch(
@@ -861,26 +860,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     } catch (error) {
       console.error('Error adding comment:', error)
       // Rollback optimistic update on error
-      const removeCommentFromTree = (comments: Comment[], commentId: string): Comment[] => {
-        return comments
-          .filter(c => c.id !== commentId)
-          .map(c => ({
-            ...c,
-            replies: removeCommentFromTree(c.replies, commentId)
-          }))
-      }
-
-      setPosts((prev) =>
-        prev.map((p) => {
-          if (p.id === postId) {
-            return {
-              ...p,
-              comments: removeCommentFromTree(p.comments, tempCommentId),
-            }
-          }
-          return p
-        })
-      )
+      setPosts(originalPosts);
     }
   }
 
@@ -946,32 +926,32 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
     let originalPosts: Post[] = [];
 
+    setPosts((prevPosts) => {
+      originalPosts = JSON.parse(JSON.stringify(prevPosts)); // Deep copy
+      const postIndex = prevPosts.findIndex(p => p.id === postId);
+      if (postIndex === -1) return prevPosts;
+
+      const postToUpdate = { ...prevPosts[postIndex] }; // Deep copy the post
+
+      // Optimistically update the comment within the post's comments tree
+      const updatedComments = findAndUpdateCommentRecursive(
+        postToUpdate.comments,
+        commentId,
+        vote,
+        user.id
+      );
+
+      const optimisticPost = {
+        ...postToUpdate,
+        comments: updatedComments,
+      };
+
+      const newPosts = [...prevPosts];
+      newPosts[postIndex] = optimisticPost;
+      return newPosts;
+    });
+
     try {
-      setPosts((prevPosts) => {
-        originalPosts = prevPosts; // Store original state for rollback
-        const postIndex = prevPosts.findIndex(p => p.id === postId);
-        if (postIndex === -1) return prevPosts;
-
-        const postToUpdate = { ...prevPosts[postIndex] }; // Deep copy the post
-
-        // Optimistically update the comment within the post's comments tree
-        const updatedComments = findAndUpdateCommentRecursive(
-          postToUpdate.comments,
-          commentId,
-          vote,
-          user.id
-        );
-
-        const optimisticPost = {
-          ...postToUpdate,
-          comments: updatedComments,
-        };
-
-        const newPosts = [...prevPosts];
-        newPosts[postIndex] = optimisticPost;
-        return newPosts;
-      });
-
       const response = await fetch(
         `${API_BASE_URL}/api/posts/${postId}/comments/${commentId}/vote`,
         {
