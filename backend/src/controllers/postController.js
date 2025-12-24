@@ -39,7 +39,7 @@ const postAggregationPipeline = [
   {
     $lookup: {
       from: 'users',
-      localField: 'comments.author',
+      localField: 'comments.author._id',
       foreignField: '_id',
       as: 'comments.authorInfo'
     }
