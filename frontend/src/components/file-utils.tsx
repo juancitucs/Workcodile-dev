@@ -18,7 +18,7 @@ export const createFileAttachment = (file: File): FileAttachment => {
   };
 };
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+const API_BASE_URL = import.meta.env.VITE_API_URL || '';
 
 export const getAttachmentUrl = (attachment: Partial<FileAttachment>): string | undefined => {
   return attachment.url; // Return the direct URL from the backend, or undefined.

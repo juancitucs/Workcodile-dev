@@ -4,7 +4,7 @@ import { Badge } from './ui/badge';
 import { GraduationCap, ArrowRight, Lock, Check } from 'lucide-react';
 import { useApp } from './app-context';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+const API_BASE_URL = import.meta.env.VITE_API_URL || '';
 
 // === TYPES ===
 // Local Course interface to avoid conflicts with global types.ts

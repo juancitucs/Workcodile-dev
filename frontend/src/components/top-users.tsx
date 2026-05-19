@@ -33,7 +33,7 @@ const badgeImages: Record<number, string> = {
     10: nivel10,
 };
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+const API_BASE_URL = import.meta.env.VITE_API_URL || '';
 
 // The extensive documentation comments have been removed for brevity,
 // as the implementation now reflects the described functionality.

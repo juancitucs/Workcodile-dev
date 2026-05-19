@@ -2,7 +2,7 @@ import { createContext, useContext, useState, ReactNode, useEffect } from 'react
 import { Post, Comment, FileAttachment } from './types'; // Assuming types are defined here
 import { useAuth } from './auth-context'; // Import useAuth to get the token and user ID
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+const API_BASE_URL = import.meta.env.VITE_API_URL || '';
 
 // Helper functions (moved from app-context.tsx)
 const transformBackendComment = (comment: any): Comment => {

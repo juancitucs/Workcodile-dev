@@ -12,7 +12,7 @@ import { Separator } from './ui/separator';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from './ui/dialog';
 import { useApp } from './app-context';
 import { WorkCodileLogo } from './crocodile-icon';
-import { toast } from 'sonner@2.0.3';
+import { toast } from 'sonner';
 import { autoSpaceInsertion } from '../utils/text-utils';
 import { ImageCropModal } from './ImageCropModal';
 import {
@@ -55,7 +55,7 @@ const socialIcons = {
   default: { icon: <LinkIcon className="h-6 w-6 text-black" />, bgColor: "bg-muted/30", textColor: "text-black" },
 };
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+const API_BASE_URL = import.meta.env.VITE_API_URL || '';
 
 export function UserProfile({ isOpen, onClose, userId }: UserProfileProps) {
   const { user, posts, updateProfile } = useApp();

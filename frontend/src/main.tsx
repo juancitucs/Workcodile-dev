@@ -9,7 +9,7 @@
   const queryClient = new QueryClient();
   
   createRoot(document.getElementById("root")!).render(
-    <BrowserRouter basename={import.meta.env.DEV ? "/" : "/workcodile"}>
+    <BrowserRouter>
       <QueryClientProvider client={queryClient}>
         <App />
       </QueryClientProvider>

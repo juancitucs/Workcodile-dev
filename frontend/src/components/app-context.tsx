@@ -7,7 +7,7 @@ import {
 } from 'react'
 import { User, Course, FileAttachment, Post, Comment, Notification } from './types'
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+const API_BASE_URL = import.meta.env.VITE_API_URL || '';
 
 interface AppContextType {
   authStatus: 'loading' | 'authenticated' | 'unauthenticated'

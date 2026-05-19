@@ -49,7 +49,7 @@ const sanitizeFilename = (filename: string): string => {
   return sanitized + extension;
 };
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+const API_BASE_URL = import.meta.env.VITE_API_URL || '';
 
 const uploadFiles = async (files: File[]): Promise<(Omit<FileAttachment, 'id'> & { object_key: string })[]> => {
   const uploadPromises = files.map(async (file) => {

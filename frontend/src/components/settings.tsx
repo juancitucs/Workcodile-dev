@@ -35,14 +35,14 @@ import {
   Key,
   Snowflake
 } from 'lucide-react';
-import { toast } from 'sonner@2.0.3';
+import { toast } from 'sonner';
 
 interface SettingsProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+const API_BASE_URL = import.meta.env.VITE_API_URL || '';
 
 export function Settings({ isOpen, onClose }: SettingsProps) {
   const { user, logout, theme, toggleTheme, christmasTheme, toggleChristmasTheme, posts } = useApp();
