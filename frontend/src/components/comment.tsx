@@ -9,11 +9,12 @@ import { ChevronUp, ChevronDown, MessageSquare, Paperclip, Download } from 'luci
 import { formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { CommentTree } from './comment-tree';
-import { Comment as CommentType, FileAttachment } from './types'; // Add FileAttachment
+import { Comment as CommentType, FileAttachment } from './types'; // Agregar FileAttachment
 import MarkdownRenderer from './markdown-renderer';
 import { CreateCommentForm } from './CreateCommentForm';
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from './ui/accordion'; // Add Accordion
-import { formatFileSize, getFileIcon, getAttachmentUrl } from './file-utils'; // Add file utils
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from './ui/accordion'; // Agregar Accordion
+import { formatFileSize, getFileIcon, getAttachmentUrl } from './file-utils'; // Agregar utilidades de archivos
+import { LevelBadge } from './level-badge';
 
 interface CommentProps {
   comment: CommentType;
@@ -23,13 +24,8 @@ interface CommentProps {
   depth?: number;
 }
 
-const lineColors = [
-  'border-blue-500/50 dark:border-blue-400/50',
-  'border-green-500/50 dark:border-green-400/50',
-  'border-purple-500/50 dark:border-purple-400/50',
-  'border-yellow-500/50 dark:border-yellow-400/50',
-  'border-red-500/50 dark:border-red-400/50',
-];
+// Profundidad máxima para respuestas de comentarios (indexado desde 0: 0=comentario de post, 1=respuesta, 2=respuesta a respuesta)
+const MAX_COMMENT_DEPTH = 2;
 
 export function Comment({ comment, postId, onCommentVote, highlightCommentId, depth = 0 }: CommentProps) {
   const { user, fetchCommentReplies } = useApp();
@@ -103,19 +99,17 @@ export function Comment({ comment, postId, onCommentVote, highlightCommentId, de
     setIsLoadingReplies(false);
   };
 
-  const lineColor = lineColors[depth % lineColors.length];
-
   return (
     <motion.div
       ref={commentRef}
       id={`comment-${comment.id}`}
       initial={{ opacity: 0, x: -20 }}
       animate={{ opacity: 1, x: 0 }}
-      className="relative pl-4"
+      className="relative"
     >
-      <div className={`absolute left-0 top-0 bottom-0 w-px bg-gray-200 dark:bg-gray-700`}></div>
-      <div className="flex items-start space-x-3">
-        <Avatar className="h-8 w-8 z-10 mt-1">
+      <div className="flex items-start gap-4">
+        {/* Avatar */}
+        <Avatar className="h-8 w-8 flex-shrink-0">
           <AvatarImage src={comment.author.avatar} alt={comment.author.name} />
           <AvatarFallback className="bg-primary/10">
             {comment.author.avatar ? (
@@ -128,7 +122,10 @@ export function Comment({ comment, postId, onCommentVote, highlightCommentId, de
 
         <div className="flex-1 min-w-0">
           <div className="flex items-center space-x-2 mb-1">
-            <p className="font-medium text-sm">{comment.author.name}</p>
+            <p className="font-medium text-sm flex items-center gap-1">
+              {comment.author.name}
+              <LevelBadge level={comment.author.level || 1} customSize={24} />
+            </p>
             <span className="text-xs text-muted-foreground">
               {formatDistanceToNow(new Date(comment.createdAt), {
                 addSuffix: true,
@@ -141,42 +138,66 @@ export function Comment({ comment, postId, onCommentVote, highlightCommentId, de
             <MarkdownRenderer attachments={comment.attachments || []}>{comment.content}</MarkdownRenderer>
           </div>
 
-          {comment.attachments && comment.attachments.length > 0 && (
-            <Accordion type="single" collapsible className="w-full mb-3">
-              <AccordionItem value="attachments">
-                <AccordionTrigger className="text-xs py-1">
-                  <div className="flex items-center space-x-2 text-muted-foreground">
-                    <Paperclip className="h-3 w-3" />
-                    <span>
-                      {comment.attachments.length} archivo{comment.attachments.length > 1 ? 's' : ''} adjunto{comment.attachments.length > 1 ? 's' : ''}
-                    </span>
-                  </div>
-                </AccordionTrigger>
-                <AccordionContent>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-2">
-                    {comment.attachments.map((attachment, index) => (
-                      <div key={`${index}-${attachment.name}`} onClick={(e) => handleDownload(e, attachment)}>
-                        <motion.div
-                          whileHover={{ scale: 1.02, y: -1 }}
-                          transition={{ duration: 0.2, ease: [0.4, 0, 0.2, 1] }}
-                          className="flex items-center space-x-2 p-2 bg-background-alt rounded-md hover:bg-accent cursor-pointer transition-colors shadow-sm"
-                        >
-                          <span className="text-sm">{getFileIcon(attachment.type)}</span>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-xs font-medium truncate">{attachment.name}</p>
-                            <p className="text-xs text-muted-foreground">{formatFileSize(attachment.size)}</p>
-                          </div>
-                          <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
-                            <Download className="h-3 w-3" />
-                          </Button>
-                        </motion.div>
-                      </div>
-                    ))}
-                  </div>
-                </AccordionContent>
-              </AccordionItem>
-            </Accordion>
-          )}
+          {/* Inline image - only first image */}
+          {comment.attachments && (() => {
+            const firstImage = comment.attachments.find(a => a.type.startsWith('image/'));
+            if (!firstImage) return null;
+            const url = getAttachmentUrl(firstImage);
+            return url ? (
+              <div className="mb-2">
+                <img
+                  src={url}
+                  alt={firstImage.name}
+                  className="max-h-48 max-w-full rounded-lg border cursor-pointer hover:opacity-90 transition-opacity"
+                  onClick={(e) => handleDownload(e, firstImage)}
+                />
+              </div>
+            ) : null;
+          })()}
+
+          {/* Other attachments accordion (all except first image) */}
+          {comment.attachments && (() => {
+            const firstImage = comment.attachments.find(a => a.type.startsWith('image/'));
+            const otherAttachments = comment.attachments.filter(a => a !== firstImage);
+            if (otherAttachments.length === 0) return null;
+
+            return (
+              <Accordion type="single" collapsible className="w-full mb-3">
+                <AccordionItem value="attachments">
+                  <AccordionTrigger className="text-xs py-1">
+                    <div className="flex items-center space-x-2 text-muted-foreground">
+                      <Paperclip className="h-3 w-3" />
+                      <span>
+                        {otherAttachments.length} archivo{otherAttachments.length > 1 ? 's' : ''} adjunto{otherAttachments.length > 1 ? 's' : ''}
+                      </span>
+                    </div>
+                  </AccordionTrigger>
+                  <AccordionContent>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-2">
+                      {otherAttachments.map((attachment, index) => (
+                        <div key={`${index}-${attachment.name}`} onClick={(e) => handleDownload(e, attachment)}>
+                          <motion.div
+                            whileHover={{ scale: 1.02, y: -1 }}
+                            transition={{ duration: 0.2, ease: [0.4, 0, 0.2, 1] }}
+                            className="flex items-center space-x-2 p-2 bg-background-alt rounded-md hover:bg-accent cursor-pointer transition-colors shadow-sm"
+                          >
+                            <span className="text-sm">{getFileIcon(attachment.type)}</span>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-xs font-medium truncate">{attachment.name}</p>
+                              <p className="text-xs text-muted-foreground">{formatFileSize(attachment.size)}</p>
+                            </div>
+                            <Button variant="ghost" size="sm" className="h-6 w-6 p-0" aria-label="Descargar archivo">
+                              <Download className="h-3 w-3" />
+                            </Button>
+                          </motion.div>
+                        </div>
+                      ))}
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+              </Accordion>
+            );
+          })()}
 
           <div className="flex items-center space-x-1">
             <div className="flex items-center space-x-1">
@@ -185,6 +206,8 @@ export function Comment({ comment, postId, onCommentVote, highlightCommentId, de
                 variant="ghost"
                 onClick={() => onCommentVote(comment.id, 'up')}
                 className={`h-6 w-6 ${comment.userVote === 'up' ? 'text-primary' : 'text-muted-foreground'}`}
+                aria-label="Votar positivo en comentario"
+                aria-pressed={comment.userVote === 'up'}
               >
                 <ChevronUp className="h-4 w-4" />
               </Button>
@@ -194,19 +217,24 @@ export function Comment({ comment, postId, onCommentVote, highlightCommentId, de
                 variant="ghost"
                 onClick={() => onCommentVote(comment.id, 'down')}
                 className={`h-6 w-6 ${comment.userVote === 'down' ? 'text-destructive' : 'text-muted-foreground'}`}
+                aria-label="Votar negativo en comentario"
+                aria-pressed={comment.userVote === 'down'}
               >
                 <ChevronDown className="h-4 w-4" />
               </Button>
             </div>
 
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setShowReplyForm(!showReplyForm)}
-              className="h-6 px-2 text-xs"
-            >
-              Responder
-            </Button>
+            {/* Only show Reply button if not at max depth */}
+            {depth < MAX_COMMENT_DEPTH && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowReplyForm(!showReplyForm)}
+                className="h-6 px-2 text-xs"
+              >
+                Responder
+              </Button>
+            )}
             {comment.replies && comment.replies.length > 0 && (
               <Button
                 variant="ghost"
@@ -239,7 +267,13 @@ export function Comment({ comment, postId, onCommentVote, highlightCommentId, de
           )}
 
           {areRepliesVisible && replies.length > 0 && (
-            <div className={`pl-4 border-l-2 ${lineColor} mt-3`}>
+            <div
+              className="comment-replies mt-4 pl-4 ml-2 hover:border-opacity-100 transition-all cursor-pointer"
+              style={{
+                borderLeft: '2px solid #9ca3af',
+                paddingLeft: '16px',
+              }}
+            >
               <CommentTree comments={replies} postId={postId} onCommentVote={onCommentVote} highlightCommentId={highlightCommentId} depth={depth + 1} />
             </div>
           )}

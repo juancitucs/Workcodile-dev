@@ -2,6 +2,7 @@ import { memo, ReactNode } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog';
 import { Card, CardContent } from './ui/card';
 import { Lightbulb, HelpCircle, BookOpen, Users, Calendar, MapPin } from 'lucide-react';
+import { useApp } from './app-context';
 
 interface GuideModalProps {
     trigger: ReactNode;
@@ -11,27 +12,27 @@ interface GuideModalProps {
 // Mock data for tips
 const CONSEJOS_DATA = [
     {
-        icon: <BookOpen className="h-5 w-5 text-green-600" />,
+        Icon: BookOpen,
         title: 'Organiza tu tiempo',
         description: 'Crea un horario de estudio equilibrado. Dedica tiempo específico para cada curso y respeta tus descansos.',
     },
     {
-        icon: <Users className="h-5 w-5 text-blue-600" />,
+        Icon: Users,
         title: 'Únete a grupos de estudio',
         description: 'Estudiar en grupo puede ayudarte a entender mejor los temas difíciles y hacer amigos.',
     },
     {
-        icon: <Calendar className="h-5 w-5 text-purple-600" />,
+        Icon: Calendar,
         title: 'No dejes todo para el final',
         description: 'Empieza los trabajos y proyectos con anticipación. El último minuto es tu peor enemigo.',
     },
     {
-        icon: <MapPin className="h-5 w-5 text-orange-600" />,
+        Icon: MapPin,
         title: 'Conoce tu campus',
         description: 'Explora las instalaciones: biblioteca, laboratorios, cafetería y áreas de estudio.',
     },
     {
-        icon: <Lightbulb className="h-5 w-5 text-yellow-600" />,
+        Icon: Lightbulb,
         title: 'Pregunta sin miedo',
         description: 'No tengas vergüenza de preguntar a profesores o compañeros. Todos estuvimos en tu lugar.',
     },
@@ -66,14 +67,16 @@ const FAQ_DATA = [
 ];
 
 export const GuideModal = memo(function GuideModal({ trigger, type }: GuideModalProps) {
+    const { christmasTheme } = useApp();
     const isConsejos = type === 'consejos';
     const title = isConsejos ? 'Consejos para Nuevos Estudiantes' : 'Preguntas Frecuentes';
-    const icon = isConsejos ? <Lightbulb className="h-6 w-6 text-yellow-500" /> : <HelpCircle className="h-6 w-6 text-blue-500" />;
+    const iconColorClass = christmasTheme ? 'text-red-500' : 'text-primary';
+    const icon = isConsejos ? <Lightbulb className={`h-6 w-6 ${iconColorClass}`} /> : <HelpCircle className={`h-6 w-6 ${iconColorClass}`} />;
 
     return (
         <Dialog>
             <DialogTrigger asChild>{trigger}</DialogTrigger>
-            <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+            <DialogContent className="sm:max-w-7xl w-[95vw] h-full max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                     <DialogTitle className="flex items-center gap-3 text-xl">
                         {icon}
@@ -85,11 +88,11 @@ export const GuideModal = memo(function GuideModal({ trigger, type }: GuideModal
                     {isConsejos ? (
                         // Consejos layout
                         CONSEJOS_DATA.map((consejo, index) => (
-                            <Card key={index} className="border-l-4 border-l-green-500">
+                            <Card key={index} className="sidebar-item hover:shadow-md transition-all cursor-pointer">
                                 <CardContent className="p-4">
                                     <div className="flex items-start gap-3">
                                         <div className="p-2 bg-muted rounded-lg">
-                                            {consejo.icon}
+                                            <consejo.Icon className={`h-5 w-5 ${iconColorClass}`} />
                                         </div>
                                         <div>
                                             <h3 className="font-semibold text-base">{consejo.title}</h3>
@@ -102,11 +105,11 @@ export const GuideModal = memo(function GuideModal({ trigger, type }: GuideModal
                     ) : (
                         // FAQ layout
                         FAQ_DATA.map((faq, index) => (
-                            <Card key={index} className="hover:shadow-md transition-shadow">
+                            <Card key={index} className="sidebar-item hover:shadow-md transition-all cursor-pointer">
                                 <CardContent className="p-4">
                                     <div className="flex items-start gap-3">
-                                        <div className="p-1.5 bg-blue-100 dark:bg-blue-900/30 rounded-full mt-0.5">
-                                            <HelpCircle className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                                        <div className="p-2 bg-muted rounded-lg">
+                                            <HelpCircle className={`h-5 w-5 ${iconColorClass}`} />
                                         </div>
                                         <div>
                                             <h3 className="font-semibold text-base">{faq.question}</h3>

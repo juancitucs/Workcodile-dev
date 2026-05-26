@@ -7,7 +7,7 @@ import {
 } from 'react'
 import { User, Course, FileAttachment, Post, Comment, Notification } from './types'
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+const API_BASE_URL = import.meta.env.VITE_API_URL || '';
 
 interface AppContextType {
   authStatus: 'loading' | 'authenticated' | 'unauthenticated'
@@ -21,6 +21,8 @@ interface AppContextType {
   login: (email: string, password: string) => Promise<void>
   sendVerificationCode: (name: string, email: string, password: string) => Promise<any>
   verifyAndRegister: (email: string, password: string, verificationCode: string) => Promise<any>
+  forgotPassword: (email: string) => Promise<any>;
+  resetPassword: (code: string, password: string) => Promise<any>;
   logout: () => void
   updateProfile: (profileData: Partial<User>) => void
   createPost: (
@@ -45,6 +47,7 @@ interface AppContextType {
     vote: 'up' | 'down'
   ) => Promise<void>
   fetchCommentReplies: (postId: string, commentId: string) => Promise<Comment[]>
+  fetchMoreComments: (postId: string) => Promise<void>
   searchPosts: (query: string) => Post[]
   getCourseById: (courseId: string) => Course | undefined
   getCoursesByCycle: (cycle: number) => Course[]
@@ -53,7 +56,7 @@ interface AppContextType {
   christmasTheme: boolean
   toggleChristmasTheme: () => void
   toggleBookmark: (postId: string) => void
-  reportPost: (postId: string) => void
+  reportPost: (postId: string, reason?: string) => void
   incrementViews: (postId: string) => void
   incrementViewsBatch: (postIds: string[]) => void
   mainFeedKey: number
@@ -61,6 +64,7 @@ interface AppContextType {
   fetchMorePosts: () => void
   hasMorePosts: boolean
   isFetchingPosts: boolean
+  toggleComments: (postId: string) => Promise<void>
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined)
@@ -174,7 +178,7 @@ const courses: Course[] = [
 
 const transformBackendComment = (comment: any): Comment => {
   const transformedReplies = comment.replies
-    ? comment.replies.map(transformBackendComment).sort((a: Comment, b: Comment) => b.score - a.score)
+    ? comment.replies.map(transformBackendComment)
     : [];
   return {
     ...comment,
@@ -186,6 +190,7 @@ const transformBackendComment = (comment: any): Comment => {
       avatar: comment.author?.avatar_key ? comment.author.avatar : undefined,
       university: 'UNAM',
       email: comment.author?.email || '',
+      level: comment.author?.level || 1, // Nivel del usuario para el badge
     },
     attachments: comment.attachments ? comment.attachments.map((att: any) => ({
       ...att,
@@ -206,13 +211,14 @@ const transformBackendPost = (post: any): Post => ({
     avatar: post.author?.avatar_key ? post.author.avatar : undefined,
     university: 'UNAM',
     email: post.author?.email || '',
+    level: post.author?.level || 1, // Nivel del usuario para el badge
   },
   createdAt: new Date(post.createdAt),
   course: post.course_id || '',
   upvotes: post.upvote_count || 0,
   downvotes: post.downvote_count || 0,
   comments: post.comments
-    ? post.comments.map(transformBackendComment).sort((a: Comment, b: Comment) => b.score - a.score)
+    ? post.comments.map(transformBackendComment)
     : [],
   hashtags: post.hashtags || [],
   attachments: post.attachments ? post.attachments.map((att: any) => ({
@@ -221,6 +227,11 @@ const transformBackendPost = (post: any): Post => ({
   views: post.views || 0,
   isBookmarked: false,
   userVote: post.user_vote,
+  commentsDisabled: post.commentsDisabled || false,
+  // Comment pagination
+  totalComments: post.totalComments,
+  hasMoreComments: post.hasMoreComments,
+  commentOffset: post.commentOffset,
 })
 
 const transformBackendNotification = (notification: any): Notification => ({
@@ -368,7 +379,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       const data = await response.json();
       const transformedPost = transformBackendPost(data);
 
-      // Optionally, update the global posts state
+      // Opcionalmente, actualizar el estado global de posts
       setPosts(prevPosts => {
         const postExists = prevPosts.some(p => p.id === transformedPost.id);
         if (postExists) {
@@ -402,7 +413,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
           }
 
           const userData = await response.json()
-          // Backend now returns the full avatar URL directly
+          // El backend ahora retorna la URL completa del avatar directamente
           // if (userData.avatar_key) {
           //   userData.avatar = `${API_BASE_URL}/workcodile-files/${userData.avatar_key}`;
           // }
@@ -480,7 +491,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const token = localStorage.getItem('token')
     if (!token) return
 
-    // Optimistically update the UI
+    // Actualizar la UI optimistamente
     const originalNotifications = notifications;
     setNotifications(prev => prev.map(n => ({ ...n, read: true })));
 
@@ -493,13 +504,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
       })
 
       if (!response.ok) {
-        // Rollback on error
+        // Revertir en caso de error
         setNotifications(originalNotifications);
         throw new Error('Failed to mark all notifications as read')
       }
     } catch (error) {
       console.error('Error marking all notifications as read:', error)
-      // Rollback on error
+      // Revertir en caso de error
       setNotifications(originalNotifications);
     }
   }
@@ -525,7 +536,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
     const { token, user: userData } = await response.json()
     localStorage.setItem('token', token)
-    // Backend now returns the full avatar URL directly
+    // El backend ahora retorna la URL completa del avatar directamente
     // if (userData.avatar_key) {
     //   userData.avatar = `${API_BASE_URL}/workcodile-files/${userData.avatar_key}`;
     // }
@@ -551,7 +562,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       throw new Error(responseData.msg || 'Error al enviar el código de verificación')
     }
 
-    return responseData; // Returns { msg: 'Verification code sent...' }
+    return responseData; // Retorna { msg: 'Código de verificación enviado...' }
   }
 
   const verifyAndRegister = async (email: string, password: string, verificationCode: string) => {
@@ -569,10 +580,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
       throw new Error(responseData.msg || 'Error al verificar el código o registrar el usuario')
     }
 
-    // On successful verification and registration, log in the user directly
+    // En verificación y registro exitosos, iniciar sesión del usuario directamente
     const { token, user: userData } = responseData;
     localStorage.setItem('token', token);
-    // Backend now returns the full avatar URL directly
+    // El backend ahora retorna la URL completa del avatar directamente
     // if (userData.avatar_key) {
     //   userData.avatar = `${API_BASE_URL}/workcodile-files/${userData.avatar_key}`;
     // }
@@ -581,8 +592,44 @@ export function AppProvider({ children }: { children: ReactNode }) {
       setTheme(userData.theme);
     }
     setAuthStatus('authenticated');
-    return responseData; // Returns { token, user }
+    return responseData; // Retorna { token, user }
   }
+
+  const forgotPassword = async (email: string) => {
+    const response = await fetch(`${API_BASE_URL}/api/auth/forgot-password`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ email }),
+    });
+
+    const responseData = await response.json();
+
+    if (!response.ok) {
+      throw new Error(responseData.msg || 'Error al enviar el correo de recuperación');
+    }
+
+    return responseData;
+  };
+
+  const resetPassword = async (code: string, password: string) => {
+    const response = await fetch(`${API_BASE_URL}/api/auth/reset-password`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ code, password }),
+    });
+
+    const responseData = await response.json();
+
+    if (!response.ok) {
+      throw new Error(responseData.msg || 'Error al restablecer la contraseña');
+    }
+
+    return responseData;
+  };
 
   const logout = () => {
     localStorage.removeItem('token')
@@ -639,57 +686,56 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const token = localStorage.getItem('token')
     if (!token) return
 
-    // Store the original posts state for rollback in case of error
     let originalPosts: Post[] = [];
 
-    try {
-      setPosts((prev) => {
-        originalPosts = prev; // Store the state before optimistic update
-        const postIndex = prev.findIndex(p => p.id === postId);
-        if (postIndex === -1) return prev; // Post not found
+    setPosts((prev) => {
+      originalPosts = JSON.parse(JSON.stringify(prev)); // Guardar el estado antes de actualización optimista
+      const postIndex = prev.findIndex(p => p.id === postId);
+      if (postIndex === -1) return prev; // Post no encontrado
 
-        const originalPost = prev[postIndex];
-        let newUpvotes = originalPost.upvotes;
-        let newDownvotes = originalPost.downvotes;
-        let newUserVote = originalPost.userVote;
+      const originalPost = prev[postIndex];
+      let newUpvotes = originalPost.upvotes;
+      let newDownvotes = originalPost.downvotes;
+      let newUserVote = originalPost.userVote;
 
-        // Determine new vote counts and userVote status
-        if (vote === 'up') {
-          if (originalPost.userVote === 'up') { // User is un-upvoting
-            newUpvotes--;
-            newUserVote = null;
-          } else { // User is upvoting
-            newUpvotes++;
-            if (originalPost.userVote === 'down') { // User was downvoting, remove downvote
-              newDownvotes--;
-            }
-            newUserVote = 'up';
-          }
-        } else { // vote === 'down'
-          if (originalPost.userVote === 'down') { // User is un-downvoting
+      // Determinar nuevos conteos de votos y estado de userVote
+      if (vote === 'up') {
+        if (originalPost.userVote === 'up') { // Usuario está quitando su upvote
+          newUpvotes--;
+          newUserVote = null;
+        } else { // Usuario está dando upvote
+          newUpvotes++;
+          if (originalPost.userVote === 'down') { // Usuario tenía downvote, quitar downvote
             newDownvotes--;
-            newUserVote = null;
-          } else { // User is downvoting
-            newDownvotes++;
-            if (originalPost.userVote === 'up') { // User was upvoting, remove upvote
-              newUpvotes--;
-            }
-            newUserVote = 'down';
           }
+          newUserVote = 'up';
         }
+      } else { // vote === 'down'
+        if (originalPost.userVote === 'down') { // Usuario está quitando su downvote
+          newDownvotes--;
+          newUserVote = null;
+        } else { // Usuario está dando downvote
+          newDownvotes++;
+          if (originalPost.userVote === 'up') { // Usuario tenía upvote, quitar upvote
+            newUpvotes--;
+          }
+          newUserVote = 'down';
+        }
+      }
 
-        const optimisticPost = {
-          ...originalPost,
-          upvotes: newUpvotes,
-          downvotes: newDownvotes,
-          userVote: newUserVote,
-        };
+      const optimisticPost = {
+        ...originalPost,
+        upvotes: newUpvotes,
+        downvotes: newDownvotes,
+        userVote: newUserVote,
+      };
 
-        const newPosts = [...prev];
-        newPosts[postIndex] = optimisticPost;
-        return newPosts;
-      });
+      const newPosts = [...prev];
+      newPosts[postIndex] = optimisticPost;
+      return newPosts;
+    });
 
+    try {
       const response = await fetch(
         `${API_BASE_URL}/api/posts/${postId}/vote`,
         {
@@ -705,14 +751,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
       if (!response.ok) {
         throw new Error('Failed to vote on post'); // Error during API call
       }
-
-      // Reconcile with backend's response (optional, but good for consistency)
-      const updatedPostFromServer = await response.json();
-      const transformedPostFromServer = transformBackendPost(updatedPostFromServer);
-
-      setPosts((prev) =>
-        prev.map((p) => (p.id === postId ? transformedPostFromServer : p))
-      );
 
     } catch (error) {
       console.error('Error voting on post:', error);
@@ -732,6 +770,61 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const token = localStorage.getItem('token')
     if (!token) return
 
+    let originalPosts: Post[] = [];
+
+    // Create a temporary optimistic comment
+    const tempCommentId = `temp-${Date.now()}`
+    const optimisticComment: Comment = {
+      id: tempCommentId,
+      content,
+      author: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        avatar: user.avatar,
+        university: user.university,
+        level: user.level,
+      },
+      createdAt: new Date(),
+      score: 0,
+      userVote: undefined,
+      replies: [],
+      parentId,
+      attachments: attachments.map((att, index) => ({
+        ...att,
+        id: `temp-att-${index}`,
+      })) as FileAttachment[],
+    }
+
+    // Helper to add comment to the right place in the tree
+    const addCommentToTree = (comments: Comment[], newComment: Comment, targetParentId?: string): Comment[] => {
+      if (!targetParentId) {
+        // Add to root level
+        return [...comments, newComment]
+      }
+      // Add as reply to a parent comment
+      return comments.map(comment => {
+        if (comment.id === targetParentId) {
+          return { ...comment, replies: [...comment.replies, newComment] }
+        }
+        if (comment.replies.length > 0) {
+          return { ...comment, replies: addCommentToTree(comment.replies, newComment, targetParentId) }
+        }
+        return comment
+      })
+    }
+
+    // Optimistic update - show comment immediately
+    setPosts((prev) => {
+      originalPosts = JSON.parse(JSON.stringify(prev));
+      const newPosts = JSON.parse(JSON.stringify(prev));
+      const postIndex = newPosts.findIndex((p: Post) => p.id === postId);
+      if (postIndex !== -1) {
+        newPosts[postIndex].comments = addCommentToTree(newPosts[postIndex].comments, optimisticComment, parentId);
+      }
+      return newPosts;
+    })
+
     try {
       const response = await fetch(
         `${API_BASE_URL}/api/posts/${postId}/comments`,
@@ -749,6 +842,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         throw new Error('Failed to add comment')
       }
 
+      // Reconcile with server response to get the real comment ID
       const updatedPost = await response.json()
       const transformedPost = transformBackendPost(updatedPost)
 
@@ -757,6 +851,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
       )
     } catch (error) {
       console.error('Error adding comment:', error)
+      // Rollback optimistic update on error
+      setPosts(originalPosts);
     }
   }
 
@@ -822,32 +918,32 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
     let originalPosts: Post[] = [];
 
+    setPosts((prevPosts) => {
+      originalPosts = JSON.parse(JSON.stringify(prevPosts)); // Deep copy
+      const postIndex = prevPosts.findIndex(p => p.id === postId);
+      if (postIndex === -1) return prevPosts;
+
+      const postToUpdate = { ...prevPosts[postIndex] }; // Deep copy the post
+
+      // Optimistically update the comment within the post's comments tree
+      const updatedComments = findAndUpdateCommentRecursive(
+        postToUpdate.comments,
+        commentId,
+        vote,
+        user.id
+      );
+
+      const optimisticPost = {
+        ...postToUpdate,
+        comments: updatedComments,
+      };
+
+      const newPosts = [...prevPosts];
+      newPosts[postIndex] = optimisticPost;
+      return newPosts;
+    });
+
     try {
-      setPosts((prevPosts) => {
-        originalPosts = prevPosts; // Store original state for rollback
-        const postIndex = prevPosts.findIndex(p => p.id === postId);
-        if (postIndex === -1) return prevPosts;
-
-        const postToUpdate = { ...prevPosts[postIndex] }; // Deep copy the post
-
-        // Optimistically update the comment within the post's comments tree
-        const updatedComments = findAndUpdateCommentRecursive(
-          postToUpdate.comments,
-          commentId,
-          vote,
-          user.id
-        );
-
-        const optimisticPost = {
-          ...postToUpdate,
-          comments: updatedComments,
-        };
-
-        const newPosts = [...prevPosts];
-        newPosts[postIndex] = optimisticPost;
-        return newPosts;
-      });
-
       const response = await fetch(
         `${API_BASE_URL}/api/posts/${postId}/comments/${commentId}/vote`,
         {
@@ -863,14 +959,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
       if (!response.ok) {
         throw new Error('Failed to vote on comment')
       }
-
-      // Reconcile with backend's response
-      const updatedPostFromServer = await response.json();
-      const transformedPostFromServer = transformBackendPost(updatedPostFromServer);
-
-      setPosts((prevPosts) =>
-        prevPosts.map((p) => (p.id === postId ? transformedPostFromServer : p))
-      );
 
     } catch (error) {
       console.error('Error voting on comment:', error)
@@ -922,6 +1010,55 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   }
 
+  // Fetch more comments for a post (pagination)
+  const fetchMoreComments = async (postId: string) => {
+    const token = localStorage.getItem('token')
+    const headers: HeadersInit = {}
+    if (token) {
+      headers['x-auth-token'] = token
+    }
+
+    const currentPost = posts.find(p => p.id === postId)
+    if (!currentPost || !currentPost.hasMoreComments) return
+
+    const currentOffset = currentPost.comments.length
+    const limit = 5
+
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/api/posts/${postId}?commentOffset=${currentOffset}&commentLimit=${limit}`,
+        { headers }
+      )
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch more comments')
+      }
+
+      const data = await response.json()
+      const newComments = data.comments ? data.comments.map(transformBackendComment) : []
+
+      setPosts(prev =>
+        prev.map(post => {
+          if (post.id === postId) {
+            return {
+              ...post,
+              comments: [...post.comments, ...newComments],
+              hasMoreComments: data.hasMoreComments,
+              commentOffset: currentOffset,
+            }
+          }
+          return post
+        })
+      )
+    } catch (error) {
+      console.error('Error fetching more comments:', error)
+    }
+  }
+
+  // TODO BACKEND: El endpoint POST /api/posts/:id/bookmark debe:
+  // 1. Alternar el estado de bookmark del post para el usuario autenticado
+  // 2. Guardar la relación user_id + post_id en la base de datos
+  // 3. Devolver { bookmarked: true/false } indicando el nuevo estado
   const toggleBookmark = async (postId: string) => {
     if (!user) return
     const token = localStorage.getItem('token')
@@ -957,6 +1094,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   }
 
+  // TODO BACKEND: El endpoint POST /api/posts/:id/report debe:
+  // 1. Guardar el reporte con: postId, reporterId (usuario que reporta), reason, timestamp
+  // 2. Notificar a los moderadores/admins sobre el nuevo reporte
+  // 3. Evitar reportes duplicados del mismo usuario al mismo post
   const reportPost = async (postId: string, reason: string = 'No reason provided') => {
     if (!user) return
     const token = localStorage.getItem('token')
@@ -979,6 +1120,50 @@ export function AppProvider({ children }: { children: ReactNode }) {
       console.log(`Post ${postId} reported by user ${user?.id}`)
     } catch (error) {
       console.error('Error reporting post:', error)
+    }
+  }
+
+  // TODO BACKEND: El endpoint PUT /api/posts/:id/toggle-comments debe:
+  // 1. Alternar el estado de commentsDisabled del post
+  // 2. Solo el autor del post puede ejecutar esta acción
+  // 3. Devolver el nuevo estado { commentsDisabled: true/false }
+  const toggleComments = async (postId: string) => {
+    // Optimistic update
+    setPosts((prevPosts) =>
+      prevPosts.map((post) => {
+        if (post.id === postId) {
+          return { ...post, commentsDisabled: !post.commentsDisabled }
+        }
+        return post
+      })
+    )
+
+    const token = localStorage.getItem('token')
+    if (!token) return
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/posts/${postId}/toggle-comments`, {
+        method: 'PUT',
+        headers: {
+          'x-auth-token': token,
+        },
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to toggle comments')
+      }
+      console.log(`Comments toggled for post ${postId}`)
+    } catch (error) {
+      console.error('Error toggling comments:', error)
+      // Revert optimistic update on error
+      setPosts((prevPosts) =>
+        prevPosts.map((post) => {
+          if (post.id === postId) {
+            return { ...post, commentsDisabled: !post.commentsDisabled }
+          }
+          return post
+        })
+      )
     }
   }
 
@@ -1034,6 +1219,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const token = localStorage.getItem('token')
     if (!token) return
 
+    // Store the post for potential rollback
+    let deletedPost: Post | undefined
+
+    // Optimistic update - remove post immediately
+    setPosts((prev) => {
+      deletedPost = prev.find((post) => post.id === postId)
+      return prev.filter((post) => post.id !== postId)
+    })
+
     try {
       const response = await fetch(`${API_BASE_URL}/api/posts/${postId}`, {
         method: 'DELETE',
@@ -1045,14 +1239,21 @@ export function AppProvider({ children }: { children: ReactNode }) {
       if (!response.ok) {
         throw new Error('Failed to delete post')
       }
-
-      setPosts((prev) => prev.filter((post) => post.id !== postId))
+      // Post successfully deleted, no further action needed
     } catch (error) {
       console.error('Error deleting post:', error)
+      // Rollback - restore the post on error
+      if (deletedPost) {
+        setPosts((prev) => [...prev, deletedPost!])
+      }
     }
   }
 
-  const updatePost = async (postId: string, data: { title: string; content: string }) => {
+  // TODO BACKEND: El endpoint PUT /api/posts/:id debe:
+  // 1. Aceptar 'hashtags' (string[]) en el body además de title y content
+  // 2. Devolver 'editedAt' (timestamp) cuando el post es actualizado
+  // 3. Guardar editedAt en la base de datos para mostrar "(editado)" en el frontend
+  const updatePost = async (postId: string, data: { title: string; content: string; hashtags?: string[] }) => {
     const token = localStorage.getItem('token')
     if (!token) return
 
@@ -1094,6 +1295,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
         login,
         sendVerificationCode, // new function
         verifyAndRegister,    // new function
+        forgotPassword,
+        resetPassword,
         logout,
         updateProfile,
         createPost,
@@ -1103,6 +1306,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         addComment,
         voteComment,
         fetchCommentReplies,
+        fetchMoreComments,
         searchPosts,
         getCourseById,
         getCoursesByCycle,
@@ -1119,6 +1323,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         fetchMorePosts,
         hasMorePosts,
         isFetchingPosts,
+        toggleComments,
       }}
     >
       {children}

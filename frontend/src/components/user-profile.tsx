@@ -12,7 +12,7 @@ import { Separator } from './ui/separator';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from './ui/dialog';
 import { useApp } from './app-context';
 import { WorkCodileLogo } from './crocodile-icon';
-import { toast } from 'sonner@2.0.3';
+import { toast } from 'sonner';
 import { autoSpaceInsertion } from '../utils/text-utils';
 import { ImageCropModal } from './ImageCropModal';
 import {
@@ -39,6 +39,7 @@ import {
   Youtube,
   MessageCircle,
 } from 'lucide-react';
+import { LevelBadge } from './level-badge';
 
 interface UserProfileProps {
   isOpen: boolean;
@@ -54,7 +55,7 @@ const socialIcons = {
   default: { icon: <LinkIcon className="h-6 w-6 text-black" />, bgColor: "bg-muted/30", textColor: "text-black" },
 };
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+const API_BASE_URL = import.meta.env.VITE_API_URL || '';
 
 export function UserProfile({ isOpen, onClose, userId }: UserProfileProps) {
   const { user, posts, updateProfile } = useApp();
@@ -64,6 +65,7 @@ export function UserProfile({ isOpen, onClose, userId }: UserProfileProps) {
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const [cropModalOpen, setCropModalOpen] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [userRanking, setUserRanking] = useState<number | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [editedProfile, setEditedProfile] = useState({
     name: '',
@@ -97,8 +99,24 @@ export function UserProfile({ isOpen, onClose, userId }: UserProfileProps) {
       }
     };
 
+    // Fetch ranking position
+    const fetchRanking = async () => {
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/users/top?limit=100`);
+        if (response.ok) {
+          const topUsers = await response.json();
+          const targetUserId = userId || user?._id;
+          const position = topUsers.findIndex((u: { id: string }) => u.id === targetUserId);
+          setUserRanking(position >= 0 ? position + 1 : null);
+        }
+      } catch (error) {
+        console.error('Failed to fetch ranking:', error);
+      }
+    };
+
     if (isOpen) {
       fetchUser();
+      fetchRanking();
     }
   }, [isOpen, userId, user]);
 
@@ -117,9 +135,13 @@ export function UserProfile({ isOpen, onClose, userId }: UserProfileProps) {
     }
   }, [profileUser]);
 
-  const userPosts = posts.filter(post => post.author.id === profileUser?._id);
-  const totalUpvotes = userPosts.reduce((sum, post) => sum + post.upvotes, 0);
+  if (!profileUser) return null;
 
+  // Calculate user statistics
+  const userPosts = posts.filter(post => post.author.id === profileUser._id);
+  const totalUpvotes = userPosts.reduce((sum, post) => sum + (post.upvotes || 0), 0);
+
+  // Collect all comments by the user
   const userComments = posts.flatMap(post => {
     const allComments: any[] = [];
     const findComments = (comments: any[]) => {
@@ -142,7 +164,7 @@ export function UserProfile({ isOpen, onClose, userId }: UserProfileProps) {
     { label: 'Publicaciones', value: userPosts.length, icon: BookOpen, color: 'text-blue-500' },
     { label: 'Votos positivos', value: totalUpvotes, icon: ThumbsUp, color: 'text-green-500' },
     { label: 'Comentarios', value: userComments.length, icon: MessageSquare, color: 'text-purple-500' },
-    { label: 'Reputación', value: Math.floor(totalUpvotes * 1.5 + userComments.length * 0.5), icon: Trophy, color: 'text-yellow-500' }
+    { label: 'Ranking', value: userRanking ? `#${userRanking}` : '-', icon: Trophy, color: 'text-yellow-500' }
   ];
 
   const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -213,6 +235,31 @@ export function UserProfile({ isOpen, onClose, userId }: UserProfileProps) {
   };
 
   const handleSave = async () => {
+    const trimmedName = editedProfile.name.trim();
+
+    // Validate name is not empty
+    if (!trimmedName) {
+      toast.error('El nombre no puede estar vacío');
+      return;
+    }
+
+    // Validate minimum length
+    if (trimmedName.length < 2) {
+      toast.error('El nombre debe tener al menos 2 caracteres');
+      return;
+    }
+
+    // Block dangerous special characters
+    const blockedChars = /[<>{}[\]\\/|@#$%^&*=+~`]/;
+    if (blockedChars.test(trimmedName)) {
+      toast.error('El nombre contiene caracteres no permitidos');
+      return;
+    }
+
+    // TODO BACKEND: El endpoint PUT /api/auth/me debe:
+    // 1. Aceptar 'interests' (string[], máx 6 items, máx 20 chars cada uno)
+    // 2. Aceptar 'socialLinks' (array de { name: string, url: string })
+    // 3. Guardar y devolver los datos actualizados del usuario
     try {
       const token = localStorage.getItem('token');
       const response = await fetch(`${API_BASE_URL}/api/auth/me`, {
@@ -296,7 +343,7 @@ export function UserProfile({ isOpen, onClose, userId }: UserProfileProps) {
   return (
     <Dialog open={isOpen} onOpenChange={handleDialogClose}>
       <DialogContent className="sm:max-w-7xl w-[95vw] max-h-[90vh] p-0 overflow-hidden">
-        <div className="flex h-full max-h-[85vh] flex-col">
+        <div className="flex h-full max-h-[90vh] flex-col">
           <div className="p-6 border-b border-border flex-shrink-0">
             <DialogHeader>
               <div className="flex items-center justify-between">
@@ -398,7 +445,7 @@ export function UserProfile({ isOpen, onClose, userId }: UserProfileProps) {
                         <div className="flex justify-between items-center">
                           <Label htmlFor="name">Nombre</Label>
                           <span className="text-xs text-muted-foreground">
-                            {editedProfile.name.length}/50
+                            {editedProfile.name.length}/40
                           </span>
                         </div>
                         <Input
@@ -406,7 +453,8 @@ export function UserProfile({ isOpen, onClose, userId }: UserProfileProps) {
                           value={editedProfile.name}
                           onChange={(e) => setEditedProfile(prev => ({ ...prev, name: e.target.value }))}
                           placeholder="Ingresa tu nombre"
-                          maxLength={30}
+                          maxLength={40}
+                          required
                           className="mt-1"
                         />
                       </div>
@@ -441,8 +489,51 @@ export function UserProfile({ isOpen, onClose, userId }: UserProfileProps) {
                     </div>
                   ) : (
                     <>
-                      <h2 className="text-2xl font-bold truncate max-w-full">{profileUser.name}</h2>
-                      <p className="text-muted-foreground mt-1">
+                      <h2 className="text-2xl font-bold truncate max-w-full flex items-center gap-2">
+                        {profileUser.name}
+                        <LevelBadge level={profileUser.level || 1} customSize={48} />
+                      </h2>
+
+                      {/* Barra de experiencia */}
+                      {(() => {
+                        const currentXp = profileUser.xp || 0;
+                        const currentLevel = profileUser.level || 1;
+                        // XP ACUMULATIVO requerido para cada nivel (backend resta XP en cada nivel)
+                        // Nivel 2=100, Nivel 3=100+200=300, Nivel 4=300+400=700, etc.
+                        const xpThresholds = [0, 100, 300, 700, 1500, 3100, 6300, 12700, 25500, 51100, 102300];
+                        const currentLevelXp = xpThresholds[currentLevel - 1] || 0;
+                        const nextLevelXp = xpThresholds[currentLevel] || xpThresholds[xpThresholds.length - 1];
+                        const xpInCurrentLevel = currentXp - currentLevelXp;
+                        const xpNeededForNextLevel = nextLevelXp - currentLevelXp;
+                        const progress = currentLevel >= 10 ? 100 : Math.min((xpInCurrentLevel / xpNeededForNextLevel) * 100, 100);
+
+                        return (
+                          <div className="mt-2 w-full max-w-sm">
+                            <div className="flex justify-between text-xs text-muted-foreground mb-1">
+                              <span>Nivel {currentLevel}</span>
+                              <span>{currentXp.toLocaleString()} / {nextLevelXp.toLocaleString()} XP</span>
+                            </div>
+                            <div className="h-2 bg-muted rounded-full overflow-hidden">
+                              <div
+                                className="h-full bg-primary rounded-full transition-all duration-500"
+                                style={{ width: `${progress}%` }}
+                              />
+                            </div>
+                            {currentLevel < 10 && (
+                              <p className="text-xs text-muted-foreground mt-1">
+                                {(nextLevelXp - currentXp).toLocaleString()} XP para nivel {currentLevel + 1}
+                              </p>
+                            )}
+                            {currentLevel >= 10 && (
+                              <p className="text-xs text-primary mt-1 font-medium">
+                                ¡Nivel máximo alcanzado! 🏆
+                              </p>
+                            )}
+                          </div>
+                        );
+                      })()}
+
+                      <p className="text-muted-foreground mt-2">
                         {editedProfile.bio || 'Estudiante de Ingeniería de Sistemas en UNAM'}
                       </p>
                     </>
@@ -559,26 +650,93 @@ export function UserProfile({ isOpen, onClose, userId }: UserProfileProps) {
               <div>
                 <h3 className="text-lg font-semibold mb-4">Intereses y habilidades</h3>
                 {isEditing ? (
-                  <div>
-                    <Label htmlFor="interests">Intereses (separados por coma)</Label>
-                    <Input
-                      id="interests"
-                      value={editedProfile.interests.join(', ')}
-                      onChange={(e) => setEditedProfile(prev => ({
-                        ...prev,
-                        interests: e.target.value.split(',').map(item => item.trim()).filter(Boolean)
-                      }))}
-                      placeholder="Programación, Bases de datos, Desarrollo web..."
-                      className="mt-1"
-                    />
+                  <div className="space-y-3">
+                    {/* Input para agregar nuevo interés */}
+                    <div className="flex items-center gap-2">
+                      <Input
+                        id="new-interest"
+                        placeholder="Escribe un interés..."
+                        maxLength={20}
+                        className="flex-1"
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            const input = e.target as HTMLInputElement;
+                            const value = input.value.trim();
+                            if (value && editedProfile.interests.length < 6 && !editedProfile.interests.includes(value)) {
+                              setEditedProfile(prev => ({
+                                ...prev,
+                                interests: [...prev.interests, value]
+                              }));
+                              input.value = '';
+                            }
+                          }
+                        }}
+                      />
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        disabled={editedProfile.interests.length >= 6}
+                        onClick={() => {
+                          const input = document.getElementById('new-interest') as HTMLInputElement;
+                          const value = input?.value.trim();
+                          if (value && editedProfile.interests.length < 6 && !editedProfile.interests.includes(value)) {
+                            setEditedProfile(prev => ({
+                              ...prev,
+                              interests: [...prev.interests, value]
+                            }));
+                            input.value = '';
+                          }
+                        }}
+                      >
+                        <Plus className="h-4 w-4" />
+                      </Button>
+                    </div>
+
+                    {/* Lista de intereses como tags removibles */}
+                    <div className="flex flex-wrap gap-2">
+                      {editedProfile.interests.map((interest, index) => (
+                        <Badge
+                          key={index}
+                          variant="secondary"
+                          className="bg-primary/10 text-primary px-3 py-1.5 text-sm font-medium rounded-full flex items-center gap-1.5 hover:bg-primary/20 transition-colors"
+                        >
+                          {interest}
+                          <button
+                            type="button"
+                            onClick={() => setEditedProfile(prev => ({
+                              ...prev,
+                              interests: prev.interests.filter((_, i) => i !== index)
+                            }))}
+                            className="hover:text-destructive transition-colors ml-1"
+                          >
+                            <X className="h-3 w-3" />
+                          </button>
+                        </Badge>
+                      ))}
+                    </div>
+
+                    {/* Contador */}
+                    <p className="text-xs text-muted-foreground">
+                      {editedProfile.interests.length}/6 intereses
+                    </p>
                   </div>
                 ) : (
                   <div className="flex flex-wrap gap-2">
-                    {editedProfile.interests.map((interest, index) => (
-                      <Badge key={index} variant="secondary" className="bg-primary/10 text-primary">
-                        {interest}
-                      </Badge>
-                    ))}
+                    {editedProfile.interests.length > 0 ? (
+                      editedProfile.interests.map((interest, index) => (
+                        <Badge
+                          key={index}
+                          variant="secondary"
+                          className="bg-primary/10 text-primary px-3 py-1.5 text-sm font-medium rounded-full hover:bg-primary/20 transition-colors"
+                        >
+                          {interest}
+                        </Badge>
+                      ))
+                    ) : (
+                      <p className="text-sm text-muted-foreground">No hay intereses configurados</p>
+                    )}
                   </div>
                 )}
               </div>

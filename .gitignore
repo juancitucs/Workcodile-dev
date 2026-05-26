@@ -3,6 +3,7 @@
 **/build
 # Archivos de build
 **/dist
+frontend/build/
 
 # Logs
 npm-debug.log*
@@ -20,3 +21,5 @@ minio_data/
 # Archivos del sistema operativo
 .DS_Store
 Thumbs.db
+
+local-docs/

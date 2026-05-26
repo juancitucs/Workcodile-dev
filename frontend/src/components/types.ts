@@ -7,6 +7,14 @@ export interface User {
   university: string
   theme?: string
   bookmarked_posts?: string[]
+  level?: number  // Nivel del usuario para mostrar badge
+  xp?: number     // Experiencia del usuario
+  stats?: {
+    totalPosts: number
+    totalComments: number
+    totalLikesReceived: number
+    totalLikesGiven: number
+  }
 }
 
 export interface Course {
@@ -25,12 +33,17 @@ export interface FileAttachment {
   object_key?: string
 }
 
+// TODO BACKEND: El modelo Post en la base de datos debe incluir estos campos:
+// - editedAt: Date (opcional, se actualiza cuando el post es editado)
+// - isBookmarked: se calcula dinámicamente según el usuario que consulta
+// - commentsDisabled: boolean para permitir al autor desactivar comentarios
 export interface Post {
   id: string
   title: string
   content: string
   author: User
   createdAt: Date
+  editedAt?: Date  // Fecha de última edición
   course: string // Course ID
   upvotes: number
   downvotes: number
@@ -41,6 +54,11 @@ export interface Post {
   // Additional fields
   views: number
   isBookmarked?: boolean
+  commentsDisabled?: boolean
+  // Comment pagination
+  totalComments?: number
+  hasMoreComments?: boolean
+  commentOffset?: number
 }
 
 export interface Comment {

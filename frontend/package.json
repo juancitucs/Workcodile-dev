@@ -63,6 +63,7 @@
         "remark-directive": "^4.0.0",
         "remark-gfm": "^4.0.1",
         "remark-math": "^6.0.0",
+        "simplebar-react": "^3.3.2",
         "sonner": "^2.0.3",
         "tailwind-merge": "*",
         "unist-util-visit": "^5.0.0",

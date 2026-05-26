@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { Comment } from './comment';
 
 interface CommentTreeProps {
@@ -8,7 +9,7 @@ interface CommentTreeProps {
   depth?: number;
 }
 
-export function CommentTree({ comments, postId, onCommentVote, highlightCommentId, depth = 0 }: CommentTreeProps) {
+const CommentTreeComponent = ({ comments, postId, onCommentVote, highlightCommentId, depth = 0 }: CommentTreeProps) => {
   return (
     <div className="space-y-2">
       {comments.map((comment) => (
@@ -18,4 +19,6 @@ export function CommentTree({ comments, postId, onCommentVote, highlightCommentI
       ))}
     </div>
   );
-}
+};
+
+export const CommentTree = CommentTreeComponent;

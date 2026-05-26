@@ -11,6 +11,7 @@ import {
   MessageCircle
 } from 'lucide-react';
 import { Post } from './types';
+import { PostCardSkeletonList } from './post-card-skeleton';
 
 const CustomList = forwardRef(({ children, ...props }: { children: React.ReactNode }, ref: React.ForwardedRef<HTMLDivElement>) => {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -80,7 +81,9 @@ export function MainFeed() {
 
   const filteredPosts = useMemo(() => {
     let filtered = searchQuery ? searchPosts(searchQuery) : posts;
-    if (selectedCourse !== 'all') {
+    if (selectedCourse === 'bookmarks') {
+      filtered = filtered.filter(post => post.isBookmarked);
+    } else if (selectedCourse !== 'all') {
       if (selectedCourse.startsWith('cycle-')) {
         const cycle = parseInt(selectedCourse.split('-')[1], 10);
         const cycleCourses = getCoursesByCycle(cycle).map(c => c.id);
@@ -128,12 +131,13 @@ export function MainFeed() {
 
       {filteredAndSortedPosts.length > 0 ? (
         <Virtuoso
-          style={{ height: '100vh' }}
+          useWindowScroll
           data={filteredAndSortedPosts}
           endReached={loadMore}
           itemContent={(index, post) => (
-            <div style={{ paddingBottom: '1rem' }}>
+            <div className="pb-4">
               <PostCard post={post} isDashboardView={true} />
+              <hr className="post-divider" />
             </div>
           )}
           visibleItemsChanged={handleVisibleItemsChange}
@@ -142,7 +146,7 @@ export function MainFeed() {
             Footer: () => (
               <div className="text-center py-8">
                 {isFetchingPosts ? (
-                  <p>Cargando...</p>
+                  <PostCardSkeletonList count={2} />
                 ) : hasMorePosts ? (
                   <Button
                     variant="outline"
@@ -168,14 +172,16 @@ export function MainFeed() {
             <div className="max-w-md mx-auto">
               <MessageCircle className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
               <h3 className="text-lg font-semibold mb-2">
-                {searchQuery ? 'No se encontraron resultados' : 'No hay publicaciones'}
+                {searchQuery ? 'No se encontraron resultados' : selectedCourse === 'bookmarks' ? 'No tienes marcadores' : 'No hay publicaciones'}
               </h3>
               <p className="text-muted-foreground mb-6">
                 {searchQuery
                   ? `No se encontraron publicaciones que coincidan con "${searchQuery}"`
-                  : selectedCourse === 'all'
-                    ? 'Sé el primero en crear una publicación'
-                    : `No hay publicaciones en el curso seleccionado`
+                  : selectedCourse === 'bookmarks'
+                    ? 'Guarda publicaciones para verlas aquí'
+                    : selectedCourse === 'all'
+                      ? 'Sé el primero en crear una publicación'
+                      : `No hay publicaciones en el curso seleccionado`
                 }
               </p>
             </div>

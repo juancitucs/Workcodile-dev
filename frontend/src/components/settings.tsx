@@ -35,14 +35,14 @@ import {
   Key,
   Snowflake
 } from 'lucide-react';
-import { toast } from 'sonner@2.0.3';
+import { toast } from 'sonner';
 
 interface SettingsProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+const API_BASE_URL = import.meta.env.VITE_API_URL || '';
 
 export function Settings({ isOpen, onClose }: SettingsProps) {
   const { user, logout, theme, toggleTheme, christmasTheme, toggleChristmasTheme, posts } = useApp();
@@ -237,7 +237,7 @@ export function Settings({ isOpen, onClose }: SettingsProps) {
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-7xl w-[95vw] max-h-[90vh] p-0 overflow-hidden">
-        <div className="flex h-full max-h-[85vh] flex-col">
+        <div className="flex h-full max-h-[90vh] flex-col">
           {/* Header */}
           <div className="p-6 border-b border-border flex-shrink-0">
             <DialogHeader>

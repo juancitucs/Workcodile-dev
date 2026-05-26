@@ -12,7 +12,7 @@ const postAggregationPipeline = [
       effective_author_id: { $ifNull: ["$author", "$author_id"] }
     }
   },
-  // 1. Lookup author
+  // 1. Lookup author for the post
   {
     $lookup: {
       from: 'users',
@@ -21,14 +21,105 @@ const postAggregationPipeline = [
       as: 'author',
     },
   },
-  // 2. Unwind author
+  // 2. Unwind author for the post
   {
     $unwind: {
       path: '$author',
       preserveNullAndEmptyArrays: true, // Keep posts even if author is not found
     },
   },
-  // 3. Final projection
+  // Start comments processing
+  {
+    $unwind: {
+      path: '$comments',
+      preserveNullAndEmptyArrays: true // Keep posts even if they have no comments
+    }
+  },
+  // Add a consistent author ID field for comments to handle both old and new comment structures
+  {
+    $addFields: {
+      'comments.authorId': {
+        $cond: {
+          if: { $eq: [{ $type: '$comments.author' }, 'object'] },
+          then: '$comments.author._id',
+          else: '$comments.author'
+        }
+      }
+    }
+  },
+  // Lookup author for comments
+  {
+    $lookup: {
+      from: 'users',
+      localField: 'comments.authorId',
+      foreignField: '_id',
+      as: 'comments.authorInfo'
+    }
+  },
+  {
+    $unwind: {
+      path: '$comments.authorInfo',
+      preserveNullAndEmptyArrays: true
+    }
+  },
+  // Add avatar URLs for comment authors and attachment URLs for comments
+  {
+    $addFields: {
+      'comments.author': {
+        $cond: {
+          if: '$comments.authorInfo',
+          then: {
+            _id: '$comments.authorInfo._id',
+            name: '$comments.authorInfo.name',
+            avatar_key: '$comments.authorInfo.avatar_key',
+            level: '$comments.authorInfo.level',
+          },
+          else: { // Default anonymous user info
+            _id: '$comments.author', // Keep original author ID if available
+            name: 'Usuario Anónimo',
+            avatar_key: null,
+            avatar: null,
+            level: 1,
+          }
+        }
+      },
+      'comments.attachments': '$comments.attachments'
+    }
+  },
+  // Group back comments into an array, reconstructing replies
+  {
+    $group: {
+      _id: '$_id',
+      title: { $first: '$title' },
+      content: { $first: '$content' },
+      course_id: { $first: '$course_id' },
+      createdAt: { $first: '$createdAt' },
+      updatedAt: { $first: '$updatedAt' },
+      hashtags: { $first: '$hashtags' },
+      attachments: { $first: '$attachments' },
+      views: { $first: '$views' },
+      upvote_count: { $first: { $size: { $ifNull: ["$upvoted_by", []] } } },
+      downvote_count: { $first: { $size: { $ifNull: ["$downvoted_by", []] } } },
+      upvoted_by: { $first: '$upvoted_by' },
+      downvoted_by: { $first: '$downvoted_by' },
+      author: { $first: '$author' },
+      comments: {
+        $push: {
+          _id: '$comments._id',
+          author: '$comments.author',
+          content: '$comments.content',
+          attachments: '$comments.attachments',
+          createdAt: '$comments.createdAt',
+          score: '$comments.score',
+          replies: '$comments.replies', // Keep original replies structure
+          parentId: '$comments.parentId',
+          upvoted_by: '$comments.upvoted_by',
+          downvoted_by: '$comments.downvoted_by'
+        }
+      }
+    }
+  },
+  // Final projection (similar to original, but with populated comments)
   {
     $project: {
       title: 1,
@@ -39,69 +130,31 @@ const postAggregationPipeline = [
       hashtags: 1,
       attachments: 1,
       views: 1,
-      upvote_count: { $size: { $ifNull: ["$upvoted_by", []] } }, // Correctly count upvotes
-      downvote_count: { $size: { $ifNull: ["$downvoted_by", []] } }, // Correctly count downvotes
+      upvote_count: 1,
+      downvote_count: 1,
       upvoted_by: 1,
       downvoted_by: 1,
       author: {
         _id: '$author._id',
         name: '$author.name',
         avatar_key: '$author.avatar_key',
+        level: '$author.level',
       },
-      comments: 1,
-    },
-  },
-];
-
-// Shared helper function for populating comment authors and URLs
-const populateCommentAuthors = async (comments) => {
-  for (const comment of comments) {
-    let authorIdToLookup = null;
-    if (comment.author && typeof comment.author.equals === 'function') { // Check if it's already an ObjectId
-      authorIdToLookup = comment.author;
-    } else if (comment.author) { // If it's a string, convert to ObjectId
-      authorIdToLookup = new ObjectId(comment.author);
-    } else if (comment.author_id) { // Fallback to author_id
-      authorIdToLookup = new ObjectId(comment.author_id);
-    }
-
-    if (authorIdToLookup) {
-      const author = await mongoose.connection.db.collection('users').findOne({ _id: authorIdToLookup });
-      if (author) {
-        comment.author = {
-          _id: author._id,
-          name: author.name,
-          avatar_key: author.avatar_key,
-          avatar: author.avatar_key ? getFileUrl(author.avatar_key) : undefined,
-        };
-      } else {
-        comment.author = {
-          _id: authorIdToLookup,
-          name: 'Usuario Eliminado',
-          avatar_key: null,
-          avatar: undefined,
-        };
+      comments: {
+        $filter: {
+          input: '$comments',
+          as: 'comment',
+          // Filter out null comments that result from preserveNullAndEmptyArrays: true
+          // on posts with no comments.
+          // This also allows to filter out replies in favor of recursive population later on
+          cond: { $and: [{ $ne: ['$$comment', {}] }, { $eq: ['$$comment.parentId', null] }] }
+        }
       }
-    } else {
-      comment.author = {
-        _id: null,
-        name: 'Usuario Anónimo',
-        avatar_key: null,
-        avatar: undefined,
-      };
-    }
-    
-    // Add attachment URLs for comments
-    if (comment.attachments) {
-        comment.attachments.forEach(att => {
-            if (att.object_key && !att.url) att.url = getFileUrl(att.object_key);
-        });
-    }
-    if (comment.replies && comment.replies.length > 0) {
-      await populateCommentAuthors(comment.replies);
     }
   }
-};
+];
+
+
 
 // Helper function to add user_vote status
 const addUserVoteStatus = (item, currentUserId) => {
@@ -130,6 +183,37 @@ const addUserVoteStatus = (item, currentUserId) => {
   }
 };
 
+const addUrlsToItems = (items) => {
+  if (!items) return;
+  for (const item of items) {
+    if (item.author && item.author.avatar_key) {
+      item.author.avatar = getFileUrl(item.author.avatar_key);
+    }
+    if (item.attachments) {
+      item.attachments.forEach(att => {
+        if (att.object_key) att.url = getFileUrl(att.object_key);
+      });
+    }
+    if (item.comments) {
+      addUrlsToItems(item.comments);
+    }
+    if (item.replies) {
+      addUrlsToItems(item.replies);
+    }
+  }
+};
+
+const sortComments = (comments) => {
+  if (!comments) return;
+  comments.sort((a, b) => (b.score || 0) - (a.score || 0));
+  for (const comment of comments) {
+    if (comment.replies) {
+      sortComments(comment.replies);
+    }
+  }
+}
+
+
 const getAllPosts = async (req, res) => {
   try {
     const page = parseInt(req.query.page, 10) || 1;
@@ -148,23 +232,14 @@ const getAllPosts = async (req, res) => {
       ])
       .toArray()
 
+
+    addUrlsToItems(posts);
+
     for (const post of posts) {
-        // Add author avatar URL
-        if (post.author && post.author.avatar_key) {
-            post.author.avatar = getFileUrl(post.author.avatar_key);
-        }
-        // Add attachment URLs
-        if (post.attachments) {
-            post.attachments.forEach(att => {
-                if (att.object_key) att.url = getFileUrl(att.object_key);
-            });
-        }
-        if (post.comments && post.comments.length > 0) {
-            await populateCommentAuthors(post.comments);
-        }
-        addUserVoteStatus(post, req.user ? req.user.id : null);
+      sortComments(post.comments);
+      addUserVoteStatus(post, req.user ? req.user.id : null);
     }
-    
+
     const totalPages = Math.ceil(totalPosts / limit);
 
     res.status(200).json({
@@ -174,7 +249,7 @@ const getAllPosts = async (req, res) => {
       hasNextPage: page < totalPages,
     });
   } catch (error) {
-    console.error('Error fetching posts:', error)
+    console.error('Error fetching posts:', error);
     res.status(500).json({ message: 'Error fetching posts' })
   }
 }
@@ -273,6 +348,7 @@ const votePost = async (req, res) => {
       ])
       .toArray()
     
+    addUrlsToItems(updatedPost);
     addUserVoteStatus(updatedPost[0], req.user ? req.user.id : null);
     res.status(200).json(updatedPost[0])
   } catch (error) {
@@ -290,7 +366,7 @@ const addCommentToPost = async (req, res) => {
 
     const comment = {
       _id: new ObjectId(),
-      author: userId,
+      author: { _id: userId },
       content,
       attachments: attachments || [], // ADD attachments
       createdAt: new Date(),
@@ -355,25 +431,21 @@ const addCommentToPost = async (req, res) => {
 
     const updatedPost = updatedPostForAgg[0];
 
-        if (updatedPost.comments && updatedPost.comments.length > 0) {
+    addUrlsToItems([updatedPost]);
 
-            await populateCommentAuthors(updatedPost.comments);
+    addUserVoteStatus(updatedPost, req.user ? req.user.id : null);
 
-        }
+    res.status(200).json(updatedPost);
 
-        addUserVoteStatus(updatedPost, req.user ? req.user.id : null);
+  } catch (error) {
 
-        res.status(200).json(updatedPost);
+    console.error('Error adding comment:', error);
 
-      } catch (error) {
+    res.status(500).json({ message: 'Error adding comment' });
 
-        console.error('Error adding comment:', error);
+  }
 
-        res.status(500).json({ message: 'Error adding comment' });
-
-      }
-
-    };
+};
 
 const createPost = async (req, res) => {
   console.log('Create post called');
@@ -402,20 +474,21 @@ const createPost = async (req, res) => {
     const result = await mongoose.connection.db
       .collection('posts')
       .insertOne(newPost)
-    
+
     // Add XP for creating a post
     await addXP(userId.toString(), 10, { totalPosts: 1 });
 
     const createdPost = await mongoose.connection.db
       .collection('posts')
-            .aggregate([
-              { $match: { _id: result.insertedId } },
-              ...postAggregationPipeline,
-            ])
-            .toArray()
-          addUserVoteStatus(createdPost[0], req.user ? req.user.id : null);
-          res.status(201).json(createdPost[0])
-        } catch (error) {
+      .aggregate([
+        { $match: { _id: result.insertedId } },
+        ...postAggregationPipeline,
+      ])
+      .toArray()
+    addUrlsToItems(createdPost);
+    addUserVoteStatus(createdPost[0], req.user ? req.user.id : null);
+    res.status(201).json(createdPost[0])
+  } catch (error) {
     console.error('Error creating post:', error)
     res.status(500).json({ message: 'Error creating post' })
   }
@@ -480,7 +553,7 @@ const voteComment = async (req, res) => {
         commentToVote.upvoted_by.push(userId);
         // Award XP to comment author for receiving an upvote
         if (commentToVote.author.toString() !== userId.toString()) {
-            await addXP(commentToVote.author.toString(), 2, { totalLikesReceived: 1 });
+          await addXP(commentToVote.author.toString(), 2, { totalLikesReceived: 1 });
         }
         if (downvoted) {
           // User was downvoting, remove downvote
@@ -523,33 +596,13 @@ const voteComment = async (req, res) => {
 
     const updatedPost = updatedPostAgg[0]
 
-    const populateCommentAuthors = async (comments) => {
-      for (const comment of comments) {
-        const author = await mongoose.connection.db
-          .collection('users')
-          .findOne({ _id: comment.author_id })
-        comment.author = {
-          _id: author._id,
-          name: author.name,
-          avatar_key: author.avatar_key,
-        }
-        if (comment.replies && comment.replies.length > 0) {
-          await populateCommentAuthors(comment.replies)
-        }
-      }
-    }
+    addUrlsToItems([updatedPost]);
 
-        if (updatedPost.comments && updatedPost.comments.length > 0) {
+    addUserVoteStatus(updatedPost, req.user ? req.user.id : null);
 
-          await populateCommentAuthors(updatedPost.comments)
+    res.status(200).json(updatedPost)
 
-        }
-
-        addUserVoteStatus(updatedPost, req.user ? req.user.id : null);
-
-        res.status(200).json(updatedPost)
-
-      } catch (error) {
+  } catch (error) {
     console.error('Error voting on comment:', error)
     res.status(500).json({ message: 'Error voting on comment' })
   }
@@ -627,6 +680,8 @@ const incrementView = async (req, res) => {
 const getPostById = async (req, res) => {
   try {
     const { id } = req.params;
+    const commentLimit = parseInt(req.query.commentLimit, 10) || 5; // Default 5 comments initially
+    const commentOffset = parseInt(req.query.commentOffset, 10) || 0;
 
     const postAgg = await mongoose.connection.db
       .collection('posts')
@@ -640,53 +695,69 @@ const getPostById = async (req, res) => {
       return res.status(404).json({ message: 'Post not found' });
     }
 
-        const post = postAgg[0];
+    const post = postAgg[0];
 
+
+    addUrlsToItems([post]);
     
+    // Store total comments count before slicing
+    const totalComments = post.comments ? post.comments.length : 0;
 
-        // Add author avatar URL
+    // Paginate root-level comments only (replies stay nested)
+    if (post.comments && post.comments.length > 0) {
+      sortComments(post.comments);
 
-        if (post.author && post.author.avatar_key) {
+      // Apply pagination to root-level comments
+      const paginatedComments = post.comments.slice(commentOffset, commentOffset + commentLimit);
+      post.comments = paginatedComments;
+    }
 
-            post.author.avatar = getFileUrl(post.author.avatar_key);
+    addUserVoteStatus(post, req.user ? req.user.id : null);
 
-        }
+    // Add pagination metadata
+    post.totalComments = totalComments;
+    post.hasMoreComments = commentOffset + commentLimit < totalComments;
+    post.commentOffset = commentOffset;
+    post.commentLimit = commentLimit;
 
-        // Add attachment URLs for the main post
+    res.status(200).json(post);
 
-        if (post.attachments) {
+  } catch (error) {
+    console.error('Error fetching post by ID:', error);
+    res.status(500).json({ message: 'Error fetching post by ID' });
+  }
+};
 
-            post.attachments.forEach(att => {
+const populateAuthors = async (comments) => {
+  for (const comment of comments) {
+    let authorIdToLookup = null;
+    if (comment.author && comment.author._id) {
+        authorIdToLookup = new ObjectId(comment.author._id);
+    } else if (comment.author) {
+      authorIdToLookup = new ObjectId(comment.author);
+    }
 
-                if (att.object_key) att.url = getFileUrl(att.object_key);
-
-            });
-
-        }
-
-    
-
-        if (post.comments && post.comments.length > 0) {
-
-            await populateCommentAuthors(post.comments);
-
-        }
-
-    
-
-        addUserVoteStatus(post, req.user ? req.user.id : null);
-
-        res.status(200).json(post);
-
-      } catch (error) {
-
-        console.error('Error fetching post by ID:', error);
-
-        res.status(500).json({ message: 'Error fetching post by ID' });
-
+    if (authorIdToLookup) {
+      const author = await mongoose.connection.db.collection('users').findOne({ _id: authorIdToLookup });
+      if (author) {
+        comment.author = {
+          _id: author._id,
+          name: author.name,
+          avatar_key: author.avatar_key,
+          level: author.level || 1,
+        };
+      } else {
+        comment.author = { name: 'Usuario Eliminado' };
       }
+    } else {
+      comment.author = { name: 'Usuario Anónimo' };
+    }
 
-    };
+    if (comment.replies && comment.replies.length > 0) {
+      await populateAuthors(comment.replies);
+    }
+  }
+};
 
 const getPostByCommentId = async (req, res) => {
   try {
@@ -703,7 +774,7 @@ const getPostByCommentId = async (req, res) => {
     if (!post) {
       return res.status(404).json({ message: 'Post not found for this comment' });
     }
-    
+
     // Fake req and res objects to call getPostById
     const mockReq = { params: { id: post._id.toString() }, user: req.user };
     const mockRes = {
@@ -731,30 +802,18 @@ const getCommentReplies = async (req, res) => {
       return res.status(404).json({ message: 'Post not found' });
     }
 
-    let parentComment = null;
-    const findComment = (comments) => {
-      for (const comment of comments) {
-        if (comment._id.equals(new ObjectId(commentId))) {
-          parentComment = comment;
-          return;
-        }
-        if (comment.replies && comment.replies.length > 0) {
-          findComment(comment.replies);
-        }
-        if (parentComment) return;
-      }
-    };
-
-    findComment(post.comments);
+    const parentComment = findCommentRecursive(post.comments, new ObjectId(commentId));
 
     if (!parentComment) {
       return res.status(404).json({ message: 'Comment not found' });
     }
 
     const replies = parentComment.replies || [];
-
-    await populateCommentAuthors(replies);
     
+    await populateAuthors(replies);
+    addUrlsToItems(replies);
+    sortComments(replies);
+
     replies.forEach(reply => {
       addUserVoteStatus(reply, userId);
     });
@@ -798,17 +857,7 @@ const updatePost = async (req, res) => {
     }
 
     const finalPost = postAgg[0];
-    if (finalPost.author && finalPost.author.avatar_key) {
-      finalPost.author.avatar = getFileUrl(finalPost.author.avatar_key);
-    }
-    if (finalPost.attachments) {
-      finalPost.attachments.forEach(att => {
-        if (att.object_key) att.url = getFileUrl(att.object_key);
-      });
-    }
-    if (finalPost.comments && finalPost.comments.length > 0) {
-      await populateCommentAuthors(finalPost.comments);
-    }
+    addUrlsToItems([finalPost]);
     addUserVoteStatus(finalPost, req.user ? req.user.id : null);
 
     res.status(200).json(finalPost);

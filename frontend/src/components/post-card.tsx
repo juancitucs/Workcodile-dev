@@ -1,6 +1,6 @@
 import MarkdownRenderer from './markdown-renderer';
 import { Link, useNavigate } from 'react-router-dom';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, memo } from 'react';
 import { motion } from 'motion/react';
 import { Card, CardContent, CardHeader } from './ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
@@ -11,6 +11,10 @@ import { PostActions } from './post-actions';
 import { WorkCodileLogo } from './crocodile-icon';
 import { UserProfile } from './user-profile';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from './ui/accordion';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from './ui/dialog';
+import { Label } from './ui/label';
+import { Textarea } from './ui/textarea';
+import { RadioGroup, RadioGroupItem } from './ui/radio-group';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -25,7 +29,6 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from './ui/dropdown-menu';
 import {
@@ -39,10 +42,7 @@ import {
   Download,
   Pencil,
   Trash2,
-  MessageSquareOff,
   Flag,
-  Bookmark,
-  Bell,
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -51,6 +51,7 @@ import { formatFileSize, getFileIcon, getAttachmentUrl } from './file-utils';
 import { CreateCommentForm } from './CreateCommentForm';
 import { EditPostModal } from './edit-post-modal';
 import { toast } from 'sonner';
+import { LevelBadge } from './level-badge';
 
 interface PostCardProps {
   post: Post;
@@ -67,7 +68,8 @@ const getCycleTextColor = (cycle: number) => {
   return `cycle-${cycle}-text`;
 };
 
-export function PostCard({ post, startWithCommentsOpen = false, highlightCommentId, isDashboardView }: PostCardProps) {
+// Wrapped with React.memo to prevent unnecessary re-renders
+const PostCardComponent = ({ post, startWithCommentsOpen = false, highlightCommentId, isDashboardView }: PostCardProps) => {
   const navigate = useNavigate();
   const contentRef = useRef<HTMLDivElement>(null);
   const [isContentTruncated, setIsContentTruncated] = useState(false);
@@ -80,12 +82,17 @@ export function PostCard({ post, startWithCommentsOpen = false, highlightComment
     toggleBookmark,
     reportPost,
     deletePost,
+    fetchMoreComments,
   } = useApp();
   const [showComments, setShowComments] = useState(startWithCommentsOpen);
   const [showProfile, setShowProfile] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showReportDialog, setShowReportDialog] = useState(false);
+  const [reportReason, setReportReason] = useState('');
+  const [customReason, setCustomReason] = useState('');
+  const [isSubmittingReport, setIsSubmittingReport] = useState(false);
 
   useEffect(() => {
     if (isDashboardView && contentRef.current) {
@@ -128,8 +135,25 @@ export function PostCard({ post, startWithCommentsOpen = false, highlightComment
     toggleBookmark(post.id);
   };
 
-  const handleReport = () => {
-    reportPost(post.id);
+  const handleReport = async () => {
+    const finalReason = reportReason === 'other' ? customReason : reportReason;
+    if (!finalReason.trim()) {
+      toast.error('Por favor selecciona o escribe una razón para el reporte');
+      return;
+    }
+
+    setIsSubmittingReport(true);
+    try {
+      await reportPost(post.id, finalReason);
+      toast.success('¡Reporte enviado! Gracias por ayudarnos a mantener la comunidad segura.');
+      setShowReportDialog(false);
+      setReportReason('');
+      setCustomReason('');
+    } catch (error) {
+      toast.error('Error al enviar el reporte. Intenta de nuevo.');
+    } finally {
+      setIsSubmittingReport(false);
+    }
   };
 
   const handleDelete = async () => {
@@ -161,7 +185,7 @@ export function PostCard({ post, startWithCommentsOpen = false, highlightComment
         className={`cursor-pointer ${isDashboardView ? '' : 'max-w-3xl mx-auto'}`}
         onClick={handleNavigate}
       >
-        <Card className="glass-card gradient-border shadow-modern hover:shadow-modern-lg transition-all duration-300 ease-out">
+        <Card className="glass-card gradient-border shadow-modern hover:shadow-modern-lg">
           <CardHeader className="pb-3">
             <div className="flex items-start justify-between">
               <div
@@ -171,16 +195,23 @@ export function PostCard({ post, startWithCommentsOpen = false, highlightComment
                   handleShowProfile(post.author.id);
                 }}
               >
-                <Avatar className="h-10 w-10">
-                  <AvatarImage src={post.author.avatar} alt={post.author.name} />
-                  <AvatarFallback className="bg-primary/10">
-                    {post.author.avatar ? (
-                      post.author.name.charAt(0).toUpperCase()
-                    ) : (
-                      <WorkCodileLogo className="h-6 w-6" />
-                    )}
-                  </AvatarFallback>
-                </Avatar>
+                {/* Avatar con medalla de nivel en esquina inferior derecha */}
+                <div className="relative">
+                  <Avatar className="h-10 w-10">
+                    <AvatarImage src={post.author.avatar} alt={post.author.name} />
+                    <AvatarFallback className="bg-primary/10">
+                      {post.author.avatar ? (
+                        post.author.name.charAt(0).toUpperCase()
+                      ) : (
+                        <WorkCodileLogo className="h-6 w-6" />
+                      )}
+                    </AvatarFallback>
+                  </Avatar>
+                  {/* Medalla de nivel - posición controlada por CSS (ver globals.css) */}
+                  <div className="level-badge-overlay absolute z-[60]">
+                    <LevelBadge level={post.author.level || 1} customSize={38} />
+                  </div>
+                </div>
                 <div>
                   <p className="font-medium text-sm">{post.author.name}</p>
                   <div className="flex items-center space-x-2 text-xs text-muted-foreground">
@@ -191,6 +222,9 @@ export function PostCard({ post, startWithCommentsOpen = false, highlightComment
                         locale: es,
                       })}
                     </span>
+                    {post.editedAt && (
+                      <span className="text-muted-foreground/70 italic">(editado)</span>
+                    )}
                     {course && (
                       <Badge
                         variant="secondary"
@@ -208,30 +242,42 @@ export function PostCard({ post, startWithCommentsOpen = false, highlightComment
               </div>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                  <Button variant="ghost" size="sm">
+                  <Button variant="ghost" size="sm" aria-label="Opciones de publicación">
                     <MoreHorizontal className="h-4 w-4" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
+                  {/* Opciones para el autor del post */}
                   {user?.id === post.author.id && (
                     <>
                       <DropdownMenuItem
-                        className="cursor-pointer"
+                        className="cursor-pointer group"
                         onClick={() => setShowEditModal(true)}
                       >
-                        <Pencil className="h-4 w-4 mr-2" />
+                        <Pencil className="h-4 w-4 mr-2 group-focus:text-white" />
                         Editar publicación
                       </DropdownMenuItem>
                       <DropdownMenuItem
-                        className="cursor-pointer text-destructive focus:text-destructive"
+                        className="cursor-pointer text-destructive focus:text-white group"
                         onClick={() => setShowDeleteDialog(true)}
                       >
-                        <Trash2 className="h-4 w-4 mr-2" />
+                        <Trash2 className="h-4 w-4 mr-2 group-focus:text-white" />
                         Eliminar
                       </DropdownMenuItem>
                     </>
                   )}
-                  {/* User-facing options for non-authors are hidden as per request */}
+                  {/* Opciones para visitantes (no autores) */}
+                  {user?.id !== post.author.id && (
+                    <>
+                      <DropdownMenuItem
+                        className="cursor-pointer text-destructive focus:text-white group"
+                        onClick={() => setShowReportDialog(true)}
+                      >
+                        <Flag className="h-4 w-4 mr-2 group-focus:text-white" />
+                        Reportar publicación
+                      </DropdownMenuItem>
+                    </>
+                  )}
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
@@ -241,25 +287,26 @@ export function PostCard({ post, startWithCommentsOpen = false, highlightComment
             <div className="flex flex-row space-x-4">
               <div className="flex flex-col items-center space-y-1">
                 <Button
-                  variant={post.userVote === 'up' ? 'default' : 'ghost'}
+                  variant={post.userVote === 'up' ? 'ghost' : 'ghost'}
                   size="sm"
                   onClick={(e) => {
                     e.stopPropagation();
                     handleVote('up');
                   }}
-                  className="h-8 w-8 p-0"
+                  className={`h-8 w-8 p-0 ${post.userVote === 'up' ? 'bg-green-500 hover:bg-green-600 text-white' : ''}`}
+                  aria-label="Votar positivo"
+                  aria-pressed={post.userVote === 'up'}
                 >
                   <ChevronUp className="h-4 w-4" />
                 </Button>
 
                 <span
-                  className={`text-sm w-8 font-medium text-center ${
-                    netScore > 0
-                      ? 'text-primary'
-                      : netScore < 0
+                  className={`text-sm w-8 font-medium text-center ${netScore > 0
+                    ? 'text-primary'
+                    : netScore < 0
                       ? 'text-destructive'
                       : 'text-muted-foreground'
-                  }`}
+                    }`}
                 >
                   {netScore}
                 </span>
@@ -272,8 +319,9 @@ export function PostCard({ post, startWithCommentsOpen = false, highlightComment
                     handleVote('down');
                   }}
                   className="h-8 w-8 p-0"
+                  aria-label="Votar negativo"
+                  aria-pressed={post.userVote === 'down'}
                 >
-                  {' '}
                   <ChevronDown className="h-4 w-4" />
                 </Button>
               </div>
@@ -294,9 +342,8 @@ export function PostCard({ post, startWithCommentsOpen = false, highlightComment
                 </Link>
                 <div
                   ref={contentRef}
-                  className={`prose prose-sm dark:prose-invert max-w-none mb-3 ${
-                    isDashboardView ? 'max-h-64 overflow-hidden relative' : ''
-                  }`}
+                  className={`prose prose-sm dark:prose-invert max-w-none mb-3 ${isDashboardView ? 'max-h-64 overflow-hidden relative' : ''
+                    }`}
                 >
                   <MarkdownRenderer attachments={post.attachments}>{post.content}</MarkdownRenderer>
                   {isDashboardView && (
@@ -348,13 +395,8 @@ export function PostCard({ post, startWithCommentsOpen = false, highlightComment
                               key={`${index}-${attachment.name}`}
                               onClick={(e) => handleDownload(e, attachment)}
                             >
-                              <motion.div
-                                whileHover={{ scale: 1.02, y: -1 }}
-                                transition={{
-                                  duration: 0.2,
-                                  ease: [0.4, 0, 0.2, 1],
-                                }}
-                                className="flex items-center space-x-2 p-3 bg-gradient-to-r from-workcodile-gray-light/50 to-workcodile-gray-subtle/30 border border-workcodile-border-light rounded-md hover:from-workcodile-green-subtle/30 hover:to-workcodile-gray-subtle/50 cursor-pointer transition-all duration-300 shadow-sm hover:shadow-md"
+                              <div
+                                className="flex items-center space-x-2 p-3 bg-gradient-to-r from-workcodile-gray-light/50 to-workcodile-gray-subtle/30 border border-workcodile-border-light rounded-md hover:from-workcodile-green-subtle/30 hover:to-workcodile-gray-subtle/50 cursor-pointer shadow-sm hover:shadow-md"
                               >
                                 <span className="text-sm">
                                   {getFileIcon(attachment.type)}
@@ -374,7 +416,7 @@ export function PostCard({ post, startWithCommentsOpen = false, highlightComment
                                 >
                                   <Download className="h-3 w-3" />
                                 </Button>
-                              </motion.div>
+                              </div>
                             </div>
                           ))}
                         </div>
@@ -391,6 +433,7 @@ export function PostCard({ post, startWithCommentsOpen = false, highlightComment
                     viewsCount={post.views}
                     isBookmarked={post.isBookmarked}
                     onToggleComments={() => setShowComments(!showComments)}
+                    onNavigate={isDashboardView ? handleNavigate : undefined}
                     onBookmark={handleBookmark}
                     onReport={handleReport}
                   />
@@ -418,6 +461,17 @@ export function PostCard({ post, startWithCommentsOpen = false, highlightComment
                       onCommentVote={handleCommentVote}
                       highlightCommentId={highlightCommentId}
                     />
+
+                    {/* Load More Comments Button */}
+                    {post.hasMoreComments && (
+                      <Button
+                        variant="ghost"
+                        className="w-full text-primary hover:text-primary/80"
+                        onClick={() => fetchMoreComments(post.id)}
+                      >
+                        Cargar más comentarios ({post.comments.length} de {post.totalComments})
+                      </Button>
+                    )}
                   </motion.div>
                 )}
               </div>
@@ -435,15 +489,15 @@ export function PostCard({ post, startWithCommentsOpen = false, highlightComment
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure you want to delete this post?</AlertDialogTitle>
+            <AlertDialogTitle>¿Estás seguro de eliminar esta publicación?</AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete your post and remove your
-              data from our servers.
+              Esta acción no se puede deshacer. Se eliminará permanentemente tu publicación
+              de nuestros servidores.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete}>Continue</AlertDialogAction>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete}>Eliminar</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
@@ -454,6 +508,83 @@ export function PostCard({ post, startWithCommentsOpen = false, highlightComment
           onClose={() => setShowEditModal(false)}
         />
       )}
+      {/* Report Post Dialog */}
+      <Dialog open={showReportDialog} onOpenChange={setShowReportDialog}>
+        <DialogContent data-report-dialog className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Flag className="h-5 w-5 text-destructive" />
+              Reportar publicación
+            </DialogTitle>
+            <DialogDescription>
+              Selecciona la razón por la que deseas reportar esta publicación.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <RadioGroup value={reportReason} onValueChange={setReportReason}>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="spam" id="spam" />
+                <Label htmlFor="spam" className="cursor-pointer">Spam o publicidad no deseada</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="inappropriate" id="inappropriate" />
+                <Label htmlFor="inappropriate" className="cursor-pointer">Contenido inapropiado u ofensivo</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="harassment" id="harassment" />
+                <Label htmlFor="harassment" className="cursor-pointer">Acoso o bullying</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="false_info" id="false_info" />
+                <Label htmlFor="false_info" className="cursor-pointer">Información falsa o engañosa</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="plagiarism" id="plagiarism" />
+                <Label htmlFor="plagiarism" className="cursor-pointer">Plagio o contenido copiado</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="other" id="other" />
+                <Label htmlFor="other" className="cursor-pointer">Otra razón</Label>
+              </div>
+            </RadioGroup>
+            {reportReason === 'other' && (
+              <div className="space-y-2">
+                <Label htmlFor="custom-reason">Describe la razón:</Label>
+                <Textarea
+                  id="custom-reason"
+                  placeholder="Escribe aquí el motivo de tu reporte..."
+                  value={customReason}
+                  onChange={(e) => setCustomReason(e.target.value)}
+                  className="min-h-[80px]"
+                  maxLength={300}
+                />
+                <p className="text-xs text-muted-foreground text-right">{customReason.length}/300</p>
+              </div>
+            )}
+          </div>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowReportDialog(false);
+                setReportReason('');
+                setCustomReason('');
+              }}
+            >
+              Cancelar
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleReport}
+              disabled={isSubmittingReport || !reportReason}
+            >
+              {isSubmittingReport ? 'Enviando...' : 'Enviar reporte'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
-}
+};
+
+export const PostCard = PostCardComponent;

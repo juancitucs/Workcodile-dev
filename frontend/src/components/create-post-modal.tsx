@@ -41,7 +41,7 @@ const sanitizeFilename = (filename: string): string => {
   return sanitized + extension;
 };
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+const API_BASE_URL = import.meta.env.VITE_API_URL || '';
 
 const uploadFiles = async (files: File[]): Promise<(Omit<FileAttachment, 'id'> & { object_key: string })[]> => {
   const uploadPromises = files.map(async (file) => {
@@ -245,8 +245,8 @@ export function CreatePostModal({ isOpen, onClose }: CreatePostModalProps) {
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-7xl w-[95vw] max-h-[90vh] p-0 overflow-hidden">
-        <div className="flex h-full max-h-[85vh]">
+      <DialogContent className="sm:max-w-7xl w-[95vw] h-full max-h-[90vh] p-0 overflow-hidden">
+        <div className="flex h-full max-h-[90vh]">
           {/* Left side - Form */}
           <div className="flex-1 flex flex-col border-r border-border">
             <div className="p-6 border-b border-border">
@@ -267,7 +267,7 @@ export function CreatePostModal({ isOpen, onClose }: CreatePostModalProps) {
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {/* Cycle Selection */}
-                  <div className="space-y-2">
+                  <div className="space-y-2 sidebar-item rounded-lg p-3 transition-all">
                     <Label className="flex items-center space-x-2">
                       <GraduationCap className="h-4 w-4 text-primary" />
                       <span>Ciclo</span>
@@ -293,7 +293,7 @@ export function CreatePostModal({ isOpen, onClose }: CreatePostModalProps) {
                   </div>
 
                   {/* Course Selection */}
-                  <div className="space-y-2">
+                  <div className="space-y-2 sidebar-item rounded-lg p-3 transition-all">
                     <Label>Curso</Label>
                     <Select
                       value={formData.course}
@@ -338,7 +338,7 @@ export function CreatePostModal({ isOpen, onClose }: CreatePostModalProps) {
                 )}
 
                 {/* Title */}
-                <div className="space-y-2">
+                <div className="space-y-2 sidebar-item rounded-lg p-3 transition-all">
                   <div className="flex justify-between items-center">
                     <Label htmlFor="title">Título</Label>
                     <span className="text-xs text-muted-foreground">
@@ -360,7 +360,7 @@ export function CreatePostModal({ isOpen, onClose }: CreatePostModalProps) {
                 </div>
 
                 {/* Content */}
-                <div className="space-y-2">
+                <div className="space-y-2 sidebar-item rounded-lg p-3 transition-all">
                   <Label htmlFor="content">Descripción</Label>
 
                   {isMobile && showPreview ? (
@@ -412,7 +412,7 @@ export function CreatePostModal({ isOpen, onClose }: CreatePostModalProps) {
 
                 <Accordion type="multiple" className="w-full">
                   {/* Hashtags */}
-                  <AccordionItem value="hashtags">
+                  <AccordionItem value="hashtags" className="sidebar-item rounded-lg transition-all">
                     <AccordionTrigger className="cursor-pointer">
                       <Label className="flex items-center space-x-2 cursor-pointer">
                         <Hash className="h-4 w-4 text-primary" />
@@ -459,7 +459,7 @@ export function CreatePostModal({ isOpen, onClose }: CreatePostModalProps) {
                   </AccordionItem>
 
                   {/* File Attachments */}
-                  <AccordionItem value="attachments">
+                  <AccordionItem value="attachments" className="sidebar-item rounded-lg transition-all">
                     <AccordionTrigger className="cursor-pointer">
                       <Label className="flex items-center space-x-2 cursor-pointer">
                         <Upload className="h-4 w-4 text-primary" />
@@ -522,7 +522,7 @@ export function CreatePostModal({ isOpen, onClose }: CreatePostModalProps) {
                         )}
 
                         <p className="text-xs text-muted-foreground">
-                          Máximo 30MB por archivo
+                          Máximo 30MB por archivo - 5 archivos por post
                         </p>
                       </div>
                     </AccordionContent>

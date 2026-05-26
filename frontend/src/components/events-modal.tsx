@@ -3,6 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Card, CardContent } from './ui/card';
 import { Calendar, MapPin, Clock, Users, GraduationCap, Trophy, BookOpen, Briefcase } from 'lucide-react';
 import { Badge } from './ui/badge';
+import { useApp } from './app-context';
 
 interface EventsModalProps {
     trigger: ReactNode;
@@ -115,7 +116,7 @@ const UNAM_EVENTS = [
 const getEventTypeColor = (type: string) => {
     switch (type) {
         case 'academic':
-            return 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400';
+            return 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-white';
         case 'workshop':
             return 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400';
         case 'event':
@@ -144,13 +145,15 @@ const getEventTypeLabel = (type: string) => {
 };
 
 export const EventsModal = memo(function EventsModal({ trigger }: EventsModalProps) {
+    const { christmasTheme } = useApp();
+
     return (
         <Dialog>
             <DialogTrigger asChild>{trigger}</DialogTrigger>
-            <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+            <DialogContent className="sm:max-w-7xl w-[95vw] max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                     <DialogTitle className="flex items-center gap-3 text-xl">
-                        <Calendar className="h-6 w-6 text-green-500" />
+                        <Calendar className={`h-6 w-6 ${christmasTheme ? 'text-red-500' : 'text-green-500'}`} />
                         Eventos UNAM Moquegua
                     </DialogTitle>
                     <p className="text-sm text-muted-foreground mt-1">

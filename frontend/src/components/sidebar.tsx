@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { motion } from 'motion/react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
@@ -12,6 +13,7 @@ import {
   SelectValue
 } from './ui/select';
 import { useApp } from './app-context';
+import { ChristmasTree } from './ChristmasTree';
 import {
   Users,
   BookOpen,
@@ -19,7 +21,7 @@ import {
   GraduationCap,
   Clock,
   TrendingUp,
-  Filter
+  Filter,
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -30,7 +32,7 @@ interface SidebarProps {
   className?: string;
 }
 
-export function Sidebar({ selectedCourse, onCourseSelect, sortBy, onSortChange }: SidebarProps) {
+const SidebarComponent = ({ selectedCourse, onCourseSelect, sortBy, onSortChange }: SidebarProps) => {
   const { posts, user, getCoursesByCycle } = useApp();
   const navigate = useNavigate();
   const location = useLocation();
@@ -65,6 +67,7 @@ export function Sidebar({ selectedCourse, onCourseSelect, sortBy, onSortChange }
         initial={{ opacity: 0, x: -20 }}
         animate={{ opacity: 1, x: 0 }}
         transition={{ delay: 0.1 }}
+        className="section-divider"
       >
         <Card className="glass-card gradient-border shadow-modern fade-in-up">
           <CardContent className="p-4">
@@ -72,31 +75,21 @@ export function Sidebar({ selectedCourse, onCourseSelect, sortBy, onSortChange }
               <div className="bg-primary p-2 rounded-lg">
                 <Users className="h-5 w-5 text-primary-foreground" />
               </div>
-              <div>
-                <h3 className="font-semibold">¡Hola, {user?.name?.split(' ')[0]}!</h3>
+              <div className="min-w-0 flex-1">
+                <h3 className="font-semibold truncate">¡Hola, {user?.name?.split(' ')[0]}!</h3>
                 <p className="text-sm text-muted-foreground">Bienvenido a WorkCodile</p>
               </div>
             </div>
             <div className="grid grid-cols-2 gap-3 text-center">
               <div>
                 <p className="text-2xl font-bold text-primary">
-                  {posts.filter(post => post.author.id === user?._id).length}
+                  {user?.stats?.totalPosts ?? 0}
                 </p>
                 <p className="text-xs text-muted-foreground">Posts totales</p>
               </div>
               <div>
                 <p className="text-2xl font-bold text-accent">
-                  {posts.reduce((sum, post) => {
-                    // Count comments recursively (including replies)
-                    const countUserComments = (comments: any[]): number => {
-                      return comments.reduce((acc, c) => {
-                        const isUserComment = c.author.id === user?._id ? 1 : 0;
-                        const repliesCount = c.replies ? countUserComments(c.replies) : 0;
-                        return acc + isUserComment + repliesCount;
-                      }, 0);
-                    };
-                    return sum + countUserComments(post.comments || []);
-                  }, 0)}
+                  {user?.stats?.totalComments ?? 0}
                 </p>
                 <p className="text-xs text-muted-foreground">Comentarios</p>
               </div>
@@ -110,6 +103,7 @@ export function Sidebar({ selectedCourse, onCourseSelect, sortBy, onSortChange }
         initial={{ opacity: 0, x: -20 }}
         animate={{ opacity: 1, x: 0 }}
         transition={{ delay: 0.15 }}
+        className="section-divider"
       >
         <Card className="glass-card gradient-border shadow-modern">
           <CardHeader className="pb-0 pt-3 px-4">
@@ -163,6 +157,7 @@ export function Sidebar({ selectedCourse, onCourseSelect, sortBy, onSortChange }
         initial={{ opacity: 0, x: -20 }}
         animate={{ opacity: 1, x: 0 }}
         transition={{ delay: 0.2 }}
+        className="section-divider"
       >
         <Card className="glass-card gradient-border shadow-modern">
           <CardHeader className="pb-2 pt-3 px-4">
@@ -178,7 +173,7 @@ export function Sidebar({ selectedCourse, onCourseSelect, sortBy, onSortChange }
             <Button
               variant={selectedCourse === 'all' ? 'default' : 'ghost'}
               onClick={() => handleCourseChange('all')}
-              className="w-full justify-start h-auto p-3 hover-lift transition-all duration-300 mb-4"
+              className="w-full justify-start h-auto p-3 hover-lift transition-all duration-300 mb-2"
             >
               <div className="flex items-center justify-between w-full">
                 <div className="flex items-center space-x-3">
@@ -198,6 +193,7 @@ export function Sidebar({ selectedCourse, onCourseSelect, sortBy, onSortChange }
                 </Badge>
               </div>
             </Button>
+
 
             <Accordion type="multiple" className="w-full">
               {cycles.map((cycle) => {
@@ -272,7 +268,17 @@ export function Sidebar({ selectedCourse, onCourseSelect, sortBy, onSortChange }
         </Card>
       </motion.div>
 
+      {/* Christmas Tree */}
+      <ChristmasTree />
 
     </div>
   );
-}
+};
+
+// React.memo to prevent re-renders when sidebar props haven't changed
+export const Sidebar = memo(SidebarComponent, (prevProps, nextProps) => {
+  return (
+    prevProps.selectedCourse === nextProps.selectedCourse &&
+    prevProps.sortBy === nextProps.sortBy
+  );
+});

@@ -65,15 +65,16 @@ export function MainLayout() {
         </SheetContent>
       </Sheet>
 
-      <main className="container max-w-[1800px] mx-auto px-4 py-6">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+      <main className="container max-w-[1900px] mx-auto px-4 py-2">
+        <div className="flex gap-4">
           {/* Left Sidebar */}
           <motion.aside
             initial={{ opacity: 0, x: -50 }}
             animate={{ opacity: 1, x: 0 }}
-            className="lg:col-span-3 xl:col-span-3 hidden lg:block"
+            className="hidden lg:block sidebar-border-right"
+            style={{ width: '22%', flexShrink: 0 }}
           >
-            <div className="sticky top-24 sidebar-scroll max-h-[calc(100vh-120px)] overflow-y-auto">
+            <div className="sticky top-20 sidebar-scroll sidebar-scroll-left max-h-[calc(100vh-120px)] overflow-y-auto pr-3">
               <Sidebar
                 key={`desktop-sidebar-${resetKey}`}
                 selectedCourse={selectedCourse}
@@ -88,7 +89,7 @@ export function MainLayout() {
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="lg:col-span-6 xl:col-span-6 col-span-full"
+            className="flex-1 lg:w-[56%]"
           >
             <Outlet context={{ setSelectedCourse, setSearchQuery, selectedCourse, searchQuery, sortBy, setSortBy }} />
           </motion.div>
@@ -98,9 +99,10 @@ export function MainLayout() {
             initial={{ opacity: 0, x: 50 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.2 }}
-            className="lg:col-span-3 xl:col-span-3 hidden lg:block"
+            className="hidden lg:block sidebar-border-left"
+            style={{ width: '22%', flexShrink: 0 }}
           >
-            <div className="sticky top-24 sidebar-scroll max-h-[calc(100vh-120px)] overflow-y-auto">
+            <div className="sticky top-20 sidebar-scroll max-h-[calc(100vh-120px)] overflow-y-auto pl-3">
               <RightSidebar key={`right-sidebar-${resetKey}`} />
             </div>
           </motion.aside>

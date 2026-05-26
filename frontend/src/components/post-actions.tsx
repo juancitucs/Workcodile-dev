@@ -39,6 +39,7 @@ interface PostActionsProps {
   viewsCount?: number
   isBookmarked?: boolean
   onToggleComments: () => void
+  onNavigate?: () => void
   onBookmark?: () => void
   onReport?: () => void
 }
@@ -50,6 +51,7 @@ export function PostActions({
   viewsCount = 0,
   isBookmarked = false,
   onToggleComments,
+  onNavigate,
   onBookmark,
   onReport,
 }: PostActionsProps) {
@@ -118,7 +120,11 @@ export function PostActions({
           onClick={(e) => {
             e.preventDefault()
             e.stopPropagation()
-            onToggleComments()
+            if (onNavigate) {
+              onNavigate()
+            } else {
+              onToggleComments()
+            }
           }}
           className="text-muted-foreground hover:text-foreground"
         >
@@ -141,7 +147,7 @@ export function PostActions({
               <span className="hidden sm:inline">Compartir</span>
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-md">
+          <DialogContent className="sm:max-w-md" data-share-dialog>
             <DialogHeader>
               <DialogTitle>Compartir publicación</DialogTitle>
               <DialogDescription>

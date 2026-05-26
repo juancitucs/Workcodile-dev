@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { sendVerificationCode, verifyAndRegister, login, getMe, updateUserTheme, updateProfile, getUserById } = require('../controllers/authController.js');
+const { sendVerificationCode, verifyAndRegister, login, getMe, updateUserTheme, updateProfile, getUserById, forgotPassword, resetPassword } = require('../controllers/authController.js');
 const authMiddleware = require('../middleware/authMiddleware');
 
 // @route   GET api/auth/me
@@ -37,5 +37,15 @@ router.post('/login', login);
 // @desc    Update user theme
 // @access  Private
 router.put('/user/theme', authMiddleware, updateUserTheme);
+
+// @route   POST api/auth/forgot-password
+// @desc    Send password reset code
+// @access  Public
+router.post('/forgot-password', forgotPassword);
+
+// @route   POST api/auth/reset-password
+// @desc    Reset password with code
+// @access  Public
+router.post('/reset-password', resetPassword);
 
 module.exports = router;

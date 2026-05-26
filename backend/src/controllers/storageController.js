@@ -1,4 +1,4 @@
-const { uploadFile, deleteFile, getFileUrl } = require('../services/storage/storage.service');
+const { uploadFile, deleteFile, getFileStream } = require('../services/storage/storage.service');
 const multer = require('multer');
 
 const upload = multer({ storage: multer.memoryStorage() });
@@ -26,11 +26,12 @@ async function uploadHandler(req, res) {
 async function getFileHandler(req, res) {
   try {
     const { name } = req.params;
-    const url = await getFileUrl(name);
-    res.redirect(url);
+    const stream = await getFileStream(name);
+    res.setHeader('Content-Disposition', `inline; filename="${name}"`);
+    stream.pipe(res);
   } catch (error) {
-    console.error('Error al obtener URL:', error);
-    res.status(500).json({ message: 'Error al obtener la URL del archivo.' });
+    console.error('Error al obtener archivo:', error);
+    res.status(500).json({ message: 'Error al obtener el archivo.' });
   }
 }
 
