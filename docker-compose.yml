@@ -20,15 +20,15 @@ services:
     volumes:
       - minio_data:/data
     environment:
-      - MINIO_ROOT_USER=minioadmin
-      - MINIO_ROOT_PASSWORD=minioadmin123
+      MINIO_ROOT_USER: ${MINIO_ACCESS_KEY:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY:-minioadmin123}
     command: server /data --console-address ":9001"
     networks:
       - workcodile-net
     healthcheck:
       test: ["CMD", "mc", "ready", "local"]
-      interval: 5s
-      timeout: 3s
+      interval: 10s
+      timeout: 5s
       retries: 5
 
   minio-setup:
@@ -36,16 +36,15 @@ services:
     container_name: workcodile-minio-setup
     depends_on:
       minio:
-        condition: service_started
+        condition: service_healthy
     entrypoint: >
       sh -c "
-      sleep 3 &&
-      mc alias set local http://minio:9000 minioadmin minioadmin123 &&
-      mc anonymous set public local/workcodile-files &&
+      mc alias set local http://minio:9000 ${MINIO_ACCESS_KEY:-minioadmin} ${MINIO_SECRET_KEY:-minioadmin123} &&
+      mc anonymous set public local/${MINIO_BUCKET_NAME:-workcodile-files} &&
       mc admin config set local/ api cors_allow_origin='*' &&
       mc admin service restart local/ &&
       echo 'MinIO setup complete'
-      ",
+      "
     restart: "no"
     networks:
       - workcodile-net
@@ -62,23 +61,24 @@ services:
       - ./backend/src:/app/src
       - /app/node_modules
     environment:
-      - MONGO_URI=mongodb://mongodb:27017/workcodiledb
-      - PORT=3001
-      - JWT_SECRET=WorkcoWord
-      - STORAGE_PROVIDER=minio
-      - MINIO_ENDPOINT=minio
-      - MINIO_PORT=9000
-      - MINIO_ACCESS_KEY=minioadmin
-      - MINIO_SECRET_KEY=minioadmin123
-      - MINIO_BUCKET_NAME=workcodile-files
-      - MINIO_PUBLIC_ENDPOINT=/files
-      - FRONTEND_URL=http://localhost:8000
-      - RESEND_API_KEY=${RESEND_API_KEY}
+      NODE_ENV: development
+      MONGO_URI: mongodb://mongodb:27017/workcodiledb
+      PORT: 3001
+      JWT_SECRET: ${JWT_SECRET}
+      STORAGE_PROVIDER: ${STORAGE_PROVIDER:-minio}
+      MINIO_ENDPOINT: minio
+      MINIO_PORT: 9000
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-minioadmin}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-minioadmin123}
+      MINIO_BUCKET_NAME: ${MINIO_BUCKET_NAME:-workcodile-files}
+      MINIO_PUBLIC_ENDPOINT: /files
+      FRONTEND_URL: http://localhost:8000
+      RESEND_API_KEY: ${RESEND_API_KEY:-}
     depends_on:
       mongodb:
         condition: service_started
       minio:
-        condition: service_started
+        condition: service_healthy
     networks:
       - workcodile-net
 
@@ -101,7 +101,7 @@ services:
     ports:
       - "8000:80"
     volumes:
-      - ./proxy.conf:/etc/nginx/conf.d/default.conf
+      - ./proxy/nginx.conf:/etc/nginx/conf.d/default.conf
     depends_on:
       - frontend
       - backend
