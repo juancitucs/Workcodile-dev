@@ -1,93 +1,76 @@
-const Settings = require('../models/Settings');
-const User = require('../models/User'); // Import the User model
+const Settings = require('../models/Settings')
+const User = require('../models/User')
 
-exports.getSettings = async (req, res) => {
+const getSettings = async (req, res, next) => {
   try {
-    let settings = await Settings.findOne({ user: req.user.id });
-
+    let settings = await Settings.findOne({ user: req.user.id })
     if (!settings) {
-      settings = new Settings({ user: req.user.id });
-      await settings.save();
+      settings = new Settings({ user: req.user.id })
+      await settings.save()
     }
-
-    res.json(settings);
+    res.json(settings)
   } catch (err) {
-    console.error(err.message);
-    res.status(500).send('Server Error');
+    next(err)
   }
-};
+}
 
-exports.updateSettings = async (req, res) => {
-  const { notifications, privacy, display, sound } = req.body;
+const updateSettings = async (req, res, next) => {
+  const { notifications, privacy, display, sound } = req.body
 
   try {
-    let settings = await Settings.findOne({ user: req.user.id });
+    const settings = await Settings.findOne({ user: req.user.id })
+    if (!settings) {return res.status(404).json({ message: 'Settings not found' })}
 
-    if (!settings) {
-      return res.status(404).json({ msg: 'Settings not found' });
-    }
+    if (notifications) {settings.notifications = { ...settings.notifications, ...notifications }}
+    if (privacy) {settings.privacy = { ...settings.privacy, ...privacy }}
+    if (display) {settings.display = { ...settings.display, ...display }}
+    if (sound) {settings.sound = { ...settings.sound, ...sound }}
 
-    if (notifications) settings.notifications = { ...settings.notifications, ...notifications };
-    if (privacy) settings.privacy = { ...settings.privacy, ...privacy };
-    if (display) settings.display = { ...settings.display, ...display };
-    if (sound) settings.sound = { ...settings.sound, ...sound };
-
-    await settings.save();
-
-    res.json(settings);
+    await settings.save()
+    res.json(settings)
   } catch (err) {
-    console.error(err.message);
-    res.status(500).send('Server Error');
+    next(err)
   }
-};
+}
 
-exports.getCompletedCourses = async (req, res) => {
+const getCompletedCourses = async (req, res, next) => {
   try {
-    const user = await User.findById(req.user.id).select('completedCourses');
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
-    }
-    res.status(200).json(user.completedCourses);
-  } catch (error) {
-    console.error(error.message);
-    res.status(500).send('Server Error');
+    const user = await User.findById(req.user.id).select('completedCourses')
+    if (!user) {return res.status(404).json({ message: 'User not found' })}
+    res.json(user.completedCourses)
+  } catch (err) {
+    next(err)
   }
-};
+}
 
-exports.addCompletedCourse = async (req, res) => {
-  const { courseId } = req.body;
+const addCompletedCourse = async (req, res, next) => {
+  const { courseId } = req.body
   try {
-    const user = await User.findById(req.user.id);
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
-    }
+    const user = await User.findById(req.user.id)
+    if (!user) {return res.status(404).json({ message: 'User not found' })}
 
     if (!user.completedCourses.includes(courseId)) {
-      user.completedCourses.push(courseId);
-      await user.save();
+      user.completedCourses.push(courseId)
+      await user.save()
     }
-    res.status(200).json(user.completedCourses);
-  } catch (error) {
-    console.error(error.message);
-    res.status(500).send('Server Error');
+    res.json(user.completedCourses)
+  } catch (err) {
+    next(err)
   }
-};
+}
 
-exports.removeCompletedCourse = async (req, res) => {
-  const { courseId } = req.params;
+const removeCompletedCourse = async (req, res, next) => {
+  const { courseId } = req.params
   try {
-    const user = await User.findById(req.user.id);
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
-    }
+    const user = await User.findById(req.user.id)
+    if (!user) {return res.status(404).json({ message: 'User not found' })}
 
-    user.completedCourses = user.completedCourses.filter(
-      (course) => course !== courseId
-    );
-    await user.save();
-    res.status(200).json(user.completedCourses);
-  } catch (error) {
-    console.error(error.message);
-    res.status(500).send('Server Error');
+    user.completedCourses = user.completedCourses.filter(c => c !== courseId)
+    await user.save()
+    res.json(user.completedCourses)
+  } catch (err) {
+    next(err)
   }
-};
+}
+
+module.exports = { getSettings, updateSettings, getCompletedCourses, addCompletedCourse, removeCompletedCourse }

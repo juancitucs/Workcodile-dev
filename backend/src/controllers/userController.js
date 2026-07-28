@@ -1,19 +1,14 @@
-const User = require('../models/User');
-const { getFileUrl } = require('../services/storage/storage.service');
+const User = require('../models/User')
+const { getFileUrl } = require('../services/storage/storage.service')
 
-/**
- * Get Top Users by XP
- * @route GET /api/users/top
- * @access Public
- */
-exports.getTopUsers = async (req, res) => {
+const getTopUsers = async (req, res, next) => {
   try {
-    const limit = parseInt(req.query.limit, 10) || 10;
+    const limit = parseInt(req.query.limit, 10) || 10
 
     const topUsers = await User.find({ isVerified: true })
       .sort({ xp: -1 })
       .limit(limit)
-      .select('name avatar_key level xp stats.totalPosts stats.totalLikesReceived');
+      .select('name avatar_key level xp stats.totalPosts stats.totalLikesReceived')
 
     const formattedUsers = topUsers.map(user => ({
       id: user._id,
@@ -23,11 +18,12 @@ exports.getTopUsers = async (req, res) => {
       xp: user.xp,
       totalPosts: user.stats.totalPosts,
       totalLikes: user.stats.totalLikesReceived,
-    }));
+    }))
 
-    res.json(formattedUsers);
+    res.json(formattedUsers)
   } catch (err) {
-    console.error(err.message);
-    res.status(500).send('Server Error');
+    next(err)
   }
-};
+}
+
+module.exports = { getTopUsers }

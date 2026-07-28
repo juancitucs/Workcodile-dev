@@ -1,54 +1,42 @@
-const { uploadFile, deleteFile, getFileStream } = require('../services/storage/storage.service');
-const multer = require('multer');
+const { uploadFile, deleteFile, getFileStream } = require('../services/storage/storage.service')
+const multer = require('multer')
 
-const upload = multer({ storage: multer.memoryStorage() });
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } })
 
-const uploadMiddleware = upload.single('file');
+const uploadMiddleware = upload.single('file')
 
-async function uploadHandler(req, res) {
-  console.log('Upload handler called');
-  console.log('STORAGE_PROVIDER in controller:', process.env.STORAGE_PROVIDER);
-  console.log('req.file:', req.file);
+async function uploadHandler(req, res, next) {
   try {
-    if (!req.file) return res.status(400).json({ message: 'No se envió ningún archivo.' });
+    if (!req.file) {return res.status(400).json({ message: 'No file provided.' })}
 
-    const objectName = `${Date.now()}-${req.file.originalname}`;
-    const url = await uploadFile(objectName, req.file.buffer);
-    console.log('URL from uploadFile:', url);
+    const objectName = `${Date.now()}-${req.file.originalname}`
+    const url = await uploadFile(objectName, req.file.buffer, req.file.mimetype)
 
-    res.status(201).json({ objectName, url });
+    res.status(201).json({ objectName, url })
   } catch (error) {
-    console.error('Error al subir archivo:', error);
-    res.status(500).json({ message: 'Error al subir el archivo.' });
+    next(error)
   }
 }
 
-async function getFileHandler(req, res) {
+async function getFileHandler(req, res, next) {
   try {
-    const { name } = req.params;
-    const stream = await getFileStream(name);
-    res.setHeader('Content-Disposition', `inline; filename="${name}"`);
-    stream.pipe(res);
+    const { name } = req.params
+    const stream = await getFileStream(name)
+    res.setHeader('Content-Disposition', `inline; filename="${name}"`)
+    stream.pipe(res)
   } catch (error) {
-    console.error('Error al obtener archivo:', error);
-    res.status(500).json({ message: 'Error al obtener el archivo.' });
+    next(error)
   }
 }
 
-async function deleteHandler(req, res) {
+async function deleteHandler(req, res, next) {
   try {
-    const { name } = req.params;
-    await deleteFile(name);
-    res.json({ message: 'Archivo eliminado correctamente.' });
+    const { name } = req.params
+    await deleteFile(name)
+    res.json({ message: 'File deleted successfully.' })
   } catch (error) {
-    console.error('Error al eliminar archivo:', error);
-    res.status(500).json({ message: 'Error al eliminar el archivo.' });
+    next(error)
   }
 }
 
-module.exports = {
-    uploadMiddleware,
-    uploadHandler,
-    getFileHandler,
-    deleteHandler,
-};
+module.exports = { uploadMiddleware, uploadHandler, getFileHandler, deleteHandler }

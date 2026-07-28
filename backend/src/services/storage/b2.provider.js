@@ -1,81 +1,64 @@
-// backend/src/services/storage/b2.provider.js
-const AWS = require('aws-sdk');
+const AWS = require('aws-sdk')
+const config = require('../../config/env')
 
-const BUCKET_NAME_PROVIDER = process.env.B2_BUCKET_NAME || 'WorkcodileBucket';
+const {
+  endpointUrl: B2_ENDPOINT_URL,
+  applicationKeyId: B2_APPLICATION_KEY_ID,
+  applicationKey: B2_APPLICATION_KEY,
+  bucketName: B2_BUCKET_NAME,
+  nativePublicUrlPrefix: B2_NATIVE_PUBLIC_URL_PREFIX,
+} = config.storage.b2
 
-// Calculate B2_PUBLIC_URL_PREFIX (S3 Compatible)
-let B2_PUBLIC_URL_PREFIX;
-if (process.env.B2_ENDPOINT_URL && process.env.B2_BUCKET_NAME) {
-  const endpoint = process.env.B2_ENDPOINT_URL.replace('https://', '');
-  B2_PUBLIC_URL_PREFIX = `https://${BUCKET_NAME_PROVIDER}.${endpoint}`;
+let B2_PUBLIC_URL_PREFIX
+if (B2_ENDPOINT_URL && B2_BUCKET_NAME) {
+  const endpoint = B2_ENDPOINT_URL.replace('https://', '')
+  B2_PUBLIC_URL_PREFIX = `https://${B2_BUCKET_NAME}.${endpoint}`
 } else {
-  // Fallback to a generic local development URL if B2 environment variables are not set
-  B2_PUBLIC_URL_PREFIX = `http://${process.env.MINIO_PUBLIC_ENDPOINT || 'localhost'}:9000/${BUCKET_NAME_PROVIDER}`;
+  B2_PUBLIC_URL_PREFIX = `http://localhost:9000/${B2_BUCKET_NAME}`
 }
 
-const B2_NATIVE_PUBLIC_URL_PREFIX = process.env.B2_NATIVE_PUBLIC_URL_PREFIX;
-
 const s3 = new AWS.S3({
-  endpoint: process.env.B2_ENDPOINT_URL,
-  accessKeyId: process.env.B2_APPLICATION_KEY_ID,
-  secretAccessKey: process.env.B2_APPLICATION_KEY,
+  endpoint: B2_ENDPOINT_URL,
+  accessKeyId: B2_APPLICATION_KEY_ID,
+  secretAccessKey: B2_APPLICATION_KEY,
   s3ForcePathStyle: true,
   signatureVersion: 'v4',
   region: 'us-east-1',
-});
+})
 
 async function ensureBucketExists() {
   try {
-    await s3.headBucket({ Bucket: BUCKET_NAME_PROVIDER }).promise();
-    console.log(`Bucket '${BUCKET_NAME_PROVIDER}' already exists.`);
+    await s3.headBucket({ Bucket: B2_BUCKET_NAME }).promise()
+    console.log(`Bucket '${B2_BUCKET_NAME}' already exists.`)
   } catch (error) {
     if (error.statusCode === 404) {
-      console.log(`Bucket '${BUCKET_NAME_PROVIDER}' does not exist. Creating...`);
-      await s3.createBucket({ Bucket: BUCKET_NAME_PROVIDER }).promise();
-      console.log(`Bucket '${BUCKET_NAME_PROVIDER}' created.`);
+      console.log(`Bucket '${B2_BUCKET_NAME}' does not exist. Creating...`)
+      await s3.createBucket({ Bucket: B2_BUCKET_NAME }).promise()
+      console.log(`Bucket '${B2_BUCKET_NAME}' created.`)
     } else {
-      console.error("Error checking for bucket:", error);
-      throw error;
+      console.error('Error checking for bucket:', error)
+      throw error
     }
   }
 }
 
 async function uploadFile(objectName, fileBuffer, mimetype) {
-  try {
-    const uploadParams = {
-      Bucket: BUCKET_NAME_PROVIDER,
-      Key: objectName,
-      Body: fileBuffer,
-      ContentType: mimetype,
-    };
-
-    const data = await s3.upload(uploadParams).promise();
-    console.log(`File uploaded successfully: ${data.Location}`);
-    // Return the friendly URL if available, otherwise the S3 compatible one
-    return getFileUrl(objectName);
-  } catch (error) {
-    console.error("Error uploading file to B2:", error);
-    throw new Error('Could not upload file to B2.');
-  }
+  await s3.upload({
+    Bucket: B2_BUCKET_NAME,
+    Key: objectName,
+    Body: fileBuffer,
+    ContentType: mimetype,
+  }).promise()
+  return getFileUrl(objectName)
 }
 
 function getFileUrl(objectName) {
-  const baseUrl = B2_NATIVE_PUBLIC_URL_PREFIX || B2_PUBLIC_URL_PREFIX;
-  return `${baseUrl}/${objectName}`;
+  const baseUrl = B2_NATIVE_PUBLIC_URL_PREFIX || B2_PUBLIC_URL_PREFIX
+  return `${baseUrl}/${objectName}`
 }
 
 async function deleteFile(objectName) {
-  try {
-    const deleteParams = {
-      Bucket: BUCKET_NAME_PROVIDER,
-      Key: objectName,
-    };
-    await s3.deleteObject(deleteParams).promise();
-    console.log(`File deleted from B2: ${objectName}`);
-  } catch (error) {
-    console.error("Error deleting file from B2:", error);
-    throw new Error('Could not delete file from B2.');
-  }
+  await s3.deleteObject({ Bucket: B2_BUCKET_NAME, Key: objectName }).promise()
 }
 
 module.exports = {
@@ -83,4 +66,4 @@ module.exports = {
   uploadFile,
   getFileUrl,
   deleteFile,
-};
+}

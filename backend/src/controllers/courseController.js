@@ -1,10 +1,12 @@
-const Course = require('../models/Course');
+const Course = require('../models/Course')
 
-exports.getAllCourses = async (req, res) => {
+const getAllCourses = async (req, res, next) => {
   try {
-    const courses = await Course.find({}).sort({ cycle: 1, _id: 1 });
-    res.status(200).json(courses);
+    const courses = await Course.find({}).sort({ cycle: 1, _id: 1 })
+    res.json(courses)
   } catch (error) {
-    res.status(500).json({ message: 'Error fetching courses', error });
+    next(error)
   }
-};
+}
+
+module.exports = { getAllCourses }

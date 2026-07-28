@@ -27,7 +27,7 @@ function calculateLevel(xp) {
  * @returns {Promise<void>}
  */
 async function addXP(userId, amount, statUpdate = {}) {
-  if (!userId || !amount) return;
+  if (!userId || !amount) {return;}
 
   try {
     const user = await User.findById(userId);
