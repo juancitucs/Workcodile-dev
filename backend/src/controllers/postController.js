@@ -342,44 +342,113 @@ const voteComment = async (req, res, next) => {
             ? commentToVote.downvoted_by.some((id) => id.equals(userId))
             : false;
 
-        const update = {};
-        if (vote === 'up') {
-            if (hasUpvoted) {
-                update.$inc = { 'comments.$.score': -1 };
-                update.$pull = { 'comments.$.upvoted_by': userId };
-            } else {
-                update.$inc = { 'comments.$.score': 1 };
-                update.$addToSet = { 'comments.$.upvoted_by': userId };
-                if (hasDownvoted) {
-                    update.$inc['comments.$.score'] += 1;
-                    update.$pull['comments.$.downvoted_by'] = userId;
+        // For nested comments, we need to replace the entire comments array
+        // since MongoDB positional operator only works for top-level array elements.
+        // Use findCommentRecursive to check if it's a nested comment.
+        const isTopLevel = post.comments.some(
+            (c) => c._id && c._id.equals(new ObjectId(commentId)),
+        );
+
+        const filter = isTopLevel
+            ? { _id: new ObjectId(postId), 'comments._id': new ObjectId(commentId) }
+            : { _id: new ObjectId(postId) };
+
+        if (isTopLevel) {
+            // Top-level comment: use positional operator with separate updates
+            if (vote === 'up') {
+                if (hasUpvoted) {
+                    // Toggle off upvote
+                    await mongoose.connection.db.collection('posts').updateOne(filter, {
+                        $inc: { 'comments.$.score': -1 },
+                        $pull: { 'comments.$.upvoted_by': userId },
+                    });
+                } else {
+                    // First, remove opposite vote if needed
+                    if (hasDownvoted) {
+                        await mongoose.connection.db.collection('posts').updateOne(filter, {
+                            $inc: { 'comments.$.score': 1 },
+                            $pull: { 'comments.$.downvoted_by': userId },
+                        });
+                    }
+                    // Then add upvote
+                    await mongoose.connection.db.collection('posts').updateOne(filter, {
+                        $inc: { 'comments.$.score': 1 },
+                        $addToSet: { 'comments.$.upvoted_by': userId },
+                    });
+                    if (commentToVote.author.toString() !== userId.toString()) {
+                        await xpService.addXP(commentToVote.author.toString(), 2, {
+                            totalLikesReceived: 1,
+                        });
+                    }
                 }
-                if (commentToVote.author.toString() !== userId.toString()) {
-                    await xpService.addXP(commentToVote.author.toString(), 2, {
-                        totalLikesReceived: 1,
+            } else {
+                if (hasDownvoted) {
+                    // Toggle off downvote
+                    await mongoose.connection.db.collection('posts').updateOne(filter, {
+                        $inc: { 'comments.$.score': 1 },
+                        $pull: { 'comments.$.downvoted_by': userId },
+                    });
+                } else {
+                    // First, remove opposite vote if needed
+                    if (hasUpvoted) {
+                        await mongoose.connection.db.collection('posts').updateOne(filter, {
+                            $inc: { 'comments.$.score': -1 },
+                            $pull: { 'comments.$.upvoted_by': userId },
+                        });
+                    }
+                    // Then add downvote
+                    await mongoose.connection.db.collection('posts').updateOne(filter, {
+                        $inc: { 'comments.$.score': -1 },
+                        $addToSet: { 'comments.$.downvoted_by': userId },
                     });
                 }
             }
         } else {
-            if (hasDownvoted) {
-                update.$inc = { 'comments.$.score': 1 };
-                update.$pull = { 'comments.$.downvoted_by': userId };
-            } else {
-                update.$inc = { 'comments.$.score': -1 };
-                update.$addToSet = { 'comments.$.downvoted_by': userId };
+            // Nested comment: modify in-memory and replace entire comments array
+            if (vote === 'up') {
                 if (hasUpvoted) {
-                    update.$inc['comments.$.score'] -= 1;
-                    update.$pull['comments.$.upvoted_by'] = userId;
+                    commentToVote.score = (commentToVote.score || 0) - 1;
+                    commentToVote.upvoted_by = (commentToVote.upvoted_by || []).filter(
+                        (id) => !id.equals(userId),
+                    );
+                } else {
+                    if (hasDownvoted) {
+                        commentToVote.score = (commentToVote.score || 0) + 1;
+                        commentToVote.downvoted_by = (commentToVote.downvoted_by || []).filter(
+                            (id) => !id.equals(userId),
+                        );
+                    }
+                    commentToVote.score = (commentToVote.score || 0) + 1;
+                    if (!commentToVote.upvoted_by) commentToVote.upvoted_by = [];
+                    commentToVote.upvoted_by.push(userId);
+                    if (commentToVote.author.toString() !== userId.toString()) {
+                        await xpService.addXP(commentToVote.author.toString(), 2, {
+                            totalLikesReceived: 1,
+                        });
+                    }
+                }
+            } else {
+                if (hasDownvoted) {
+                    commentToVote.score = (commentToVote.score || 0) + 1;
+                    commentToVote.downvoted_by = (commentToVote.downvoted_by || []).filter(
+                        (id) => !id.equals(userId),
+                    );
+                } else {
+                    if (hasUpvoted) {
+                        commentToVote.score = (commentToVote.score || 0) - 1;
+                        commentToVote.upvoted_by = (commentToVote.upvoted_by || []).filter(
+                            (id) => !id.equals(userId),
+                        );
+                    }
+                    commentToVote.score = (commentToVote.score || 0) - 1;
+                    if (!commentToVote.downvoted_by) commentToVote.downvoted_by = [];
+                    commentToVote.downvoted_by.push(userId);
                 }
             }
+            await mongoose.connection.db
+                .collection('posts')
+                .updateOne(filter, { $set: { comments: post.comments } });
         }
-
-        await mongoose.connection.db
-            .collection('posts')
-            .updateOne(
-                { _id: new ObjectId(postId), 'comments._id': new ObjectId(commentId) },
-                update,
-            );
 
         if (!hasUpvoted && vote === 'up') {
             await xpService.addXP(userId.toString(), 1, { totalLikesGiven: 1 });

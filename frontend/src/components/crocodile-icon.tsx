@@ -55,7 +55,7 @@ export function CrocodileIcon({
 }
 
 export function WorkCodileLogo({
-  className = 'w-4 h-4',
+  className = 'w-8 h-8',
   animate = false,
 }: {
   className?: string
