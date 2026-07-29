@@ -447,24 +447,28 @@ const incrementView = async (req, res, next) => {
         const { id } = req.params;
         const userId = req.user ? req.user.id : null;
 
-        const post = await mongoose.connection.db
-            .collection('posts')
-            .findOne({ _id: new ObjectId(id) });
-        if (!post) {
-            return res.status(404).json({ message: 'Post not found' });
-        }
-
         if (userId) {
-            const alreadyViewed =
-                post.viewed_by && post.viewed_by.some((uid) => uid.toString() === userId);
+            const uid = new ObjectId(userId);
+            const post = await mongoose.connection.db
+                .collection('posts')
+                .findOne({ _id: new ObjectId(id) });
+
+            if (!post) {
+                return res.status(404).json({ message: 'Post not found' });
+            }
+
+            const viewedBy = post.viewed_by || [];
+            const alreadyViewed = viewedBy.some((v) => v.equals(uid));
+
             if (alreadyViewed) {
                 return res.status(200).json({ message: 'View already recorded' });
             }
+
             await mongoose.connection.db
                 .collection('posts')
                 .updateOne(
                     { _id: new ObjectId(id) },
-                    { $inc: { views: 1 }, $addToSet: { viewed_by: new ObjectId(userId) } },
+                    { $inc: { views: 1 }, $addToSet: { viewed_by: uid } },
                 );
         } else {
             await mongoose.connection.db

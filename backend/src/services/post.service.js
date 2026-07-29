@@ -280,6 +280,7 @@ async function createPostDocument(data) {
         downvote_count: 0,
         upvoted_by: [],
         downvoted_by: [],
+        viewed_by: [],
         comments: [],
         views: 0,
     };

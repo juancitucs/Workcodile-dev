@@ -39,7 +39,7 @@ router.delete('/:id', auth, postId, validate, post.deletePost);
 router.post('/:id/vote', auth, postId, votePost, validate, post.votePost);
 router.post('/:id/bookmark', auth, postId, validate, post.bookmarkPost);
 router.post('/:id/report', auth, postId, validate, post.reportPost);
-router.post('/:id/view', postId, validate, post.incrementView);
+router.post('/:id/view', optionalAuth, postId, validate, post.incrementView);
 router.post('/:id/comments', auth, postId, addComment, validate, post.addCommentToPost);
 router.post(
     '/:postId/comments/:commentId/vote',
