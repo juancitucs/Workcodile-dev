@@ -135,7 +135,7 @@ describe('Post CRUD Integration', () => {
 
         expect(res.statusCode).toBe(201);
         expect(res.body.title).toBe('Test Post');
-        postId = res.body.id;
+        postId = res.body._id;
     });
 
     it('should get posts list', async () => {
@@ -162,7 +162,7 @@ describe('Post CRUD Integration', () => {
         const res = await request(app).get(`/api/posts/${postId}`).set('x-auth-token', token);
 
         expect(res.statusCode).toBe(200);
-        expect(res.body.id).toBe(postId);
+        expect(res.body._id).toBe(postId);
     });
 
     it('should update a post', async () => {
@@ -262,7 +262,7 @@ describe('Vote Integration', () => {
                 content: 'Content for voting',
                 course: 'IS-524',
             });
-        postId = res.body.id;
+        postId = res.body._id;
     });
 
     it('should upvote a post', async () => {
@@ -338,7 +338,7 @@ describe('Comment Integration', () => {
                 content: 'Content for comments',
                 course: 'IS-524',
             });
-        postId = res.body.id;
+        postId = res.body._id;
     });
 
     it('should add a comment', async () => {
@@ -354,7 +354,7 @@ describe('Comment Integration', () => {
         expect(res.statusCode).toBe(200);
         expect(res.body.comments).toBeDefined();
         if (res.body.comments && res.body.comments.length > 0) {
-            commentId = res.body.comments[0].id || res.body.comments[0]._id;
+            commentId = res.body.comments[0]._id;
         }
     });
 
