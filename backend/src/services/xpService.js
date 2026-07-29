@@ -7,16 +7,16 @@ const User = require('../models/User');
  * @returns {number} The calculated level.
  */
 function calculateLevel(xp) {
-  let level = 1;
-  let xpForNextLevel = 100;
+    let level = 1;
+    let xpForNextLevel = 100;
 
-  while (xp >= xpForNextLevel && level < 20) {
-    xp -= xpForNextLevel;
-    level++;
-    xpForNextLevel *= 2;
-  }
+    while (xp >= xpForNextLevel && level < 20) {
+        xp -= xpForNextLevel;
+        level++;
+        xpForNextLevel *= 2;
+    }
 
-  return level;
+    return level;
 }
 
 /**
@@ -27,41 +27,43 @@ function calculateLevel(xp) {
  * @returns {Promise<void>}
  */
 async function addXP(userId, amount, statUpdate = {}) {
-  if (!userId || !amount) return;
-
-  try {
-    const user = await User.findById(userId);
-    if (!user) {
-      console.warn(`addXP: User not found with ID ${userId}`);
-      return;
+    if (!userId || !amount) {
+        return;
     }
 
-    // Update XP
-    user.xp += amount;
-
-    // Update stats
-    if (statUpdate) {
-      for (const stat in statUpdate) {
-        if (user.stats[stat] !== undefined) {
-          user.stats[stat] += statUpdate[stat];
+    try {
+        const user = await User.findById(userId);
+        if (!user) {
+            console.warn(`addXP: User not found with ID ${userId}`);
+            return;
         }
-      }
-    }
 
-    // Recalculate level
-    const newLevel = calculateLevel(user.xp);
-    if (newLevel !== user.level) {
-      user.level = newLevel;
-      // Here you could also trigger a 'level up' notification in the future
-    }
+        // Update XP
+        user.xp += amount;
 
-    await user.save();
-  } catch (error) {
-    console.error(`Error adding XP to user ${userId}:`, error);
-  }
+        // Update stats
+        if (statUpdate) {
+            for (const stat in statUpdate) {
+                if (user.stats[stat] !== undefined) {
+                    user.stats[stat] += statUpdate[stat];
+                }
+            }
+        }
+
+        // Recalculate level
+        const newLevel = calculateLevel(user.xp);
+        if (newLevel !== user.level) {
+            user.level = newLevel;
+            // Here you could also trigger a 'level up' notification in the future
+        }
+
+        await user.save();
+    } catch (error) {
+        console.error(`Error adding XP to user ${userId}:`, error);
+    }
 }
 
 module.exports = {
-  addXP,
-  calculateLevel,
+    addXP,
+    calculateLevel,
 };

@@ -1,31 +1,17 @@
-# ETAPA 1: Construcción de la aplicación de React
-FROM node:22-alpine as builder
-
+FROM node:22-alpine AS builder
 WORKDIR /app
-
-# Copiar package.json y package-lock.json
 COPY package*.json ./
-
-# Instalar dependencias
-RUN npm install
-
-# Copiar el resto de los archivos de la aplicación
+RUN npm install --no-audit --no-fund
 COPY . .
-
-# Construir la aplicación para producción
 RUN npm run build
 
-# ETAPA 2: Servir la aplicación con Nginx
 FROM nginx:stable-alpine
-
-# Copiar los archivos de build de la etapa anterior
 COPY --from=builder /app/build /usr/share/nginx/html
-
-# Copiar la configuración personalizada de Nginx
 COPY nginx.conf /etc/nginx/conf.d/default.conf
-
-# Exponer el puerto 80
+RUN addgroup -g 1001 -S workcodile && adduser -S workcodile -u 1001 -G workcodile
+RUN chown -R workcodile:workcodile /usr/share/nginx/html && \
+    chown -R workcodile:workcodile /etc/nginx/conf.d && \
+    touch /var/run/nginx.pid && chown workcodile:workcodile /var/run/nginx.pid
+USER workcodile
 EXPOSE 80
-
-# Comando para iniciar Nginx
 CMD ["nginx", "-g", "daemon off;"]

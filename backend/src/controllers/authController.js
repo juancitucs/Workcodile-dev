@@ -1,287 +1,262 @@
-const User = require('../models/User')
-const bcrypt = require('bcrypt')
-const jwt = require('jsonwebtoken')
-const crypto = require('crypto'); // Added for token generation
-const { sendVerificationCodeEmail, sendPasswordResetCodeEmail } = require('../services/email/email.service'); // Added for sending verification code email
-const { getFileUrl } = require('../services/storage/storage.service'); // Added for getting file public URL
+const User = require('../models/User');
+const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
+const crypto = require('crypto');
+const config = require('../config/env');
+const {
+    sendVerificationCodeEmail,
+    sendPasswordResetCodeEmail,
+} = require('../services/email/email.service');
+const { getFileUrl } = require('../services/storage/storage.service');
 
-const sendVerificationCode = async (req, res) => { // Renamed from register
-  const { name, email, password } = req.body
-
-  try {
-    let user = await User.findOne({ email })
-    if (user) { // If user already exists, check if they are verified
-      if (user.isVerified) {
-        return res.status(400).json({ msg: 'User already exists and is verified.' });
-      } else {
-        // User exists but is not verified, resend code or update existing
-        // For now, let's just update the existing user's code
-        // and send a message to check email.
-      }
-    } else {
-      // Create a temporary user record but don't save yet, just for token storage
-      user = new User({ // Create new user object
-        name,
-        email,
-        password,
-        isVerified: false, // Ensure it's false
-      });
-      // Hash password (moved here as user is not saved yet)
-      const salt = await bcrypt.genSalt(10);
-      user.password = await bcrypt.hash(password, salt);
-    }
-    
-    // Generate 6-digit verification code
-    const verificationCode = Math.floor(100000 + Math.random() * 900000).toString(); // 6-digit number
-    user.verificationCode = verificationCode;
-    user.verificationCodeExpires = Date.now() + 600000; // 10 minutes
-
-    // Save the user (or update if already existed but unverified)
-    await user.save();
-
-    // Send verification code email
-    await sendVerificationCodeEmail(user.email, user.name, verificationCode);
-
-    res.status(200).json({ msg: 'Verification code sent. Please check your email to complete registration.' });
-
-  } catch (err) {
-    console.error(err)
-    res.status(500).json({ message: 'Server error', error: err.message })
-  }
+function generateSecureCode() {
+    return crypto.randomInt(100000, 999999).toString();
 }
 
-const login = async (req, res) => {
-  const { email, password } = req.body
+const sendVerificationCode = async (req, res, next) => {
+    const { name, email, password } = req.body;
 
-  try {
-    let user = await User.findOne({ email })
-    if (!user) {
-      return res.status(400).json({ msg: 'Invalid credentials' })
+    try {
+        let user = await User.findOne({ email });
+        if (user) {
+            if (user.isVerified) {
+                return res.status(400).json({ message: 'User already exists and is verified.' });
+            }
+        } else {
+            user = new User({ name, email, password, isVerified: false });
+            const salt = await bcrypt.genSalt(10);
+            user.password = await bcrypt.hash(password, salt);
+        }
+
+        const verificationCode = generateSecureCode();
+        user.verificationCode = verificationCode;
+        user.verificationCodeExpires = Date.now() + 600000;
+
+        await user.save();
+        await sendVerificationCodeEmail(user.email, user.name, verificationCode);
+
+        res.status(200).json({
+            message: 'Verification code sent. Please check your email to complete registration.',
+        });
+    } catch (err) {
+        next(err);
     }
-
-    const isMatch = await bcrypt.compare(password, user.password)
-    if (!isMatch) {
-      return res.status(400).json({ msg: 'Invalid credentials' })
-    }
-
-    if (!user.isVerified) {
-      return res.status(400).json({ msg: 'Please confirm your email address to log in.' });
-    }
-
-    const payload = {
-      user: {
-        id: user.id,
-      },
-    }
-
-    jwt.sign(
-      payload,
-      process.env.JWT_SECRET || 'your_jwt_secret',
-      { expiresIn: 360000 },
-      (err, token) => {
-        if (err) throw err
-        res.json({ token, user })
-      }
-    )
-  } catch (err) {
-    console.error(err.message)
-    res.status(500).send('Server error')
-  }
-}
-
-const getMe = async (req, res) => {
-  try {
-    // req.user is set by the auth middleware
-    const user = await User.findById(req.user.id).select('-password').lean(); // Use .lean() for plain JS object
-    if (!user) {
-      return res.status(404).json({ msg: 'User not found' })
-    }
-    if (user.avatar_key) {
-      user.avatar = getFileUrl(user.avatar_key); // Add full avatar URL
-    }
-    // Manually map _id to id (as a string) to match frontend Type
-    user.id = user._id.toString();
-    delete user._id;
-
-    res.json(user)
-  } catch (err) {
-    console.error(err.message)
-    res.status(500).send('Server Error');
-  }
 };
 
-const updateUserTheme = async (req, res) => {
-  const { theme } = req.body;
-  if (!['light', 'dark'].includes(theme)) {
-    return res.status(400).json({ msg: 'Invalid theme' });
-  }
+const login = async (req, res, next) => {
+    const { email, password } = req.body;
 
-  try {
-    const user = await User.findByIdAndUpdate(
-      req.user.id,
-      { theme },
-      { new: true }
-    ).select('-password');
+    try {
+        const user = await User.findOne({ email });
+        if (!user) {
+            return res.status(400).json({ message: 'Invalid credentials' });
+        }
 
-    if (!user) {
-      return res.status(404).json({ msg: 'User not found' });
+        const isMatch = await bcrypt.compare(password, user.password);
+        if (!isMatch) {
+            return res.status(400).json({ message: 'Invalid credentials' });
+        }
+
+        if (!user.isVerified) {
+            return res
+                .status(400)
+                .json({ message: 'Please confirm your email address to log in.' });
+        }
+
+        const payload = { user: { id: user.id } };
+        const token = jwt.sign(payload, config.jwt.secret, { expiresIn: config.jwt.expiresIn });
+
+        const userObj = user.toObject();
+        delete userObj.password;
+        res.json({ token, user: userObj });
+    } catch (err) {
+        next(err);
     }
-
-    res.json(user);
-  } catch (err) {
-    console.error(err.message);
-    res.status(500).send('Server Error');
-  }
 };
 
-const updateProfile = async (req, res) => {
-  const { name, bio, interests, avatar_key, socialLinks } = req.body;
+const getMe = async (req, res, next) => {
+    try {
+        const user = await User.findById(req.user.id).select('-password').lean();
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+        if (user.avatar_key) {
+            user.avatar = getFileUrl(user.avatar_key);
+        }
+        user.id = user._id.toString();
+        delete user._id;
 
-  try {
-    const user = await User.findById(req.user.id);
-
-    if (!user) {
-      return res.status(404).json({ msg: 'User not found' });
+        res.json(user);
+    } catch (err) {
+        next(err);
     }
-
-    user.name = name || user.name;
-    user.bio = bio || user.bio;
-    user.interests = interests || user.interests;
-    user.avatar_key = avatar_key || user.avatar_key;
-    user.socialLinks = socialLinks || user.socialLinks;
-
-    await user.save();
-
-    res.json(user);
-  } catch (err) {
-    console.error(err.message);
-    res.status(500).send('Server Error');
-  }
 };
 
-const getUserById = async (req, res) => {
-  try {
-    const user = await User.findById(req.params.id).select('-password').lean(); // Use .lean() for plain JS object
-    if (!user) {
-      return res.status(404).json({ msg: 'User not found' });
+const updateUserTheme = async (req, res, next) => {
+    const { theme } = req.body;
+    if (!['light', 'dark'].includes(theme)) {
+        return res.status(400).json({ message: 'Invalid theme' });
     }
-    if (user.avatar_key) {
-      user.avatar = getFileUrl(user.avatar_key); // Add full avatar URL
+
+    try {
+        const user = await User.findByIdAndUpdate(req.user.id, { theme }, { new: true }).select(
+            '-password',
+        );
+
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        res.json(user);
+    } catch (err) {
+        next(err);
     }
-    // Manually map _id to id (as a string) to match frontend Type
-    user.id = user._id.toString();
-    delete user._id;
-    
-    res.json(user);
-  } catch (err) {
-    console.error(err.message);
-    if (err.kind === 'ObjectId') {
-      return res.status(404).json({ msg: 'User not found' });
-    }
-    res.status(500).send('Server Error');
-  }
 };
 
-const verifyAndRegister = async (req, res) => {
-  const { email, verificationCode } = req.body;
+const updateProfile = async (req, res, next) => {
+    const { name, bio, interests, avatar_key, socialLinks } = req.body;
 
-  try {
-    const user = await User.findOne({
-      email,
-      verificationCode: verificationCode,
-      verificationCodeExpires: { $gt: Date.now() },
-    });
+    try {
+        const user = await User.findById(req.user.id);
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
 
-    if (!user) {
-      return res.status(400).json({ msg: 'Invalid verification code or it has expired.' });
+        if (name !== undefined) {
+            user.name = name;
+        }
+        if (bio !== undefined) {
+            user.bio = bio;
+        }
+        if (interests !== undefined) {
+            user.interests = interests;
+        }
+        if (avatar_key !== undefined) {
+            user.avatar_key = avatar_key;
+        }
+        if (socialLinks !== undefined) {
+            user.socialLinks = socialLinks;
+        }
+
+        await user.save();
+        const userObj = user.toObject();
+        delete userObj.password;
+        res.json(userObj);
+    } catch (err) {
+        next(err);
     }
-
-    // If code is valid, finalize registration
-    user.isVerified = true;
-    user.verificationCode = undefined;
-    user.verificationCodeExpires = undefined;
-    await user.save();
-
-    // Log in the user after successful registration
-    const payload = {
-      user: {
-        id: user.id,
-      },
-    };
-
-    jwt.sign(
-      payload,
-      process.env.JWT_SECRET || 'my_jwt_secret',
-      { expiresIn: 360000 },
-      (err, token) => {
-        if (err) throw err;
-        res.json({ token, user });
-      }
-    );
-
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: 'Server error', error: err.message });
-  }
 };
 
-const forgotPassword = async (req, res) => {
-  const { email } = req.body;
+const getUserById = async (req, res, next) => {
+    try {
+        const user = await User.findById(req.params.id).select('-password').lean();
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+        if (user.avatar_key) {
+            user.avatar = getFileUrl(user.avatar_key);
+        }
+        user.id = user._id.toString();
+        delete user._id;
 
-  try {
-    const user = await User.findOne({ email });
-    if (!user) {
-      // To prevent user enumeration, we send a generic success message even if the user doesn't exist.
-      return res.status(200).json({ msg: 'If a user with that email exists, a password reset code has been sent.' });
+        res.json(user);
+    } catch (err) {
+        next(err);
     }
-
-    // Generate a 6-digit password reset code
-    const resetCode = Math.floor(100000 + Math.random() * 900000).toString();
-    user.passwordResetCode = resetCode;
-    user.passwordResetExpires = Date.now() + 600000; // 10 minutes
-
-    await user.save();
-
-    // Send password reset code email
-    await sendPasswordResetCodeEmail(user.email, user.name, resetCode);
-
-    res.status(200).json({ msg: 'A password reset code has been sent to your email.' });
-
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: 'Server error', error: err.message });
-  }
 };
 
-const resetPassword = async (req, res) => {
-  const { code, password } = req.body;
+const verifyAndRegister = async (req, res, next) => {
+    const { email, verificationCode } = req.body;
 
-  try {
-    const user = await User.findOne({
-      passwordResetCode: code,
-      passwordResetExpires: { $gt: Date.now() },
-    });
+    try {
+        const user = await User.findOne({
+            email,
+            verificationCode: verificationCode,
+            verificationCodeExpires: { $gt: Date.now() },
+        });
 
-    if (!user) {
-      return res.status(400).json({ msg: 'Invalid reset code or it has expired.' });
+        if (!user) {
+            return res
+                .status(400)
+                .json({ message: 'Invalid verification code or it has expired.' });
+        }
+
+        user.isVerified = true;
+        user.verificationCode = undefined;
+        user.verificationCodeExpires = undefined;
+        await user.save();
+
+        const payload = { user: { id: user.id } };
+        const token = jwt.sign(payload, config.jwt.secret, { expiresIn: config.jwt.expiresIn });
+
+        const userObj = user.toObject();
+        delete userObj.password;
+        res.json({ token, user: userObj });
+    } catch (err) {
+        next(err);
     }
-
-    // Hash the new password
-    const salt = await bcrypt.genSalt(10);
-    user.password = await bcrypt.hash(password, salt);
-
-    // Clear the password reset fields
-    user.passwordResetCode = undefined;
-    user.passwordResetExpires = undefined;
-
-    await user.save();
-
-    res.status(200).json({ msg: 'Password has been reset successfully.' });
-
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: 'Server error', error: err.message });
-  }
 };
 
-module.exports = { sendVerificationCode, verifyAndRegister, login, getMe, updateUserTheme, updateProfile, getUserById, forgotPassword, resetPassword };
+const forgotPassword = async (req, res, next) => {
+    const { email } = req.body;
+
+    try {
+        const user = await User.findOne({ email });
+        if (!user) {
+            return res
+                .status(200)
+                .json({
+                    message:
+                        'If a user with that email exists, a password reset code has been sent.',
+                });
+        }
+
+        const resetCode = generateSecureCode();
+        user.passwordResetCode = resetCode;
+        user.passwordResetExpires = Date.now() + 600000;
+
+        await user.save();
+        await sendPasswordResetCodeEmail(user.email, user.name, resetCode);
+
+        res.status(200).json({ message: 'A password reset code has been sent to your email.' });
+    } catch (err) {
+        next(err);
+    }
+};
+
+const resetPassword = async (req, res, next) => {
+    const { code, password } = req.body;
+
+    try {
+        const user = await User.findOne({
+            passwordResetCode: code,
+            passwordResetExpires: { $gt: Date.now() },
+        });
+
+        if (!user) {
+            return res.status(400).json({ message: 'Invalid reset code or it has expired.' });
+        }
+
+        const salt = await bcrypt.genSalt(10);
+        user.password = await bcrypt.hash(password, salt);
+        user.passwordResetCode = undefined;
+        user.passwordResetExpires = undefined;
+
+        await user.save();
+        res.status(200).json({ message: 'Password has been reset successfully.' });
+    } catch (err) {
+        next(err);
+    }
+};
+
+module.exports = {
+    sendVerificationCode,
+    verifyAndRegister,
+    login,
+    getMe,
+    updateUserTheme,
+    updateProfile,
+    getUserById,
+    forgotPassword,
+    resetPassword,
+};

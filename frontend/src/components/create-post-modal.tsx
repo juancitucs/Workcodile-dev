@@ -47,7 +47,6 @@ const uploadFiles = async (files: File[]): Promise<(Omit<FileAttachment, 'id'> &
   const uploadPromises = files.map(async (file) => {
     const formData = new FormData();
     const sanitizedFilename = sanitizeFilename(file.name);
-    console.log(`Uploading file: ${file.name} as ${sanitizedFilename}`);
     formData.append('file', file, sanitizedFilename);
 
     try {
@@ -58,8 +57,6 @@ const uploadFiles = async (files: File[]): Promise<(Omit<FileAttachment, 'id'> &
         },
         body: formData,
       });
-
-      console.log('Upload response:', response);
 
       if (!response.ok) {
         throw new Error(`Error uploading file: ${file.name}`);

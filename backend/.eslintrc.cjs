@@ -1,14 +1,21 @@
 module.exports = {
   env: {
-    browser: true,
+    node: true,
     commonjs: true,
     es2021: true,
-    node: true,
+    jest: true,
   },
-  extends: ['eslint:recommended', 'prettier'],
-  overrides: [],
+  extends: ['eslint:recommended'],
   parserOptions: {
     ecmaVersion: 'latest',
   },
-  rules: {},
+  rules: {
+    'no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
+    'no-console': 'off',
+    'eqeqeq': ['error', 'always'],
+    'curly': ['error', 'all'],
+    'no-var': 'error',
+    'prefer-const': 'error',
+    'no-throw-literal': 'error',
+  },
 }

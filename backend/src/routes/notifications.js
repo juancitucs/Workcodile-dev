@@ -1,21 +1,18 @@
 const express = require('express');
 const router = express.Router();
-const { getNotifications, markAsRead, markAllAsRead } = require('../controllers/notificationController');
+const { param } = require('express-validator');
+const {
+    getNotifications,
+    markAsRead,
+    markAllAsRead,
+} = require('../controllers/notificationController');
 const auth = require('../middleware/authMiddleware');
+const validate = require('../middleware/validate');
 
-// @route   GET api/notifications
-// @desc    Get user notifications
-// @access  Private
+const notifIdParam = [param('id').isMongoId().withMessage('Invalid notification ID')];
+
 router.get('/', auth, getNotifications);
-
-// @route   PUT api/notifications/read/all
-// @desc    Mark all notifications as read
-// @access  Private
 router.put('/read/all', auth, markAllAsRead);
-
-// @route   PUT api/notifications/:id/read
-// @desc    Mark notification as read
-// @access  Private
-router.put('/:id/read', auth, markAsRead);
+router.put('/:id/read', auth, notifIdParam, validate, markAsRead);
 
 module.exports = router;
