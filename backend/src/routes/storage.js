@@ -1,11 +1,16 @@
-const express = require('express')
-const { uploadMiddleware, uploadHandler, getFileHandler, deleteHandler } = require('../controllers/storageController')
-const authMiddleware = require('../middleware/authMiddleware')
+const express = require('express');
+const {
+    uploadMiddleware,
+    uploadHandler,
+    getFileHandler,
+    deleteHandler,
+} = require('../controllers/storageController');
+const authMiddleware = require('../middleware/authMiddleware');
 
-const router = express.Router()
+const router = express.Router();
 
-router.post('/', authMiddleware, uploadMiddleware, uploadHandler)
-router.get('/:name', getFileHandler)
-router.delete('/:name', authMiddleware, deleteHandler)
+router.post('/', authMiddleware, uploadMiddleware, uploadHandler);
+router.get('/:name', getFileHandler);
+router.delete('/:name', authMiddleware, deleteHandler);
 
-module.exports = router
+module.exports = router;

@@ -1,5 +1,5 @@
 function getVerificationCodeHTML(name, verificationCode) {
-  return `
+    return `
     <div style="font-family: sans-serif; padding: 20px; color: #333;">
       <h2>¡Bienvenido a WorkCodile, ${name}!</h2>
       <p>Gracias por registrarte. Usa el siguiente código para verificar tu cuenta:</p>
@@ -8,11 +8,11 @@ function getVerificationCodeHTML(name, verificationCode) {
       <p>Si no te registraste en WorkCodile, por favor ignora este mensaje.</p>
       <p>— El equipo de WorkCodile</p>
     </div>
-  `
+  `;
 }
 
 function getPasswordResetCodeEmailHTML(name, resetCode) {
-  return `
+    return `
     <div style="font-family: sans-serif; padding: 20px; color: #333;">
       <h2>Recuperación de Contraseña de WorkCodile</h2>
       <p>Hola, ${name}.</p>
@@ -22,7 +22,7 @@ function getPasswordResetCodeEmailHTML(name, resetCode) {
       <p>Si no solicitaste un restablecimiento de contraseña, puedes ignorar este correo de forma segura.</p>
       <p>— El equipo de WorkCodile</p>
     </div>
-  `
+  `;
 }
 
-module.exports = { getVerificationCodeHTML, getPasswordResetCodeEmailHTML }
+module.exports = { getVerificationCodeHTML, getPasswordResetCodeEmailHTML };

@@ -1,190 +1,127 @@
 {
-  "collections": {
-    "users": {
-      "description": "Stores user account information and profile details.",
-      "schema": {
-        "_id": "ObjectId",
-        "name": "String",
-        "email": "String (Unique, Indexed)",
-        "emailVerified": "Boolean",
-        "password": "String (Hashed)",
-        "avatar_key": "String (S3 Object Key)",
-        "bio": "String",
-        "role": "String ('student' | 'moderator' | 'admin')",
-        "cycle": "Number",
-        "interests": ["String"],
-        "bookmarked_posts": ["ObjectId (ref: 'posts')"],
-        "createdAt": "Date",
-        "updatedAt": "Date"
-      },
-      "sample_document": {
-        "_id": "ObjectId('60d5ec49f5a2b1a2c8d3e8f1')",
-        "name": "Ana García",
-        "email": "ana.garcia@unam.edu.pe",
-        "password": "$2b$12$KqL6b8d2e...hashed_password_example",
-        "avatar_key": "avatars/60d5ec49f5a2b1a2c8d3e8f1.jpg",
-        "bio": "Estudiante de Ingeniería de Sistemas apasionada por el desarrollo web y la inteligencia artificial.",
-        "cycle": 5,
-        "interests": ["Programación", "Bases de datos", "Desarrollo web"],
-        "bookmarked_posts": ["ObjectId('60d5ec49f5a2b1a2c8d3e8f3')"],
-        "createdAt": "2024-01-10T10:00:00Z",
-        "updatedAt": "2024-01-10T10:00:00Z"
-      }
-    },
-    "courses": {
-      "description": "Stores the list of available courses. This is mostly static data.",
-      "schema": {
-        "_id": "ObjectId",
-        "course_id": "String (Unique, Indexed)",
-        "name": "String",
-        "cycle": "Number"
-      },
-      "sample_document": {
-        "_id": "ObjectId('60d5ec49f5a2b1a2c8d3e9a1')",
-        "course_id": "IS-226",
-        "name": "MATEMATICA II",
-        "cycle": 2
-      }
-    },
-    "posts": {
-      "description": "Main collection for all posts. Comments are embedded. Votes and ratings include counts for quick reads and arrays for validation.",
-      "schema": {
-        "_id": "ObjectId",
-        "title": "String",
-        "content": "String",
-        "author_id": "ObjectId (ref: 'users')",
-        "course_id": "ObjectId (ref: 'courses', Indexed)",
-        "createdAt": "Date",
-        "updatedAt": "Date",
-        "hashtags": ["String"],
-        "attachments": [
-          {
-            "name": "String",
-            "size": "Number",
-            "type": "String",
-            "object_key": "String (S3 Object Key)"
-          }
-        ],
-        "views": "Number",
-        "upvote_count": "Number",
-        "downvote_count": "Number",
-        "votes": [
-          {
-            "user_id": "ObjectId (ref: 'users')",
-            "type": "String ('up' or 'down')"
-          }
-        ],
-        "average_rating": "Number",
-        "total_ratings": "Number",
-        "ratings": [
-          { "user_id": "ObjectId (ref: 'users')", "value": "Number (1-5)" }
-        ],
-
-        "comments": [
-          {
-            "_id": "ObjectId",
-            "content": "String",
-            "author_id": "ObjectId (ref: 'users')",
-            "createdAt": "Date",
-            "updatedAt": "Date",
-            "score": "Number",
-            "votes": [
-              {
-                "user_id": "ObjectId (ref: 'users')",
-                "type": "String ('up' or 'down')"
-              }
-            ],
-            "replies": "Array (recursive structure of comment documents)"
-          }
-        ]
-      },
-      "sample_document": {
-        "_id": "ObjectId('60d5ec49f5a2b1a2c8d3e8f2')",
-        "title": "🔍 Busco tutor para Matemática II",
-        "content": "Hola estudiantes de UNAM! Necesito ayuda con Matemática II...",
-        "author_id": "ObjectId('60d5ec49f5a2b1a2c8d3e8f1')",
-        "course_id": "ObjectId('60d5ec49f5a2b1a2c8d3e9a1')",
-        "createdAt": "2024-01-15T10:30:00Z",
-        "updatedAt": "2024-01-15T10:30:00Z",
-        "hashtags": ["tutoría", "matemática", "ayuda"],
-        "attachments": [
-          {
-            "name": "Guia de integrales.pdf",
-            "size": 2097152,
-            "type": "application/pdf",
-            "object_key": "attachments/60d5ec49f5a2b1a2c8d3e8f2/guia_integrales.pdf"
-          }
-        ],
-        "views": 156,
-        "upvote_count": 12,
-        "downvote_count": 1,
-        "votes": [
-          { "user_id": "ObjectId('60d5ec49f5a2b1a2c8d3e8f4')", "type": "up" }
-        ],
-        "average_rating": 4.2,
-        "total_ratings": 8,
-        "ratings": [
-          { "user_id": "ObjectId('60d5ec49f5a2b1a2c8d3e8f4')", "value": 5 }
-        ],
-        "comments": [
-          {
-            "_id": "ObjectId('60d5ec49f5a2b1a2c8d3e8f5')",
-            "content": "Hola Ana! Yo puedo ayudarte...",
-            "author_id": "ObjectId('60d5ec49f5a2b1a2c8d3e8f4')",
-            "createdAt": "2024-01-15T11:00:00Z",
-            "updatedAt": "2024-01-15T11:00:00Z",
-            "score": 3,
-            "votes": [],
-            "replies": []
-          }
-        ]
-      }
-    },
-    "achievements": {
-      "description": "Definitions for all available achievements in the system.",
-      "schema": {
-        "_id": "ObjectId",
-        "achievement_id": "String (e.g., 'first-post')",
-        "title": "String",
-        "description": "String",
-        "category": "String ('posting', 'social', 'engagement', 'special')",
-        "rarity": "String ('common', 'rare', 'epic', 'legendary')",
-        "icon": "String (S3 key or URL)",
-        "visible": "Boolean",
-        "maxProgress": "Number",
-        "reward_points": "Number",
-        "reward_badge": "String"
-      },
-      "sample_document": {
-        "_id": "ObjectId('60d5ec49f5a2b1a2c8d3e8a1')",
-        "achievement_id": "social-butterfly",
-        "title": "Mariposa Social",
-        "description": "Recibir 50 upvotes en tus publicaciones",
-        "category": "social",
-        "rarity": "rare",
-        "maxProgress": 50,
-        "reward_points": 50,
-        "reward_badge": "Popular"
-      }
-    },
-    "user_achievements": {
-      "description": "Tracks the progress of each user towards unlocking achievements.",
-      "schema": {
-        "_id": "ObjectId",
-        "user_id": "ObjectId (ref: 'users')",
-        "achievement_id": "ObjectId (ref: 'achievements')",
-        "progress": "Number",
-        "unlocked": "Boolean",
-        "unlockedAt": "Date"
-      },
-      "sample_document": {
-        "_id": "ObjectId('60d5ec49f5a2b1a2c8d3e8b1')",
-        "user_id": "ObjectId('60d5ec49f5a2b1a2c8d3e8f1')",
-        "achievement_id": "ObjectId('60d5ec49f5a2b1a2c8d3e8a1')",
-        "progress": 23,
-        "unlocked": false,
-        "unlockedAt": null
-      }
+    "collections": {
+        "users": {
+            "description": "Stores user account information, profile, XP system, and settings.",
+            "schema": {
+                "_id": "ObjectId",
+                "name": "String (required)",
+                "email": "String (required, unique, indexed)",
+                "password": "String (required, hashed with bcrypt)",
+                "isVerified": "Boolean (default: false)",
+                "verificationCode": "String (6-digit code for email verification)",
+                "verificationCodeExpires": "Date (10 min expiry)",
+                "passwordResetCode": "String (6-digit code for password reset)",
+                "passwordResetExpires": "Date (10 min expiry)",
+                "avatar_key": "String (S3/MinIO object key)",
+                "bio": "String (max 500 chars)",
+                "role": "String (enum: 'student' | 'moderator' | 'admin', default: 'student')",
+                "interests": "[String]",
+                "socialLinks": "[{ name: String, url: String }]",
+                "bookmarked_posts": "[ObjectId (ref: 'posts')]",
+                "xp": "Number (default: 0)",
+                "level": "Number (default: 1, calculated from XP)",
+                "stats": {
+                    "totalPosts": "Number (default: 0)",
+                    "totalComments": "Number (default: 0)",
+                    "totalLikesReceived": "Number (default: 0)",
+                    "totalLikesGiven": "Number (default: 0)"
+                },
+                "badges": "[{ badgeId: String, unlockedAt: Date }]",
+                "theme": "String (enum: 'light' | 'dark', default: 'light')",
+                "completedCourses": "[String (ref: 'courses')]",
+                "createdAt": "Date (auto)",
+                "updatedAt": "Date (auto)"
+            }
+        },
+        "courses": {
+            "description": "Stores available courses. Mostly static data.",
+            "schema": {
+                "_id": "String (course code, e.g. 'IS-121')",
+                "name": "String (required)",
+                "cycle": "Number (required, 1-10)"
+            }
+        },
+        "posts": {
+            "description": "Posts with embedded comments. Uses aggregation pipeline for author population.",
+            "schema": {
+                "_id": "ObjectId",
+                "title": "String (required, max 200)",
+                "content": "String (required, max 10000)",
+                "author": "ObjectId (ref: 'users', required, indexed)",
+                "course_id": "String (required, indexed)",
+                "hashtags": "[String]",
+                "attachments": "[{ name: String, size: Number, type: String, object_key: String }]",
+                "createdAt": "Date (indexed)",
+                "updatedAt": "Date",
+                "views": "Number (default: 0)",
+                "viewed_by": "[ObjectId (ref: 'users')]",
+                "upvoted_by": "[ObjectId (ref: 'users')]",
+                "downvoted_by": "[ObjectId (ref: 'users')]",
+                "upvote_count": "Number (default: 0)",
+                "downvote_count": "Number (default: 0)",
+                "comments": "[CommentSchema (embedded)]",
+                "timestamps": true
+            },
+            "comment_schema": {
+                "_id": "ObjectId",
+                "author": "ObjectId (ref: 'users', required)",
+                "content": "String (required)",
+                "createdAt": "Date",
+                "score": "Number (default: 0)",
+                "upvoted_by": "[ObjectId]",
+                "downvoted_by": "[ObjectId]",
+                "attachments": "[AttachmentSchema]",
+                "replies": "[ReplySchema (recursive)]",
+                "parentId": "ObjectId (null for root comments)"
+            }
+        },
+        "notifications": {
+            "description": "User notifications for votes, comments, mentions.",
+            "schema": {
+                "_id": "ObjectId",
+                "user": "ObjectId (ref: 'users', required)",
+                "text": "String (required)",
+                "link": "String (route path)",
+                "read": "Boolean (default: false)",
+                "createdAt": "Date"
+            }
+        },
+        "settings": {
+            "description": "Per-user settings for notifications, privacy, display.",
+            "schema": {
+                "_id": "ObjectId",
+                "user": "ObjectId (ref: 'users', required, unique)",
+                "notifications": {
+                    "email": "Boolean (default: true)",
+                    "push": "Boolean (default: true)",
+                    "comments": "Boolean (default: true)",
+                    "mentions": "Boolean (default: true)",
+                    "votes": "Boolean (default: false)"
+                },
+                "privacy": {
+                    "profileVisibility": "String (enum: 'public' | 'students' | 'private', default: 'public')",
+                    "showEmail": "Boolean (default: false)",
+                    "showStats": "Boolean (default: true)",
+                    "allowMessages": "Boolean (default: true)"
+                },
+                "display": {
+                    "postsPerPage": "Number (default: 10)"
+                },
+                "sound": {
+                    "enabled": "Boolean (default: true)",
+                    "volume": "Number (default: 50)"
+                }
+            }
+        },
+        "reports": {
+            "description": "Post reports from users.",
+            "schema": {
+                "_id": "ObjectId",
+                "post": "ObjectId (ref: 'posts', required)",
+                "user": "ObjectId (ref: 'users', required)",
+                "reason": "String (required)",
+                "createdAt": "Date"
+            }
+        }
     }
-  }
 }
