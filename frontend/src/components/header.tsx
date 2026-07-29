@@ -26,8 +26,7 @@ import {
   Sun,
   User,
   Home,
-  TreePine,
-  Star
+  TreePine
 } from 'lucide-react';
 
 interface HeaderProps {

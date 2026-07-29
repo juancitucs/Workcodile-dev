@@ -1,13 +1,5 @@
 import { useState } from 'react'
-import { motion } from 'motion/react'
 import { Button } from './ui/button'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-  DropdownMenuSeparator,
-} from './ui/dropdown-menu'
 import {
   Dialog,
   DialogContent,
@@ -19,16 +11,11 @@ import {
 import { toast } from 'sonner'
 import {
   Share2,
-  Bookmark,
-  BookmarkCheck,
-  Flag,
   Copy,
   Facebook,
   Twitter,
   MessageCircle,
   Eye,
-  Calendar,
-  MoreHorizontal,
   ExternalLink,
 } from 'lucide-react'
 

@@ -11,7 +11,7 @@ export const autoSpaceInsertion = (text: string, maxLength: number = 20): string
     let mentionIndex = 0;
 
     // Replace mentions with placeholders
-    let processedText = text.replace(/@"[^"]+"/g, (match) => {
+    const processedText = text.replace(/@"[^"]+"/g, (match) => {
         const placeholder = `__MENTION_${mentionIndex}__`;
         mentions.push({ placeholder, original: match });
         mentionIndex++;

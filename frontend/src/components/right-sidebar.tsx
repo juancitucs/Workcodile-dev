@@ -7,9 +7,7 @@ import { EventsModal } from './events-modal';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from './ui/accordion';
 import { Activity, MessageSquare, Trophy, BookOpen, Calendar, ChevronRight } from 'lucide-react';
 import { Button } from './ui/button';
-import { Link } from 'react-router-dom';
 import { memo } from 'react';
-import { useApp } from './app-context';
 
 /**
  * MOCK DATA - Eventos próximos
@@ -47,8 +45,6 @@ const GUIDE_LINKS = [
 ];
 
 export const RightSidebar = memo(function RightSidebar() {
-  const { christmasTheme } = useApp();
-
   return (
     <div className="space-y-4">
       {/* All Collapsible Sections */}

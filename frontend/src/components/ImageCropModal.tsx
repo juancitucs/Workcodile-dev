@@ -23,21 +23,6 @@ export function ImageCropModal({ image, isOpen, onClose, onCropComplete }: Image
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const imageRef = useRef<HTMLImageElement>(null);
 
-    useEffect(() => {
-        if (isOpen && image) {
-            const img = new Image();
-            img.onload = () => {
-                imageRef.current = img;
-                drawImage();
-            };
-            img.src = image;
-        }
-    }, [isOpen, image]);
-
-    useEffect(() => {
-        drawImage();
-    }, [zoom, rotation, position]);
-
     const drawImage = () => {
         const canvas = canvasRef.current;
         const img = imageRef.current;
@@ -66,20 +51,33 @@ export function ImageCropModal({ image, isOpen, onClose, onCropComplete }: Image
         ctx.drawImage(img, x, y, img.width * scale, img.height * scale);
         ctx.restore();
 
-        // Draw circular mask
         ctx.globalCompositeOperation = 'destination-in';
         ctx.beginPath();
         ctx.arc(size / 2, size / 2, size / 2, 0, Math.PI * 2);
         ctx.fill();
         ctx.globalCompositeOperation = 'source-over';
 
-        // Draw circle border
         ctx.strokeStyle = '#fff';
         ctx.lineWidth = 2;
         ctx.beginPath();
         ctx.arc(size / 2, size / 2, size / 2 - 1, 0, Math.PI * 2);
         ctx.stroke();
     };
+
+    useEffect(() => {
+        if (isOpen && image) {
+            const img = new Image();
+            img.onload = () => {
+                imageRef.current = img;
+                drawImage();
+            };
+            img.src = image;
+        }
+    }, [isOpen, image]);
+
+    useEffect(() => {
+        drawImage();
+    }, [zoom, rotation, position]);
 
     const handleMouseDown = (e: React.MouseEvent) => {
         setIsDragging(true);
@@ -140,7 +138,6 @@ export function ImageCropModal({ image, isOpen, onClose, onCropComplete }: Image
                 </DialogHeader>
 
                 <div className="space-y-3">
-                    {/* Canvas Area */}
                     <div className="flex justify-center">
                         <canvas
                             ref={canvasRef}
@@ -156,7 +153,6 @@ export function ImageCropModal({ image, isOpen, onClose, onCropComplete }: Image
                         />
                     </div>
 
-                    {/* Zoom Control */}
                     <div className="space-y-2">
                         <Label></Label>
                         <Slider
@@ -169,9 +165,8 @@ export function ImageCropModal({ image, isOpen, onClose, onCropComplete }: Image
                         />
                     </div>
 
-                    {/* Rotate Button */}
                     <div className="flex items-center justify-between">
-                        <Label>Rotación</Label>
+                        <Label>Rotacion</Label>
                         <Button
                             variant="outline"
                             size="sm"
@@ -179,7 +174,7 @@ export function ImageCropModal({ image, isOpen, onClose, onCropComplete }: Image
                             className="flex items-center gap-2"
                         >
                             <RotateCw className="h-4 w-4" />
-                            Rotar 90°
+                            Rotar 90
                         </Button>
                     </div>
                 </div>

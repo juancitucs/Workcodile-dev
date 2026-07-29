@@ -1,25 +1,16 @@
 import { useState, useMemo, forwardRef, memo, useDeferredValue } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
-import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
+import { Card, CardContent } from './ui/card';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
-import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { useApp } from './app-context';
-import { WorkCodileLogo } from './crocodile-icon';
 import {
-  Clock,
-  MessageSquare,
   Plus,
-  Star,
   TrendingUp,
-  TrendingDown,
-  FileText,
-  Hash,
   ChevronRight,
   Activity,
-  Zap
 } from 'lucide-react';
 
 interface RecentActivityProps {

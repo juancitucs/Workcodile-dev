@@ -15,70 +15,13 @@ import { MentionsInput, Mention } from 'react-mentions';
 import mentionsInputStyle from './mentions-input-style';
 import { useMediaQuery } from '../hooks/useMediaQuery';
 import { autoSpaceInsertion } from '../utils/text-utils';
+import { uploadFiles } from './upload-helpers';
 
 
 interface CreatePostModalProps {
   isOpen: boolean;
   onClose: () => void;
 }
-
-const sanitizeFilename = (filename: string): string => {
-  const lastDot = filename.lastIndexOf('.');
-  const filenameBody = lastDot === -1 ? filename : filename.substring(0, lastDot);
-  const extension = lastDot === -1 ? '' : filename.substring(lastDot);
-
-  // Replace all invalid characters with a single underscore
-  let sanitized = filenameBody.replace(/[^a-zA-Z0-9_-]+/g, '_');
-
-  // Remove leading and trailing underscores
-  sanitized = sanitized.replace(/^_+|_+$/g, '');
-
-  // If the name is empty after sanitization (e.g., "!!.txt"), use a default name
-  if (!sanitized) {
-    sanitized = 'file';
-  }
-
-  return sanitized + extension;
-};
-
-const API_BASE_URL = import.meta.env.VITE_API_URL || '';
-
-const uploadFiles = async (files: File[]): Promise<(Omit<FileAttachment, 'id'> & { object_key: string })[]> => {
-  const uploadPromises = files.map(async (file) => {
-    const formData = new FormData();
-    const sanitizedFilename = sanitizeFilename(file.name);
-    formData.append('file', file, sanitizedFilename);
-
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/storage`, {
-        method: 'POST',
-        headers: {
-          'x-auth-token': localStorage.getItem('token') || '',
-        },
-        body: formData,
-      });
-
-      if (!response.ok) {
-        throw new Error(`Error uploading file: ${file.name}`);
-      }
-
-      const result = await response.json();
-      return {
-        name: file.name,
-        size: file.size,
-        type: file.type,
-        object_key: result.objectName,
-      };
-    } catch (error) {
-      console.error(error);
-      // You might want to handle this more gracefully
-      return null;
-    }
-  });
-
-  const results = await Promise.all(uploadPromises);
-  return results.filter((result): result is (Omit<FileAttachment, 'id'> & { object_key: string }) => result !== null);
-};
 
 export function CreatePostModal({ isOpen, onClose }: CreatePostModalProps) {
   const { createPost, courses, getCoursesByCycle } = useApp();

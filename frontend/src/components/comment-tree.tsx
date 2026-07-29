@@ -1,4 +1,3 @@
-import { memo } from 'react';
 import { Comment } from './comment';
 
 interface CommentTreeProps {
