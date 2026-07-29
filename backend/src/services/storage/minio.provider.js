@@ -33,6 +33,27 @@ async function ensureBucketExists() {
             throw error;
         }
     }
+
+    try {
+        const policy = {
+            Version: '2012-10-17',
+            Statement: [
+                {
+                    Sid: 'PublicReadGetObject',
+                    Effect: 'Allow',
+                    Principal: '*',
+                    Action: ['s3:GetObject'],
+                    Resource: [`arn:aws:s3:::${MINIO_BUCKET_NAME}/*`],
+                },
+            ],
+        };
+        await s3.putBucketPolicy({
+            Bucket: MINIO_BUCKET_NAME,
+            Policy: JSON.stringify(policy),
+        }).promise();
+    } catch (policyErr) {
+        console.warn('Could not set public bucket policy on MinIO:', policyErr.message);
+    }
 }
 
 async function uploadFile(objectName, fileBuffer, mimetype) {

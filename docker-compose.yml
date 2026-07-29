@@ -40,7 +40,8 @@ services:
     entrypoint: >
       sh -c "
       mc alias set local http://minio:9000 ${MINIO_ACCESS_KEY:-minioadmin} ${MINIO_SECRET_KEY:-minioadmin123} &&
-      mc anonymous set public local/${MINIO_BUCKET_NAME:-workcodile-files} &&
+      mc mb --ignore-existing local/${MINIO_BUCKET_NAME:-workcodile-files} &&
+      mc anonymous set download local/${MINIO_BUCKET_NAME:-workcodile-files} &&
       mc admin config set local/ api cors_allow_origin='*' &&
       mc admin service restart local/ &&
       echo 'MinIO setup complete'
