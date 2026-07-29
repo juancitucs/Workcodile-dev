@@ -1,5 +1,5 @@
 import { motion } from 'motion/react';
-import { WorkCodileLogo } from './crocodile-icon';
+import { WorkCodileLogo } from './workcodile-logo';
 import { Card } from './ui/card';
 import { Skeleton } from './ui/skeleton';
 

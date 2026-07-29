@@ -13,7 +13,7 @@ import {
 import { useApp } from './app-context';
 import { UserProfile } from './user-profile';
 import { Settings } from './settings';
-import { WorkCodileLogo } from './crocodile-icon';
+import { WorkCodileLogo } from './workcodile-logo';
 import { EnhancedNotifications } from './enhanced-notifications';
 import {
   Menu,

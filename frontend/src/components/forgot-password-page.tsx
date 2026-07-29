@@ -5,7 +5,7 @@ import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { useApp } from './app-context';
-import { WorkCodileLogo } from './crocodile-icon';
+import { WorkCodileLogo } from './workcodile-logo';
 import { Loader2 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 

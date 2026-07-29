@@ -6,7 +6,7 @@ import { Label } from './ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { useApp } from './app-context';
-import { WorkCodileLogo } from './crocodile-icon';
+import { WorkCodileLogo } from './workcodile-logo';
 import { Loader2, GraduationCap, Users, BrainCircuit, Eye, EyeOff, Check, X } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from './ui/dialog'; // Added for code verification dialog
 import { Link } from 'react-router-dom';
