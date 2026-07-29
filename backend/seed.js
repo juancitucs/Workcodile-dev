@@ -3,6 +3,11 @@ const mongoose = require('mongoose');
 const bcrypt = require('bcrypt');
 
 async function seed() {
+    if (config.nodeEnv === 'production') {
+        console.error('Refusing to seed in production');
+        process.exit(1);
+    }
+
     await mongoose.connect(config.mongo.uri);
     console.log('Connected to MongoDB');
 
@@ -18,7 +23,7 @@ async function seed() {
         userId = existingUser._id;
     } else {
         const salt = await bcrypt.genSalt(10);
-        const password = await bcrypt.hash('123456', salt);
+        const password = await bcrypt.hash('Test1234', salt);
         const user = await User.create({
             name: 'Usuario de Prueba',
             email: 'test@test.com',
@@ -28,7 +33,7 @@ async function seed() {
             role: 'student',
         });
         userId = user._id;
-        console.log('Seed user created: test@test.com / 123456');
+        console.log('Seed user created: test@test.com / Test1234');
     }
 
     // Seed courses

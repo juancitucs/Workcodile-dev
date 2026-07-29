@@ -299,6 +299,7 @@ async function handleVote(userId, post, voteType) {
     const alreadyDown = post.downvoted_by ? post.downvoted_by.some((id) => id.equals(uid)) : false;
 
     const collection = mongoose.connection.db.collection('posts');
+    let voteAdded = false;
 
     if (voteType === 'up') {
         if (alreadyUp) {
@@ -307,19 +308,16 @@ async function handleVote(userId, post, voteType) {
                 { $inc: { upvote_count: -1 }, $pull: { upvoted_by: uid } },
             );
         } else {
+            const update = { $inc: { upvote_count: 1 }, $addToSet: { upvoted_by: uid } };
             if (alreadyDown) {
-                await collection.updateOne(
-                    { _id: post._id },
-                    { $inc: { downvote_count: -1 }, $pull: { downvoted_by: uid } },
-                );
+                update.$inc.downvote_count = -1;
+                update.$pull = { downvoted_by: uid };
             }
+            await collection.updateOne({ _id: post._id }, update);
+            voteAdded = true;
             if (post.author.toString() !== userId) {
                 await xpService.addXP(post.author.toString(), 5, { totalLikesReceived: 1 });
             }
-            await collection.updateOne(
-                { _id: post._id },
-                { $inc: { upvote_count: 1 }, $push: { upvoted_by: uid } },
-            );
         }
     } else {
         if (alreadyDown) {
@@ -328,18 +326,17 @@ async function handleVote(userId, post, voteType) {
                 { $inc: { downvote_count: -1 }, $pull: { downvoted_by: uid } },
             );
         } else {
+            const update = { $inc: { downvote_count: 1 }, $addToSet: { downvoted_by: uid } };
             if (alreadyUp) {
-                await collection.updateOne(
-                    { _id: post._id },
-                    { $inc: { upvote_count: -1 }, $pull: { upvoted_by: uid } },
-                );
+                update.$inc.upvote_count = -1;
+                update.$pull = { upvoted_by: uid };
             }
-            await collection.updateOne(
-                { _id: post._id },
-                { $inc: { downvote_count: 1 }, $push: { downvoted_by: uid } },
-            );
+            await collection.updateOne({ _id: post._id }, update);
+            voteAdded = true;
         }
     }
+
+    return { voteAdded };
 }
 
 module.exports = {

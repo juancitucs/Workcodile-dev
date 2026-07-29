@@ -22,7 +22,7 @@ describe('Validators', () => {
                 const result = await runValidators(register, {
                     name: 'Test User',
                     email: 'test@example.com',
-                    password: '123456',
+                    password: 'Test1234',
                 });
                 expect(result.isEmpty()).toBe(true);
             });
@@ -30,7 +30,7 @@ describe('Validators', () => {
             it('should fail without name', async () => {
                 const result = await runValidators(register, {
                     email: 'test@example.com',
-                    password: '123456',
+                    password: 'Test1234',
                 });
                 expect(result.isEmpty()).toBe(false);
             });
@@ -39,7 +39,7 @@ describe('Validators', () => {
                 const result = await runValidators(register, {
                     name: 'Test',
                     email: 'not-an-email',
-                    password: '123456',
+                    password: 'Test1234',
                 });
                 expect(result.isEmpty()).toBe(false);
             });

@@ -1,3 +1,5 @@
+const config = require('../config/env');
+
 function errorHandler(err, req, res, _next) {
     console.error('[ERROR]', err);
 
@@ -13,8 +15,9 @@ function errorHandler(err, req, res, _next) {
         return res.status(409).json({ message: 'Duplicate key error' });
     }
 
+    const isProduction = config.nodeEnv === 'production';
     res.status(err.status || 500).json({
-        message: err.message || 'Server error',
+        message: isProduction ? 'Server error' : err.message || 'Server error',
     });
 }
 

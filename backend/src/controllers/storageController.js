@@ -13,7 +13,7 @@ async function uploadHandler(req, res, next) {
         }
 
         const safeName = path.basename(req.file.originalname).replace(/[^a-zA-Z0-9._-]/g, '_');
-        const objectName = `${Date.now()}-${safeName}`;
+        const objectName = `${req.user.id}-${Date.now()}-${safeName}`;
         const url = await uploadFile(objectName, req.file.buffer, req.file.mimetype);
 
         res.status(201).json({ objectName, url });
@@ -25,8 +25,9 @@ async function uploadHandler(req, res, next) {
 async function getFileHandler(req, res, next) {
     try {
         const { name } = req.params;
-        const stream = await getFileStream(name);
-        res.setHeader('Content-Disposition', `inline; filename="${name}"`);
+        const safeName = path.basename(name).replace(/[^a-zA-Z0-9._-]/g, '_');
+        const stream = await getFileStream(safeName);
+        res.setHeader('Content-Disposition', `inline; filename="${safeName}"`);
         stream.pipe(res);
     } catch (error) {
         next(error);
@@ -36,6 +37,14 @@ async function getFileHandler(req, res, next) {
 async function deleteHandler(req, res, next) {
     try {
         const { name } = req.params;
+        const safeName = path.basename(name).replace(/[^a-zA-Z0-9._-]/g, '_');
+        if (safeName !== name) {
+            return res.status(400).json({ message: 'Invalid file name.' });
+        }
+        const fileOwnerId = name.split('-')[0];
+        if (fileOwnerId !== req.user.id) {
+            return res.status(403).json({ message: 'Not authorized to delete this file.' });
+        }
         await deleteFile(name);
         res.json({ message: 'File deleted successfully.' });
     } catch (error) {

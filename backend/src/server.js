@@ -27,7 +27,16 @@ const limiter = rateLimit({
     message: { message: 'Too many requests, please try again later' },
 });
 
+const authLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 10,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { message: 'Too many authentication attempts, please try again later' },
+});
+
 app.use('/api/', limiter);
+app.use('/api/auth/', authLimiter);
 
 mongoose
     .connect(config.mongo.uri)

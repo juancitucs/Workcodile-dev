@@ -220,8 +220,10 @@ const votePost = async (req, res, next) => {
 
         const user = await User.findById(userId);
 
-        await postService.handleVote(userId, post, vote);
-        await xpService.addXP(userId, 1, { totalLikesGiven: 1 });
+        const { voteAdded } = await postService.handleVote(userId, post, vote);
+        if (voteAdded) {
+            await xpService.addXP(userId, 1, { totalLikesGiven: 1 });
+        }
 
         if (post.author.toString() !== userId) {
             await Notification.create({
@@ -314,6 +316,10 @@ const voteComment = async (req, res, next) => {
         const { vote } = req.body;
         const userId = new ObjectId(req.user.id);
 
+        if (!['up', 'down'].includes(vote)) {
+            return res.status(400).json({ message: 'Invalid vote type' });
+        }
+
         const post = await mongoose.connection.db
             .collection('posts')
             .findOne({ _id: new ObjectId(postId) });
@@ -329,62 +335,57 @@ const voteComment = async (req, res, next) => {
             return res.status(404).json({ message: 'Comment not found' });
         }
 
-        if (!commentToVote.upvoted_by) {
-            commentToVote.upvoted_by = [];
-        }
-        if (!commentToVote.downvoted_by) {
-            commentToVote.downvoted_by = [];
-        }
+        const hasUpvoted = commentToVote.upvoted_by
+            ? commentToVote.upvoted_by.some((id) => id.equals(userId))
+            : false;
+        const hasDownvoted = commentToVote.downvoted_by
+            ? commentToVote.downvoted_by.some((id) => id.equals(userId))
+            : false;
 
-        const upvoted = commentToVote.upvoted_by.some((id) => id.equals(userId));
-        const downvoted = commentToVote.downvoted_by.some((id) => id.equals(userId));
-
+        const update = {};
         if (vote === 'up') {
-            if (upvoted) {
-                commentToVote.score--;
-                commentToVote.upvoted_by = commentToVote.upvoted_by.filter(
-                    (id) => !id.equals(userId),
-                );
+            if (hasUpvoted) {
+                update.$inc = { 'comments.$.score': -1 };
+                update.$pull = { 'comments.$.upvoted_by': userId };
             } else {
-                commentToVote.score++;
-                commentToVote.upvoted_by.push(userId);
+                update.$inc = { 'comments.$.score': 1 };
+                update.$addToSet = { 'comments.$.upvoted_by': userId };
+                if (hasDownvoted) {
+                    update.$inc['comments.$.score'] += 1;
+                    update.$pull['comments.$.downvoted_by'] = userId;
+                }
                 if (commentToVote.author.toString() !== userId.toString()) {
                     await xpService.addXP(commentToVote.author.toString(), 2, {
                         totalLikesReceived: 1,
                     });
                 }
-                if (downvoted) {
-                    commentToVote.score++;
-                    commentToVote.downvoted_by = commentToVote.downvoted_by.filter(
-                        (id) => !id.equals(userId),
-                    );
-                }
-            }
-        } else if (vote === 'down') {
-            if (downvoted) {
-                commentToVote.score++;
-                commentToVote.downvoted_by = commentToVote.downvoted_by.filter(
-                    (id) => !id.equals(userId),
-                );
-            } else {
-                commentToVote.score--;
-                commentToVote.downvoted_by.push(userId);
-                if (upvoted) {
-                    commentToVote.score--;
-                    commentToVote.upvoted_by = commentToVote.upvoted_by.filter(
-                        (id) => !id.equals(userId),
-                    );
-                }
             }
         } else {
-            return res.status(400).json({ message: 'Invalid vote type' });
+            if (hasDownvoted) {
+                update.$inc = { 'comments.$.score': 1 };
+                update.$pull = { 'comments.$.downvoted_by': userId };
+            } else {
+                update.$inc = { 'comments.$.score': -1 };
+                update.$addToSet = { 'comments.$.downvoted_by': userId };
+                if (hasUpvoted) {
+                    update.$inc['comments.$.score'] -= 1;
+                    update.$pull['comments.$.upvoted_by'] = userId;
+                }
+            }
         }
 
         await mongoose.connection.db
             .collection('posts')
-            .updateOne({ _id: new ObjectId(postId) }, { $set: { comments: post.comments } });
+            .updateOne(
+                { _id: new ObjectId(postId), 'comments._id': new ObjectId(commentId) },
+                update,
+            );
 
-        await xpService.addXP(userId.toString(), 1, { totalLikesGiven: 1 });
+        if (!hasUpvoted && vote === 'up') {
+            await xpService.addXP(userId.toString(), 1, { totalLikesGiven: 1 });
+        } else if (!hasDownvoted && vote === 'down') {
+            await xpService.addXP(userId.toString(), 1, { totalLikesGiven: 1 });
+        }
 
         const updatedPost = await postService.getAggregatedPost(postId);
         postService.addUrlsToItems(updatedPost ? [updatedPost] : []);
@@ -444,9 +445,33 @@ const reportPost = async (req, res, next) => {
 const incrementView = async (req, res, next) => {
     try {
         const { id } = req.params;
-        await mongoose.connection.db
+        const userId = req.user ? req.user.id : null;
+
+        const post = await mongoose.connection.db
             .collection('posts')
-            .updateOne({ _id: new ObjectId(id) }, { $inc: { views: 1 } });
+            .findOne({ _id: new ObjectId(id) });
+        if (!post) {
+            return res.status(404).json({ message: 'Post not found' });
+        }
+
+        if (userId) {
+            const alreadyViewed =
+                post.viewed_by && post.viewed_by.some((uid) => uid.toString() === userId);
+            if (alreadyViewed) {
+                return res.status(200).json({ message: 'View already recorded' });
+            }
+            await mongoose.connection.db
+                .collection('posts')
+                .updateOne(
+                    { _id: new ObjectId(id) },
+                    { $inc: { views: 1 }, $addToSet: { viewed_by: new ObjectId(userId) } },
+                );
+        } else {
+            await mongoose.connection.db
+                .collection('posts')
+                .updateOne({ _id: new ObjectId(id) }, { $inc: { views: 1 } });
+        }
+
         res.status(200).json({ message: 'View count incremented' });
     } catch (error) {
         next(error);

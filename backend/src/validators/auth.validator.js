@@ -3,7 +3,15 @@ const { body } = require('express-validator');
 const register = [
     body('name').trim().notEmpty().withMessage('Name is required').isLength({ max: 100 }),
     body('email').trim().isEmail().withMessage('Valid email is required').normalizeEmail(),
-    body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters'),
+    body('password')
+        .isLength({ min: 8 })
+        .withMessage('Password must be at least 8 characters')
+        .matches(/[a-z]/)
+        .withMessage('Password must contain a lowercase letter')
+        .matches(/[A-Z]/)
+        .withMessage('Password must contain an uppercase letter')
+        .matches(/[0-9]/)
+        .withMessage('Password must contain a number'),
 ];
 
 const login = [
@@ -24,7 +32,15 @@ const forgotPassword = [
 
 const resetPassword = [
     body('code').isLength({ min: 6, max: 6 }).withMessage('Reset code must be 6 digits'),
-    body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters'),
+    body('password')
+        .isLength({ min: 8 })
+        .withMessage('Password must be at least 8 characters')
+        .matches(/[a-z]/)
+        .withMessage('Password must contain a lowercase letter')
+        .matches(/[A-Z]/)
+        .withMessage('Password must contain an uppercase letter')
+        .matches(/[0-9]/)
+        .withMessage('Password must contain a number'),
 ];
 
 const updateProfile = [
@@ -32,6 +48,9 @@ const updateProfile = [
     body('bio').optional().trim().isLength({ max: 500 }),
     body('interests').optional().isArray(),
     body('socialLinks').optional().isArray(),
+    body('socialLinks.*.name').optional().trim().isLength({ max: 50 }),
+    body('socialLinks.*.url').optional().trim().isURL().withMessage('Invalid URL'),
+    body('avatar_key').optional().trim().isLength({ max: 200 }),
 ];
 
 const updateTheme = [

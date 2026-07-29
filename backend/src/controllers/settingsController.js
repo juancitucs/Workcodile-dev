@@ -17,6 +17,22 @@ const getSettings = async (req, res, next) => {
 const updateSettings = async (req, res, next) => {
     const { notifications, privacy, display, sound } = req.body;
 
+    const allowedNotifications = ['email', 'push', 'comments', 'mentions', 'votes'];
+    const allowedPrivacy = ['profileVisibility', 'showEmail', 'showStats', 'allowMessages'];
+    const allowedDisplay = ['postsPerPage'];
+    const allowedSound = ['enabled', 'volume'];
+
+    const filterKeys = (input, allowed) => {
+        if (!input || typeof input !== 'object') {return {};}
+        const filtered = {};
+        for (const key of allowed) {
+            if (input[key] !== undefined) {
+                filtered[key] = input[key];
+            }
+        }
+        return filtered;
+    };
+
     try {
         const settings = await Settings.findOne({ user: req.user.id });
         if (!settings) {
@@ -24,16 +40,28 @@ const updateSettings = async (req, res, next) => {
         }
 
         if (notifications) {
-            settings.notifications = { ...settings.notifications, ...notifications };
+            settings.notifications = {
+                ...settings.notifications,
+                ...filterKeys(notifications, allowedNotifications),
+            };
         }
         if (privacy) {
-            settings.privacy = { ...settings.privacy, ...privacy };
+            settings.privacy = {
+                ...settings.privacy,
+                ...filterKeys(privacy, allowedPrivacy),
+            };
         }
         if (display) {
-            settings.display = { ...settings.display, ...display };
+            settings.display = {
+                ...settings.display,
+                ...filterKeys(display, allowedDisplay),
+            };
         }
         if (sound) {
-            settings.sound = { ...settings.sound, ...sound };
+            settings.sound = {
+                ...settings.sound,
+                ...filterKeys(sound, allowedSound),
+            };
         }
 
         await settings.save();
