@@ -219,9 +219,9 @@ const votePost = async (req, res, next) => {
         }
 
         const user = await User.findById(userId);
-        await xpService.addXP(userId, 1, { totalLikesGiven: 1 });
 
         await postService.handleVote(userId, post, vote);
+        await xpService.addXP(userId, 1, { totalLikesGiven: 1 });
 
         if (post.author.toString() !== userId) {
             await Notification.create({
@@ -252,7 +252,7 @@ const addCommentToPost = async (req, res, next) => {
 
         const comment = {
             _id: new ObjectId(),
-            author: { _id: userId },
+            author: userId,
             content,
             attachments: attachments || [],
             createdAt: new Date(),
@@ -313,8 +313,6 @@ const voteComment = async (req, res, next) => {
         const { postId, commentId } = req.params;
         const { vote } = req.body;
         const userId = new ObjectId(req.user.id);
-
-        await xpService.addXP(userId.toString(), 1, { totalLikesGiven: 1 });
 
         const post = await mongoose.connection.db
             .collection('posts')
@@ -385,6 +383,8 @@ const voteComment = async (req, res, next) => {
         await mongoose.connection.db
             .collection('posts')
             .updateOne({ _id: new ObjectId(postId) }, { $set: { comments: post.comments } });
+
+        await xpService.addXP(userId.toString(), 1, { totalLikesGiven: 1 });
 
         const updatedPost = await postService.getAggregatedPost(postId);
         postService.addUrlsToItems(updatedPost ? [updatedPost] : []);

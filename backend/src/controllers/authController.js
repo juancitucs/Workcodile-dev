@@ -64,15 +64,11 @@ const login = async (req, res, next) => {
         }
 
         const payload = { user: { id: user.id } };
+        const token = jwt.sign(payload, config.jwt.secret, { expiresIn: config.jwt.expiresIn });
 
-        jwt.sign(payload, config.jwt.secret, { expiresIn: config.jwt.expiresIn }, (err, token) => {
-            if (err) {
-                throw err;
-            }
-            const userObj = user.toObject();
-            delete userObj.password;
-            res.json({ token, user: userObj });
-        });
+        const userObj = user.toObject();
+        delete userObj.password;
+        res.json({ token, user: userObj });
     } catch (err) {
         next(err);
     }
@@ -143,7 +139,9 @@ const updateProfile = async (req, res, next) => {
         }
 
         await user.save();
-        res.json(user);
+        const userObj = user.toObject();
+        delete userObj.password;
+        res.json(userObj);
     } catch (err) {
         next(err);
     }
@@ -189,15 +187,11 @@ const verifyAndRegister = async (req, res, next) => {
         await user.save();
 
         const payload = { user: { id: user.id } };
+        const token = jwt.sign(payload, config.jwt.secret, { expiresIn: config.jwt.expiresIn });
 
-        jwt.sign(payload, config.jwt.secret, { expiresIn: config.jwt.expiresIn }, (err, token) => {
-            if (err) {
-                throw err;
-            }
-            const userObj = user.toObject();
-            delete userObj.password;
-            res.json({ token, user: userObj });
-        });
+        const userObj = user.toObject();
+        delete userObj.password;
+        res.json({ token, user: userObj });
     } catch (err) {
         next(err);
     }
