@@ -1,6 +1,6 @@
 import MarkdownRenderer from './markdown-renderer';
 import { Link, useNavigate } from 'react-router-dom';
-import { useState, useEffect, useRef, memo } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion } from 'motion/react';
 import { Card, CardContent, CardHeader } from './ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
@@ -11,7 +11,6 @@ import { PostActions } from './post-actions';
 import { WorkCodileLogo } from './crocodile-icon';
 import { UserProfile } from './user-profile';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from './ui/accordion';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from './ui/dialog';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -73,7 +72,6 @@ const PostCardComponent = ({ post, startWithCommentsOpen = false, highlightComme
   const [isContentTruncated, setIsContentTruncated] = useState(false);
   const {
     votePost,
-    addComment,
     voteComment,
     user,
     getCourseById,
@@ -409,7 +407,6 @@ const PostCardComponent = ({ post, startWithCommentsOpen = false, highlightComme
                     onToggleComments={() => setShowComments(!showComments)}
                     onNavigate={isDashboardView ? handleNavigate : undefined}
                     onBookmark={handleBookmark}
-                    onReport={handleReport}
                   />
                 </div>
 

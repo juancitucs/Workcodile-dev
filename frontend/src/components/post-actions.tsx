@@ -28,7 +28,6 @@ interface PostActionsProps {
   onToggleComments: () => void
   onNavigate?: () => void
   onBookmark?: () => void
-  onReport?: () => void
 }
 
 export function PostActions({
@@ -40,7 +39,6 @@ export function PostActions({
   onToggleComments,
   onNavigate,
   onBookmark,
-  onReport,
 }: PostActionsProps) {
   const [showShareDialog, setShowShareDialog] = useState(false)
 
@@ -83,11 +81,6 @@ export function PostActions({
         ? 'Publicación eliminada de guardados'
         : 'Publicación guardada'
     )
-  }
-
-  const handleReport = () => {
-    onReport?.()
-    toast.success('Publicación reportada. Será revisada por los moderadores.')
   }
 
   const formatViews = (views: number) => {
