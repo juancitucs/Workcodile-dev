@@ -53,9 +53,9 @@ describe('Security Tests', () => {
             expect(res.status).toBe(401);
         });
 
-        it('should reject GET /api/users/top without token', async () => {
+        it('should allow GET /api/users/top without token (public leaderboard)', async () => {
             const res = await request(app).get('/api/users/top');
-            expect(res.status).toBe(401);
+            expect(res.status).toBe(200);
         });
     });
 
