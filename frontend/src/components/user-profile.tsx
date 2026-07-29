@@ -10,7 +10,6 @@ import { Badge } from './ui/badge';
 import { Separator } from './ui/separator';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from './ui/dialog';
 import { useApp } from './app-context';
-import { WorkCodileLogo } from './crocodile-icon';
 import { toast } from 'sonner';
 import { autoSpaceInsertion } from '../utils/text-utils';
 import { ImageCropModal } from './ImageCropModal';
@@ -383,11 +382,7 @@ export function UserProfile({ isOpen, onClose, userId }: UserProfileProps) {
                       alt={profileUser.name}
                     />
                     <AvatarFallback className="text-2xl bg-primary/10">
-                      {profileUser.avatar ? (
-                        profileUser.name?.charAt(0).toUpperCase()
-                      ) : (
-                        <WorkCodileLogo className="h-12 w-12" />
-                      )}
+                      {profileUser.name?.charAt(0).toUpperCase() || '?'}
                     </AvatarFallback>
                   </Avatar>
 

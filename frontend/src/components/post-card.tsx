@@ -8,7 +8,6 @@ import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 import { useApp } from './app-context';
 import { PostActions } from './post-actions';
-import { WorkCodileLogo } from './crocodile-icon';
 import { UserProfile } from './user-profile';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from './ui/accordion';
 import {
@@ -172,11 +171,7 @@ const PostCardComponent = ({ post, startWithCommentsOpen = false, highlightComme
                   <Avatar className="h-10 w-10">
                     <AvatarImage src={post.author.avatar} alt={post.author.name} />
                     <AvatarFallback className="bg-primary/10">
-                      {post.author.avatar ? (
-                        post.author.name.charAt(0).toUpperCase()
-                      ) : (
-                        <WorkCodileLogo className="h-6 w-6" />
-                      )}
+                      {post.author.name?.charAt(0).toUpperCase() || '?'}
                     </AvatarFallback>
                   </Avatar>
                   {/* Medalla de nivel - posición controlada por CSS (ver globals.css) */}

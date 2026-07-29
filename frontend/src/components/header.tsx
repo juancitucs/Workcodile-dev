@@ -235,12 +235,8 @@ export const Header = memo(function Header({ onCreatePost, onSearch, onToggleMob
                   <Avatar className="h-8 w-8">
                     <AvatarImage src={user?.avatar} alt={user?.name} />
                     <AvatarFallback className="bg-primary/10">
-                      {user?.avatar ? (
-                        user.name?.charAt(0).toUpperCase()
-                      ) : (
-                        <WorkCodileLogo className="h-5 w-5" />
-                      )}
-                    </AvatarFallback>
+                    {user?.name?.charAt(0).toUpperCase() || '?'}
+                  </AvatarFallback>
                   </Avatar>
                 </Button>
               </DropdownMenuTrigger>

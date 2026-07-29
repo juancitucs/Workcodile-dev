@@ -4,16 +4,15 @@ import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { Button } from './ui/button';
 import { Textarea } from './ui/textarea';
 import { useApp } from './app-context';
-import { WorkCodileLogo } from './crocodile-icon';
 import { ChevronUp, ChevronDown, MessageSquare, Paperclip, Download } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { CommentTree } from './comment-tree';
-import { Comment as CommentType, FileAttachment } from './types'; // Agregar FileAttachment
+import { Comment as CommentType, FileAttachment } from './types';
 import MarkdownRenderer from './markdown-renderer';
 import { CreateCommentForm } from './CreateCommentForm';
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from './ui/accordion'; // Agregar Accordion
-import { formatFileSize, getFileIcon, getAttachmentUrl } from './file-utils'; // Agregar utilidades de archivos
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from './ui/accordion';
+import { formatFileSize, getFileIcon, getAttachmentUrl } from './file-utils';
 import { LevelBadge } from './level-badge';
 
 interface CommentProps {
@@ -112,11 +111,7 @@ export function Comment({ comment, postId, onCommentVote, highlightCommentId, de
         <Avatar className="h-8 w-8 flex-shrink-0">
           <AvatarImage src={comment.author.avatar} alt={comment.author.name} />
           <AvatarFallback className="bg-primary/10">
-            {comment.author.avatar ? (
-              comment.author.name.charAt(0).toUpperCase()
-            ) : (
-              <WorkCodileLogo className="h-4 w-4" />
-            )}
+            {comment.author.name?.charAt(0).toUpperCase() || '?'}
           </AvatarFallback>
         </Avatar>
 
