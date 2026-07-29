@@ -104,7 +104,7 @@ export function MainFeed() {
           return b.comments.length - a.comments.length;
         case 'recent':
         default:
-          return b.createdAt.getTime() - a.createdAt.getTime();
+          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
       }
     });
   }, [filteredPosts, sortBy]);
