@@ -36,11 +36,15 @@ export const getFileIcon = (type: string): string => {
   return '📄'
 }
 
+export const ALLOWED_FILE_ACCEPT = '.pdf,.zip,.rar,.jpg,.jpeg,.png,.gif,.mp4,.webm,.mp3,.wav,.ogg,.txt,.doc,.docx'
+
 export const validateFileType = (file: File): boolean => {
   const allowedTypes = [
     'application/pdf',
     'application/zip',
+    'application/x-zip-compressed',
     'application/x-rar-compressed',
+    'application/octet-stream',
     'image/jpeg',
     'image/png',
     'image/gif',
@@ -54,7 +58,11 @@ export const validateFileType = (file: File): boolean => {
     'application/msword',
     'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
   ]
-  return allowedTypes.includes(file.type)
+  if (allowedTypes.includes(file.type)) return true
+
+  const ext = file.name.split('.').pop()?.toLowerCase()
+  const allowedExtensions = ['pdf', 'zip', 'rar', 'jpg', 'jpeg', 'png', 'gif', 'mp4', 'webm', 'mp3', 'wav', 'ogg', 'txt', 'doc', 'docx']
+  return !!ext && allowedExtensions.includes(ext)
 }
 
 export const validateFileSize = (file: File, maxSizeMB = 10): boolean => {

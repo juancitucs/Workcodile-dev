@@ -1,7 +1,7 @@
 import { useState, useRef } from 'react';
 import { Button } from './ui/button';
 import { useApp } from './app-context';
-import { FileAttachment, createFileAttachment, validateFileType, validateFileSize } from './file-utils';
+import { FileAttachment, createFileAttachment, validateFileType, validateFileSize, ALLOWED_FILE_ACCEPT } from './file-utils';
 import { Paperclip, X, File as FileIcon } from 'lucide-react';
 import { MentionsInput, Mention } from 'react-mentions';
 import mentionsInputStyle from './mentions-input-style';
@@ -269,7 +269,7 @@ export function CreateCommentForm({ postId, parentId, onCommentSubmitted }: Crea
               ref={fileInputRef}
               type="file"
               multiple
-              accept=".pdf,.zip,.rar,.jpg,.jpeg,.png,.gif,.txt,.doc,.docx,.mp3A,.wav,.ogg"
+              accept={ALLOWED_FILE_ACCEPT}
               onChange={handleFileSelect}
               className="hidden"
             />

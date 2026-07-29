@@ -7,7 +7,7 @@ import { Label } from './ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Badge } from './ui/badge';
 import { useApp } from './app-context';
-import { FileAttachment, createFileAttachment, formatFileSize, getFileIcon, validateFileType, validateFileSize } from './file-utils';
+import { FileAttachment, createFileAttachment, formatFileSize, getFileIcon, validateFileType, validateFileSize, ALLOWED_FILE_ACCEPT } from './file-utils';
 import { PlusCircle, X, GraduationCap, Upload, FileText, Hash, Trash2, Eye, Paperclip } from 'lucide-react';
 import MarkdownRenderer from './markdown-renderer';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from './ui/accordion';
@@ -423,7 +423,7 @@ export function CreatePostModal({ isOpen, onClose }: CreatePostModalProps) {
                           ref={fileInputRef}
                           type="file"
                           multiple
-                          accept=".pdf,.zip,.rar,.jpg,.jpeg,.png,.gif,.txt,.doc,.docx,.mp3,.wav,.ogg"
+                          accept={ALLOWED_FILE_ACCEPT}
                           onChange={handleFileSelect}
                           className="hidden"
                         />
