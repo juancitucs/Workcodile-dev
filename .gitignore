@@ -1,25 +1,25 @@
-# Dependencias
+# Dependencies
 **/node_modules
-**/build
-# Archivos de build
+
+# Build output
 **/dist
-frontend/build/
+**/build
 
-# Logs
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-
-# Variables de entorno
+# Environment
 .env
 *.local
 
-# Datos de la base de datos local
+# Data volumes
 /data/
 /minio_data/
 
-# Archivos del sistema operativo
+# System
 .DS_Store
 Thumbs.db
 
+# IDE
+.vscode
+.idea
+
+# Docs (local, not needed in repo)
 local-docs/

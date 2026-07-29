@@ -26,7 +26,7 @@ services:
     networks:
       - workcodile-net
     healthcheck:
-      test: ["CMD", "mc", "ready", "local"]
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -55,8 +55,6 @@ services:
       target: development
     container_name: workcodile-backend
     restart: unless-stopped
-    ports:
-      - "3001:3001"
     volumes:
       - ./backend/src:/app/src
       - /app/node_modules
@@ -87,8 +85,6 @@ services:
       context: ./frontend
     container_name: workcodile-frontend
     restart: unless-stopped
-    ports:
-      - "8080:80"
     depends_on:
       - backend
     networks:
