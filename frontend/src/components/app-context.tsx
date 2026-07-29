@@ -6,7 +6,7 @@ import {
   useEffect,
 } from 'react'
 import { User, FileAttachment, Post, Comment, Notification } from './types'
-import { courses as COURSES_DATA } from '../data/courses'
+import { courses as COURSES_DATA, Course } from '../data/courses'
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || '';
 
@@ -763,7 +763,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       if (comment.id === targetCommentId) {
         let newScore = comment.score;
         let newUserVote = comment.userVote;
-        console.log(`Optimistically updating comment: ${targetCommentId}, new userVote: ${newUserVote}, new score: ${newScore}`); if (vote === 'up') {
+        if (vote === 'up') {
           if (comment.userVote === 'up') { // Un-upvoting
             newScore--;
             newUserVote = null;
@@ -1013,7 +1013,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
         throw new Error('Failed to report post')
       }
 
-      console.log(`Post ${postId} reported by user ${user?.id}`)
     } catch (error) {
       console.error('Error reporting post:', error)
     }
@@ -1048,7 +1047,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
       if (!response.ok) {
         throw new Error('Failed to toggle comments')
       }
-      console.log(`Comments toggled for post ${postId}`)
     } catch (error) {
       console.error('Error toggling comments:', error)
       // Revert optimistic update on error

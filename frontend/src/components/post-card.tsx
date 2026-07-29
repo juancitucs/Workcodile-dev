@@ -449,9 +449,7 @@ const PostCardComponent = ({ post, startWithCommentsOpen = false, highlightComme
                     {user && (
                       <CreateCommentForm
                         postId={post.id}
-                        onCommentSubmitted={() => {
-                          console.log('Top-level comment submitted');
-                        }}
+                        onCommentSubmitted={() => {}}
                       />
                     )}
 
