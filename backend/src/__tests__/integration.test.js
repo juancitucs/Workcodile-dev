@@ -224,4 +224,205 @@ describe('Settings Integration', () => {
         expect(res.statusCode).toBe(200);
         expect(res.body.notifications.email).toBe(false);
     });
+
+    it('should filter invalid keys from settings update', async () => {
+        if (skipIfNoDb()) {
+            return;
+        }
+        const request = require('supertest');
+        const app = require('../server');
+
+        const res = await request(app)
+            .put('/api/settings')
+            .set('x-auth-token', token)
+            .send({
+                notifications: { email: true, hackerField: 'injected' },
+                evil: { nested: 'value' },
+            });
+
+        expect(res.statusCode).toBe(200);
+        expect(res.body.notifications.email).toBe(true);
+        expect(res.body.notifications.hackerField).toBeUndefined();
+    });
+});
+
+describe('Vote Integration', () => {
+    let postId;
+
+    beforeAll(async () => {
+        if (skipIfNoDb()) {return;}
+        const request = require('supertest');
+        const app = require('../server');
+
+        const res = await request(app)
+            .post('/api/posts')
+            .set('x-auth-token', token)
+            .send({
+                title: 'Vote Test Post',
+                content: 'Content for voting',
+                course: 'IS-524',
+            });
+        postId = res.body.id;
+    });
+
+    it('should upvote a post', async () => {
+        if (skipIfNoDb()) {return;}
+        const request = require('supertest');
+        const app = require('../server');
+
+        const res = await request(app)
+            .post(`/api/posts/${postId}/vote`)
+            .set('x-auth-token', token)
+            .send({ vote: 'up' });
+
+        expect(res.statusCode).toBe(200);
+    });
+
+    it('should toggle off upvote', async () => {
+        if (skipIfNoDb()) {return;}
+        const request = require('supertest');
+        const app = require('../server');
+
+        const res = await request(app)
+            .post(`/api/posts/${postId}/vote`)
+            .set('x-auth-token', token)
+            .send({ vote: 'up' });
+
+        expect(res.statusCode).toBe(200);
+    });
+
+    it('should increment view count', async () => {
+        if (skipIfNoDb()) {return;}
+        const request = require('supertest');
+        const app = require('../server');
+
+        const res = await request(app)
+            .post(`/api/posts/${postId}/view`)
+            .set('x-auth-token', token);
+
+        expect(res.statusCode).toBe(200);
+    });
+
+    it('should prevent duplicate views from same user', async () => {
+        if (skipIfNoDb()) {return;}
+        const request = require('supertest');
+        const app = require('../server');
+
+        await request(app)
+            .post(`/api/posts/${postId}/view`)
+            .set('x-auth-token', token);
+
+        const res = await request(app)
+            .post(`/api/posts/${postId}/view`)
+            .set('x-auth-token', token);
+
+        expect(res.statusCode).toBe(200);
+        expect(res.body.message).toBe('View already recorded');
+    });
+});
+
+describe('Comment Integration', () => {
+    let postId;
+    let commentId;
+
+    beforeAll(async () => {
+        if (skipIfNoDb()) {return;}
+        const request = require('supertest');
+        const app = require('../server');
+
+        const res = await request(app)
+            .post('/api/posts')
+            .set('x-auth-token', token)
+            .send({
+                title: 'Comment Test Post',
+                content: 'Content for comments',
+                course: 'IS-524',
+            });
+        postId = res.body.id;
+    });
+
+    it('should add a comment', async () => {
+        if (skipIfNoDb()) {return;}
+        const request = require('supertest');
+        const app = require('../server');
+
+        const res = await request(app)
+            .post(`/api/posts/${postId}/comments`)
+            .set('x-auth-token', token)
+            .send({ content: 'Great post!' });
+
+        expect(res.statusCode).toBe(200);
+        expect(res.body.comments).toBeDefined();
+        if (res.body.comments && res.body.comments.length > 0) {
+            commentId = res.body.comments[0].id || res.body.comments[0]._id;
+        }
+    });
+
+    it('should reply to a comment', async () => {
+        if (skipIfNoDb() || !commentId) {return;}
+        const request = require('supertest');
+        const app = require('../server');
+
+        const res = await request(app)
+            .post(`/api/posts/${postId}/comments`)
+            .set('x-auth-token', token)
+            .send({ content: 'Thanks!', parentId: commentId });
+
+        expect(res.statusCode).toBe(200);
+    });
+});
+
+describe('Courses Integration', () => {
+    it('should get courses list', async () => {
+        if (skipIfNoDb()) {return;}
+        const request = require('supertest');
+        const app = require('../server');
+
+        const res = await request(app).get('/api/courses');
+
+        expect(res.statusCode).toBe(200);
+        expect(Array.isArray(res.body)).toBe(true);
+    });
+});
+
+describe('Users Integration', () => {
+    it('should get top users', async () => {
+        if (skipIfNoDb()) {return;}
+        const request = require('supertest');
+        const app = require('../server');
+
+        const res = await request(app)
+            .get('/api/users/top')
+            .set('x-auth-token', token);
+
+        expect(res.statusCode).toBe(200);
+        expect(Array.isArray(res.body)).toBe(true);
+    });
+});
+
+describe('Notifications Integration', () => {
+    it('should get notifications list', async () => {
+        if (skipIfNoDb()) {return;}
+        const request = require('supertest');
+        const app = require('../server');
+
+        const res = await request(app)
+            .get('/api/notifications')
+            .set('x-auth-token', token);
+
+        expect(res.statusCode).toBe(200);
+        expect(Array.isArray(res.body)).toBe(true);
+    });
+
+    it('should mark all notifications as read', async () => {
+        if (skipIfNoDb()) {return;}
+        const request = require('supertest');
+        const app = require('../server');
+
+        const res = await request(app)
+            .put('/api/notifications/read/all')
+            .set('x-auth-token', token);
+
+        expect(res.statusCode).toBe(200);
+    });
 });
