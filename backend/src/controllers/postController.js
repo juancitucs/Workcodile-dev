@@ -69,9 +69,13 @@ const getPostByCommentId = async (req, res, next) => {
 
     if (!post) {return res.status(404).json({ message: 'Post not found for this comment' })}
 
-    const mockReq = { params: { id: post._id.toString() }, user: req.user }
-    const mockRes = { status: (code) => ({ json: (data) => res.status(code).json(data) }) }
-    await getPostById(mockReq, mockRes)
+    const aggregatedPost = await postService.getAggregatedPost(post._id.toString())
+    if (!aggregatedPost) {return res.status(404).json({ message: 'Post not found' })}
+
+    postService.addUrlsToItems([aggregatedPost])
+    postService.addUserVoteStatus(aggregatedPost, req.user ? req.user.id : null)
+
+    res.status(200).json(aggregatedPost)
   } catch (error) {
     next(error)
   }
@@ -168,12 +172,12 @@ const votePost = async (req, res, next) => {
     const { id } = req.params
     const { vote } = req.body
     const userId = req.user.id
-    const user = await User.findById(userId)
-
-    await xpService.addXP(userId, 1, { totalLikesGiven: 1 })
 
     const post = await mongoose.connection.db.collection('posts').findOne({ _id: new ObjectId(id) })
     if (!post) {return res.status(404).json({ message: 'Post not found' })}
+
+    const user = await User.findById(userId)
+    await xpService.addXP(userId, 1, { totalLikesGiven: 1 })
 
     await postService.handleVote(userId, post, vote)
 

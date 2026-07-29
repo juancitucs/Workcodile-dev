@@ -1,15 +1,18 @@
 const express = require('express')
 const router = express.Router()
+const { param } = require('express-validator')
 const post = require('../controllers/postController')
 const auth = require('../middleware/authMiddleware')
 const optionalAuth = require('../middleware/optionalAuthMiddleware')
 const validate = require('../middleware/validate')
 const { createPost, updatePost, votePost, addComment, voteComment, postId, postIdCommentId } = require('../validators/post.validator')
 
+const commentIdParam = [param('commentId').isMongoId().withMessage('Invalid comment ID')]
+
 router.get('/', optionalAuth, post.getAllPosts)
 router.get('/:id', optionalAuth, postId, validate, post.getPostById)
-router.get('/by-comment/:commentId', optionalAuth, post.getPostByCommentId)
-router.get('/:postId/comments/:commentId/replies', optionalAuth, post.getCommentReplies)
+router.get('/by-comment/:commentId', optionalAuth, commentIdParam, validate, post.getPostByCommentId)
+router.get('/:postId/comments/:commentId/replies', optionalAuth, postIdCommentId, validate, post.getCommentReplies)
 router.post('/', auth, createPost, validate, post.createPost)
 router.put('/:id', auth, postId, updatePost, validate, post.updatePost)
 router.delete('/:id', auth, postId, validate, post.deletePost)

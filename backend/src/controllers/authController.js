@@ -1,9 +1,14 @@
 const User = require('../models/User')
 const bcrypt = require('bcrypt')
 const jwt = require('jsonwebtoken')
+const crypto = require('crypto')
 const config = require('../config/env')
 const { sendVerificationCodeEmail, sendPasswordResetCodeEmail } = require('../services/email/email.service')
 const { getFileUrl } = require('../services/storage/storage.service')
+
+function generateSecureCode() {
+  return crypto.randomInt(100000, 999999).toString()
+}
 
 const sendVerificationCode = async (req, res, next) => {
   const { name, email, password } = req.body
@@ -20,7 +25,7 @@ const sendVerificationCode = async (req, res, next) => {
       user.password = await bcrypt.hash(password, salt)
     }
 
-    const verificationCode = Math.floor(100000 + Math.random() * 900000).toString()
+    const verificationCode = generateSecureCode()
     user.verificationCode = verificationCode
     user.verificationCodeExpires = Date.now() + 600000
 
@@ -59,7 +64,9 @@ const login = async (req, res, next) => {
       { expiresIn: config.jwt.expiresIn },
       (err, token) => {
         if (err) {throw err}
-        res.json({ token, user })
+        const userObj = user.toObject()
+        delete userObj.password
+        res.json({ token, user: userObj })
       }
     )
   } catch (err) {
@@ -175,7 +182,9 @@ const verifyAndRegister = async (req, res, next) => {
       { expiresIn: config.jwt.expiresIn },
       (err, token) => {
         if (err) {throw err}
-        res.json({ token, user })
+        const userObj = user.toObject()
+        delete userObj.password
+        res.json({ token, user: userObj })
       }
     )
   } catch (err) {
@@ -192,7 +201,7 @@ const forgotPassword = async (req, res, next) => {
       return res.status(200).json({ message: 'If a user with that email exists, a password reset code has been sent.' })
     }
 
-    const resetCode = Math.floor(100000 + Math.random() * 900000).toString()
+    const resetCode = generateSecureCode()
     user.passwordResetCode = resetCode
     user.passwordResetExpires = Date.now() + 600000
 

@@ -1,3 +1,4 @@
+const path = require('path')
 const { uploadFile, deleteFile, getFileStream } = require('../services/storage/storage.service')
 const multer = require('multer')
 
@@ -9,7 +10,8 @@ async function uploadHandler(req, res, next) {
   try {
     if (!req.file) {return res.status(400).json({ message: 'No file provided.' })}
 
-    const objectName = `${Date.now()}-${req.file.originalname}`
+    const safeName = path.basename(req.file.originalname).replace(/[^a-zA-Z0-9._-]/g, '_')
+    const objectName = `${Date.now()}-${safeName}`
     const url = await uploadFile(objectName, req.file.buffer, req.file.mimetype)
 
     res.status(201).json({ objectName, url })

@@ -1,11 +1,3 @@
-// backend/src/services/email/email.templates.js
-
-/**
- * Genera el HTML para un correo de verificación de cuenta con un código.
- * @param {string} name - Nombre del usuario.
- * @param {string} verificationCode - El código de verificación.
- * @returns {string} - El HTML del correo.
- */
 function getVerificationCodeHTML(name, verificationCode) {
   return `
     <div style="font-family: sans-serif; padding: 20px; color: #333;">
@@ -16,37 +8,9 @@ function getVerificationCodeHTML(name, verificationCode) {
       <p>Si no te registraste en WorkCodile, por favor ignora este mensaje.</p>
       <p>— El equipo de WorkCodile</p>
     </div>
-  `;
+  `
 }
 
-/**
- * Genera el HTML para un correo de recuperación de contraseña.
- * @param {string} name - Nombre del usuario.
- * @param {string} resetLink - El enlace para restablecer la contraseña.
- * @returns {string} - El HTML del correo.
- */
-function getPasswordResetEmailHTML(name, resetLink) {
-  return `
-    <div style="font-family: sans-serif; padding: 20px; color: #333;">
-      <h2>Recuperación de Contraseña de WorkCodile</h2>
-      <p>Hola, ${name}.</p>
-      <p>Recibimos una solicitud para restablecer tu contraseña. Haz clic en el siguiente enlace para crear una nueva:</p>
-      <a href="${resetLink}" style="background-color: #22c55e; color: white; padding: 10px 15px; text-decoration: none; border-radius: 5px; display: inline-block;">
-        Restablecer Contraseña
-      </a>
-      <p>Este enlace expirará en 1 hora.</p>
-      <p>Si no solicitaste un restablecimiento de contraseña, puedes ignorar este correo de forma segura.</p>
-      <p>— El equipo de WorkCodile</p>
-    </div>
-  `;
-}
-
-/**
- * Genera el HTML para un correo de recuperación de contraseña con un código.
- * @param {string} name - Nombre del usuario.
- * @param {string} resetCode - El código de restablecimiento de contraseña.
- * @returns {string} - El HTML del correo.
- */
 function getPasswordResetCodeEmailHTML(name, resetCode) {
   return `
     <div style="font-family: sans-serif; padding: 20px; color: #333;">
@@ -58,7 +22,7 @@ function getPasswordResetCodeEmailHTML(name, resetCode) {
       <p>Si no solicitaste un restablecimiento de contraseña, puedes ignorar este correo de forma segura.</p>
       <p>— El equipo de WorkCodile</p>
     </div>
-  `;
+  `
 }
 
-module.exports = { getVerificationCodeHTML, getPasswordResetEmailHTML, getPasswordResetCodeEmailHTML };
+module.exports = { getVerificationCodeHTML, getPasswordResetCodeEmailHTML }
