@@ -5,6 +5,9 @@
 **/dist
 **/build
 
+# Coverage reports
+**/coverage
+
 # Environment
 .env
 *.local
