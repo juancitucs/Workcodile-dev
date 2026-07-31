@@ -51,6 +51,9 @@ describe('AuthPage', () => {
         </AppProvider>
       </MemoryRouter>
     );
-    expect(container.firstChild).toMatchSnapshot();
+    // Los IDs de Radix UI (radix-:rN:) dependen de cuántos renders previos
+    // haya; se normalizan para que el snapshot sea determinista.
+    const html = container.innerHTML.replace(/radix-:[a-z0-9]+:/g, 'radix-id');
+    expect(html).toMatchSnapshot();
   });
 });

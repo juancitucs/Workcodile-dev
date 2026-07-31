@@ -419,7 +419,7 @@ const voteComment = async (req, res, next) => {
                         );
                     }
                     commentToVote.score = (commentToVote.score || 0) + 1;
-                    if (!commentToVote.upvoted_by) commentToVote.upvoted_by = [];
+                    if (!commentToVote.upvoted_by) { commentToVote.upvoted_by = []; }
                     commentToVote.upvoted_by.push(userId);
                     if (commentToVote.author.toString() !== userId.toString()) {
                         await xpService.addXP(commentToVote.author.toString(), 2, {
@@ -441,7 +441,7 @@ const voteComment = async (req, res, next) => {
                         );
                     }
                     commentToVote.score = (commentToVote.score || 0) - 1;
-                    if (!commentToVote.downvoted_by) commentToVote.downvoted_by = [];
+                    if (!commentToVote.downvoted_by) { commentToVote.downvoted_by = []; }
                     commentToVote.downvoted_by.push(userId);
                 }
             }

@@ -28,7 +28,6 @@ const userController = require('../../controllers/userController');
 const courseController = require('../../controllers/courseController');
 const authController = require('../../controllers/authController');
 const notificationController = require('../../controllers/notificationController');
-const postController = require('../../controllers/postController');
 
 describe('Contract Testing: shape de respuestas que consume el frontend', () => {
     const mkRes = () => {

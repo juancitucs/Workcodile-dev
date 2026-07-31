@@ -1,8 +1,6 @@
 // Mutation Testing manual (unitario): se muta la función en memoria y se
 // verifica que las aserciones originales detectan la mutación (la matan).
 // El mutation score = mutaciones detectadas / mutaciones inyectadas.
-const xpService = require('../../services/xpService');
-const postService = require('../../services/post.service');
 
 describe('Mutation Testing (unitario)', () => {
     let mutantes = 0;
@@ -20,7 +18,6 @@ describe('Mutation Testing (unitario)', () => {
 
     describe('calculateLevel (D34: exponencial vs lineal)', () => {
         it('detecta la mutación lineal (+100 en vez de *2)', () => {
-            const original = xpService.calculateLevel;
             // mutante: xpForNextLevel += 100 (lineal)
             const mutante = (xp) => {
                 let level = 1;
@@ -62,7 +59,7 @@ describe('Mutation Testing (unitario)', () => {
     describe('sortComments (D16: orden descendente)', () => {
         it('detecta la mutación de comparador invertido', () => {
             const mutante = (comments) => {
-                if (!comments) return;
+                if (!comments) {return;}
                 comments.sort((a, b) => (a.score || 0) - (b.score || 0));
             };
             evaluar('ascendente', mutante, (m) => {
@@ -75,7 +72,7 @@ describe('Mutation Testing (unitario)', () => {
 
         it('detecta la mutación de score nulo (sin || 0)', () => {
             const mutante = (comments) => {
-                if (!comments) return;
+                if (!comments) {return;}
                 comments.sort((a, b) => b.score - a.score);
             };
             evaluar('score-nulo', mutante, (m) => {

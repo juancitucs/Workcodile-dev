@@ -47,14 +47,10 @@ const Settings = require('../../models/Settings');
 const authController = require('../../controllers/authController');
 const authMiddleware = require('../../middleware/authMiddleware');
 const optionalAuthMiddleware = require('../../middleware/optionalAuthMiddleware');
-const errorHandler = require('../../middleware/errorHandler');
-const storageController = require('../../controllers/storageController');
-const userController = require('../../controllers/userController');
 const settingsController = require('../../controllers/settingsController');
 const notificationController = require('../../controllers/notificationController');
 const postService = require('../../services/post.service');
 const xpService = require('../../services/xpService');
-const courseController = require('../../controllers/courseController');
 
 describe('Regression Testing: defectos corregidos D01-D36', () => {
     const mkRes = () => {

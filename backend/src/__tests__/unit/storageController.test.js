@@ -1,5 +1,4 @@
 const { ObjectId } = require('mongodb');
-const path = require('path');
 
 // ── Mocks ───────────────────────────────────────────
 const mockUploadFile = jest.fn();
