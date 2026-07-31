@@ -27,7 +27,7 @@ jest.mock('multer', () => {
     return fn;
 });
 
-jest.mock('../services/storage/storage.service', () => ({
+jest.mock('../../services/storage/storage.service', () => ({
     uploadFile: (...args) => mockUploadFile(...args),
     deleteFile: (...args) => mockDeleteFile(...args),
     getFileStream: (...args) => mockGetFileStream(...args),
@@ -38,7 +38,7 @@ const {
     uploadHandler,
     getFileHandler,
     deleteHandler,
-} = require('../controllers/storageController');
+} = require('../../controllers/storageController');
 
 describe('Storage Controller', () => {
     let req, res, next;

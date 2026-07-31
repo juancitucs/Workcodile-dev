@@ -4,17 +4,17 @@ const { ObjectId } = require('mongodb');
 const mockUserFind = jest.fn();
 const mockGetFileUrl = jest.fn();
 
-jest.mock('../models/User', () => {
+jest.mock('../../models/User', () => {
     const fn = function () {};
     fn.find = mockUserFind;
     return fn;
 });
 
-jest.mock('../services/storage/storage.service', () => ({
+jest.mock('../../services/storage/storage.service', () => ({
     getFileUrl: (...args) => mockGetFileUrl(...args),
 }));
 
-const { getTopUsers } = require('../controllers/userController');
+const { getTopUsers } = require('../../controllers/userController');
 
 describe('User Controller', () => {
     let req, res, next;

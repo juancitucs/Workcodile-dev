@@ -4,7 +4,7 @@ const {
     addUrlsToItems,
     sortComments,
     findCommentRecursive,
-} = require('../services/post.service');
+} = require('../../services/post.service');
 
 describe('Post Service - Helper Functions', () => {
     describe('addUserVoteStatus', () => {

@@ -19,14 +19,14 @@ const mockPostService = {
     findCommentRecursive: jest.fn(),
     populateAuthors: jest.fn(),
 };
-jest.mock('../services/post.service', () => mockPostService);
+jest.mock('../../services/post.service', () => mockPostService);
 
 const mockXpService = { addXP: jest.fn() };
-jest.mock('../services/xpService', () => mockXpService);
+jest.mock('../../services/xpService', () => mockXpService);
 
 const mockUserFindById = jest.fn();
 const mockUserUpdateOne = jest.fn();
-jest.mock('../models/User', () => {
+jest.mock('../../models/User', () => {
     const fn = function () {};
     fn.findById = (...args) => mockUserFindById(...args);
     fn.updateOne = (...args) => mockUserUpdateOne(...args);
@@ -34,10 +34,10 @@ jest.mock('../models/User', () => {
 });
 
 const mockNotifCreate = jest.fn();
-jest.mock('../models/Notification', () => ({ create: (...args) => mockNotifCreate(...args) }));
+jest.mock('../../models/Notification', () => ({ create: (...args) => mockNotifCreate(...args) }));
 
 const mockReportCreate = jest.fn();
-jest.mock('../models/Report', () => ({ create: (...args) => mockReportCreate(...args) }));
+jest.mock('../../models/Report', () => ({ create: (...args) => mockReportCreate(...args) }));
 
 const mockUpdateOne = jest.fn();
 const mockFindOne = jest.fn();
@@ -61,7 +61,7 @@ const {
     createPost, updatePost, deletePost,
     votePost, addCommentToPost, voteComment,
     bookmarkPost, reportPost, incrementView,
-} = require('../controllers/postController');
+} = require('../../controllers/postController');
 
 describe('Post Controller', () => {
     let req, res, next;

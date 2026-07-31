@@ -6,7 +6,7 @@ const mockSettingsSave = jest.fn();
 const mockUserFindById = jest.fn();
 const mockUserSave = jest.fn();
 
-jest.mock('../models/Settings', () => {
+jest.mock('../../models/Settings', () => {
     const MockSettings = function (data) {
         Object.assign(this, data);
         this.save = mockSettingsSave;
@@ -15,7 +15,7 @@ jest.mock('../models/Settings', () => {
     return MockSettings;
 });
 
-jest.mock('../models/User', () => {
+jest.mock('../../models/User', () => {
     const MockUser = function (data) {
         Object.assign(this, data);
         this.save = mockUserSave;
@@ -30,7 +30,7 @@ const {
     getCompletedCourses,
     addCompletedCourse,
     removeCompletedCourse,
-} = require('../controllers/settingsController');
+} = require('../../controllers/settingsController');
 
 describe('Settings Controller', () => {
     let req, res, next;

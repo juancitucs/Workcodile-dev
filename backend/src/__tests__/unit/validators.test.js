@@ -7,8 +7,8 @@ const {
     resetPassword,
     updateProfile,
     updateTheme,
-} = require('../validators/auth.validator');
-const { createPost, votePost, addComment, voteComment, updatePost } = require('../validators/post.validator');
+} = require('../../validators/auth.validator');
+const { createPost, votePost, addComment, voteComment, updatePost } = require('../../validators/post.validator');
 
 function runValidators(validators, body) {
     const req = { body, params: {}, query: {} };

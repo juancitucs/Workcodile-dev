@@ -1,8 +1,8 @@
 const jwt = require('jsonwebtoken');
-const config = require('../config/env');
-const authMiddleware = require('../middleware/authMiddleware');
-const optionalAuthMiddleware = require('../middleware/optionalAuthMiddleware');
-const errorHandler = require('../middleware/errorHandler');
+const config = require('../../config/env');
+const authMiddleware = require('../../middleware/authMiddleware');
+const optionalAuthMiddleware = require('../../middleware/optionalAuthMiddleware');
+const errorHandler = require('../../middleware/errorHandler');
 
 describe('Middleware', () => {
     describe('authMiddleware', () => {

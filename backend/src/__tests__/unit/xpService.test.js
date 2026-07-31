@@ -1,4 +1,4 @@
-const { calculateLevel } = require('../services/xpService');
+const { calculateLevel } = require('../../services/xpService');
 
 describe('XP Service', () => {
     describe('calculateLevel', () => {

@@ -6,7 +6,7 @@ const mockNotificationFindById = jest.fn();
 const mockNotificationUpdateMany = jest.fn();
 const mockNotifSave = jest.fn();
 
-jest.mock('../models/Notification', () => {
+jest.mock('../../models/Notification', () => {
     const MockNotification = function (data) {
         Object.assign(this, data);
         this.save = mockNotifSave;
@@ -21,7 +21,7 @@ const {
     getNotifications,
     markAsRead,
     markAllAsRead,
-} = require('../controllers/notificationController');
+} = require('../../controllers/notificationController');
 
 describe('Notification Controller', () => {
     let req, res, next;

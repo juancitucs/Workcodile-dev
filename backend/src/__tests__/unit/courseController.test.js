@@ -3,13 +3,13 @@ const { ObjectId } = require('mongodb');
 // ── Mocks ───────────────────────────────────────────
 const mockCourseFind = jest.fn();
 
-jest.mock('../models/Course', () => {
+jest.mock('../../models/Course', () => {
     const fn = function () {};
     fn.find = mockCourseFind;
     return fn;
 });
 
-const { getAllCourses } = require('../controllers/courseController');
+const { getAllCourses } = require('../../controllers/courseController');
 
 describe('Course Controller', () => {
     let req, res, next;

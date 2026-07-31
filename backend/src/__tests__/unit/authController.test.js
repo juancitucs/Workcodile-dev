@@ -13,7 +13,7 @@ const mockSendVerificationCodeEmail = jest.fn();
 const mockSendPasswordResetCodeEmail = jest.fn();
 const mockGetFileUrl = jest.fn();
 
-jest.mock('../models/User', () => {
+jest.mock('../../models/User', () => {
     const MockUser = function (data) {
         Object.assign(this, data);
         this.save = mockUserSave;
@@ -34,16 +34,16 @@ jest.mock('jsonwebtoken', () => ({
     sign: (...args) => mockJwtSign(...args),
 }));
 
-jest.mock('../services/email/email.service', () => ({
+jest.mock('../../services/email/email.service', () => ({
     sendVerificationCodeEmail: (...args) => mockSendVerificationCodeEmail(...args),
     sendPasswordResetCodeEmail: (...args) => mockSendPasswordResetCodeEmail(...args),
 }));
 
-jest.mock('../services/storage/storage.service', () => ({
+jest.mock('../../services/storage/storage.service', () => ({
     getFileUrl: (...args) => mockGetFileUrl(...args),
 }));
 
-jest.mock('../config/env', () => ({
+jest.mock('../../config/env', () => ({
     jwt: { secret: 'test-secret', expiresIn: '1h' },
     mongo: { uri: 'mongodb://fake' },
 }));
@@ -58,7 +58,7 @@ const {
     getUserById,
     forgotPassword,
     resetPassword,
-} = require('../controllers/authController');
+} = require('../../controllers/authController');
 
 describe('Auth Controller', () => {
     let req, res, next;

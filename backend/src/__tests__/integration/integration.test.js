@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-const config = require('../config/env');
+const config = require('../../config/env');
 
 let token;
 let userId;
@@ -12,8 +12,8 @@ beforeAll(async () => {
         await mongoose.connect(config.mongo.uri, { serverSelectionTimeoutMS: 3000 });
         dbConnected = true;
 
-        const User = require('../models/User');
-        const Post = require('../models/Post');
+        const User = require('../../models/User');
+        const Post = require('../../models/Post');
 
         await User.deleteMany({});
         await Post.deleteMany({});
@@ -38,8 +38,8 @@ beforeAll(async () => {
 
 afterAll(async () => {
     if (dbConnected) {
-        const User = require('../models/User');
-        const Post = require('../models/Post');
+        const User = require('../../models/User');
+        const Post = require('../../models/Post');
         await User.deleteMany({});
         await Post.deleteMany({});
         await mongoose.disconnect();
@@ -59,7 +59,7 @@ describe('Auth Integration', () => {
             return;
         }
         const request = require('supertest');
-        const app = require('../server');
+        const app = require('../../server');
 
         const res = await request(app)
             .post('/api/auth/login')
@@ -76,7 +76,7 @@ describe('Auth Integration', () => {
             return;
         }
         const request = require('supertest');
-        const app = require('../server');
+        const app = require('../../server');
 
         const res = await request(app)
             .post('/api/auth/login')
@@ -91,7 +91,7 @@ describe('Auth Integration', () => {
             return;
         }
         const request = require('supertest');
-        const app = require('../server');
+        const app = require('../../server');
 
         const res = await request(app).get('/api/auth/me').set('x-auth-token', token);
 
@@ -105,7 +105,7 @@ describe('Auth Integration', () => {
             return;
         }
         const request = require('supertest');
-        const app = require('../server');
+        const app = require('../../server');
 
         const res = await request(app).get('/api/auth/me');
 
@@ -121,7 +121,7 @@ describe('Post CRUD Integration', () => {
             return;
         }
         const request = require('supertest');
-        const app = require('../server');
+        const app = require('../../server');
 
         const res = await request(app)
             .post('/api/posts')
@@ -143,7 +143,7 @@ describe('Post CRUD Integration', () => {
             return;
         }
         const request = require('supertest');
-        const app = require('../server');
+        const app = require('../../server');
 
         const res = await request(app).get('/api/posts').set('x-auth-token', token);
 
@@ -157,7 +157,7 @@ describe('Post CRUD Integration', () => {
             return;
         }
         const request = require('supertest');
-        const app = require('../server');
+        const app = require('../../server');
 
         const res = await request(app).get(`/api/posts/${postId}`).set('x-auth-token', token);
 
@@ -170,7 +170,7 @@ describe('Post CRUD Integration', () => {
             return;
         }
         const request = require('supertest');
-        const app = require('../server');
+        const app = require('../../server');
 
         const res = await request(app)
             .put(`/api/posts/${postId}`)
@@ -186,7 +186,7 @@ describe('Post CRUD Integration', () => {
             return;
         }
         const request = require('supertest');
-        const app = require('../server');
+        const app = require('../../server');
 
         const res = await request(app).delete(`/api/posts/${postId}`).set('x-auth-token', token);
 
@@ -201,7 +201,7 @@ describe('Settings Integration', () => {
             return;
         }
         const request = require('supertest');
-        const app = require('../server');
+        const app = require('../../server');
 
         const res = await request(app).get('/api/settings').set('x-auth-token', token);
 
@@ -214,7 +214,7 @@ describe('Settings Integration', () => {
             return;
         }
         const request = require('supertest');
-        const app = require('../server');
+        const app = require('../../server');
 
         const res = await request(app)
             .put('/api/settings')
@@ -230,7 +230,7 @@ describe('Settings Integration', () => {
             return;
         }
         const request = require('supertest');
-        const app = require('../server');
+        const app = require('../../server');
 
         const res = await request(app)
             .put('/api/settings')
@@ -252,7 +252,7 @@ describe('Vote Integration', () => {
     beforeAll(async () => {
         if (skipIfNoDb()) {return;}
         const request = require('supertest');
-        const app = require('../server');
+        const app = require('../../server');
 
         const res = await request(app)
             .post('/api/posts')
@@ -268,7 +268,7 @@ describe('Vote Integration', () => {
     it('should upvote a post', async () => {
         if (skipIfNoDb()) {return;}
         const request = require('supertest');
-        const app = require('../server');
+        const app = require('../../server');
 
         const res = await request(app)
             .post(`/api/posts/${postId}/vote`)
@@ -281,7 +281,7 @@ describe('Vote Integration', () => {
     it('should toggle off upvote', async () => {
         if (skipIfNoDb()) {return;}
         const request = require('supertest');
-        const app = require('../server');
+        const app = require('../../server');
 
         const res = await request(app)
             .post(`/api/posts/${postId}/vote`)
@@ -294,7 +294,7 @@ describe('Vote Integration', () => {
     it('should increment view count', async () => {
         if (skipIfNoDb()) {return;}
         const request = require('supertest');
-        const app = require('../server');
+        const app = require('../../server');
 
         const res = await request(app)
             .post(`/api/posts/${postId}/view`)
@@ -306,7 +306,7 @@ describe('Vote Integration', () => {
     it('should prevent duplicate views from same user', async () => {
         if (skipIfNoDb()) {return;}
         const request = require('supertest');
-        const app = require('../server');
+        const app = require('../../server');
 
         await request(app)
             .post(`/api/posts/${postId}/view`)
@@ -328,7 +328,7 @@ describe('Comment Integration', () => {
     beforeAll(async () => {
         if (skipIfNoDb()) {return;}
         const request = require('supertest');
-        const app = require('../server');
+        const app = require('../../server');
 
         const res = await request(app)
             .post('/api/posts')
@@ -344,7 +344,7 @@ describe('Comment Integration', () => {
     it('should add a comment', async () => {
         if (skipIfNoDb()) {return;}
         const request = require('supertest');
-        const app = require('../server');
+        const app = require('../../server');
 
         const res = await request(app)
             .post(`/api/posts/${postId}/comments`)
@@ -361,7 +361,7 @@ describe('Comment Integration', () => {
     it('should reply to a comment', async () => {
         if (skipIfNoDb() || !commentId) {return;}
         const request = require('supertest');
-        const app = require('../server');
+        const app = require('../../server');
 
         const res = await request(app)
             .post(`/api/posts/${postId}/comments`)
@@ -376,7 +376,7 @@ describe('Courses Integration', () => {
     it('should get courses list', async () => {
         if (skipIfNoDb()) {return;}
         const request = require('supertest');
-        const app = require('../server');
+        const app = require('../../server');
 
         const res = await request(app).get('/api/courses');
 
@@ -389,7 +389,7 @@ describe('Users Integration', () => {
     it('should get top users', async () => {
         if (skipIfNoDb()) {return;}
         const request = require('supertest');
-        const app = require('../server');
+        const app = require('../../server');
 
         const res = await request(app)
             .get('/api/users/top')
@@ -404,7 +404,7 @@ describe('Notifications Integration', () => {
     it('should get notifications list', async () => {
         if (skipIfNoDb()) {return;}
         const request = require('supertest');
-        const app = require('../server');
+        const app = require('../../server');
 
         const res = await request(app)
             .get('/api/notifications')
@@ -417,7 +417,7 @@ describe('Notifications Integration', () => {
     it('should mark all notifications as read', async () => {
         if (skipIfNoDb()) {return;}
         const request = require('supertest');
-        const app = require('../server');
+        const app = require('../../server');
 
         const res = await request(app)
             .put('/api/notifications/read/all')
