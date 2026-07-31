@@ -1,0 +1,78 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Snapshot Testing: respuestas de la API GET /api/auth/me: snapshot del perfil 1`] = `
+{
+  "avatar": "http://minio.local/av-u1",
+  "avatar_key": "av-u1",
+  "bio": "Estudiante",
+  "email": "test@unam.edu.pe",
+  "id": "u1",
+  "interests": [
+    "matemáticas",
+  ],
+  "isVerified": true,
+  "level": 2,
+  "name": "Test User",
+  "role": "student",
+  "socialLinks": [
+    {
+      "name": "GitHub",
+      "url": "https://github.com/x",
+    },
+  ],
+  "theme": "light",
+  "xp": 150,
+}
+`;
+
+exports[`Snapshot Testing: respuestas de la API GET /api/courses: snapshot del shape de la respuesta 1`] = `
+[
+  {
+    "_id": "c1",
+    "cycle": 1,
+    "description": "Curso base",
+    "name": "Matemática I",
+  },
+  {
+    "_id": "c2",
+    "cycle": 2,
+    "description": "Curso avanzado",
+    "name": "Física II",
+  },
+]
+`;
+
+exports[`Snapshot Testing: respuestas de la API GET /api/notifications: snapshot del shape 1`] = `
+[
+  {
+    "_id": "n1",
+    "createdAt": 2026-05-20T10:00:00.000Z,
+    "link": "/post/p1",
+    "read": false,
+    "text": "Nuevo voto en tu publicación",
+  },
+]
+`;
+
+exports[`Snapshot Testing: respuestas de la API GET /api/users/top: snapshot del shape de la respuesta 1`] = `
+[
+  {
+    "avatar": "http://minio.local/av1",
+    "id": "a1",
+    "level": 5,
+    "name": "Ana",
+    "totalLikes": 30,
+    "totalPosts": 4,
+    "xp": 1200,
+  },
+  {
+    "avatar": null,
+    "id": "b2",
+    "level": 3,
+    "name": "Luis",
+    "totalLikes": 10,
+    "totalPosts": 2,
+    "xp": 500,
+  },
+]
+`;
