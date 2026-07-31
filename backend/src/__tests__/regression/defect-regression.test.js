@@ -320,9 +320,9 @@ describe('Regression Testing: defectos corregidos D01-D36', () => {
     });
 
     describe('D34: calculateLevel exponencial', () => {
-        it('nivel 3 requiere 300 XP (100+200)', () => {
-            expect(xpService.calculateLevel(300)).toBe(3);
-            expect(xpService.calculateLevel(299)).toBe(2);
+        it('nivel 5 requiere 1500 XP (100+200+400+800) -- discrimina lineal de exponencial', () => {
+            expect(xpService.calculateLevel(1500)).toBe(5);
+            expect(xpService.calculateLevel(1499)).toBe(4);
         });
     });
 
